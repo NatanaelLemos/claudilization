@@ -30,6 +30,9 @@ export interface CreationBandView {
   state?: string;
   /** summaries send the head-count; full island pulses send the units themselves */
   units?: number | unknown[];
+  /** where the band is bound and why — the client stages skirmishes with it */
+  dest?: string;
+  intent?: string;
 }
 
 /**

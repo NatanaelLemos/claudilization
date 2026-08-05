@@ -30,7 +30,7 @@ export interface IslandSummary {
   population: number;
   /** the whole built world rides the summary so no island ever renders bare */
   buildings?: Building[];
-  boats?: Pick<Boat, "id" | "pos" | "state" | "craft">[];
+  boats?: Pick<Boat, "id" | "pos" | "state" | "craft" | "dest" | "intent">[];
   /** player-invented creations: designs (pixel-art), units ashore, bands at sea */
   creationSpecs?: CreationSpecView[];
   creations?: CreationUnitView[];

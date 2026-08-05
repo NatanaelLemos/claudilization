@@ -21,6 +21,7 @@ import { WONDER_CIV } from "../shared/wonders";
 import { hashString, mulberry32 } from "../shared/rng";
 import { generateIsland } from "../shared/terrain";
 import type {
+  Age,
   Boat,
   Building,
   BuildingSpec,
@@ -609,6 +610,7 @@ export class World {
           stage: "site",
           progress: 0,
           pos: this.buildSite(island, order.building),
+          age: island.age,
         });
         return { order, ok: true };
       }
@@ -629,6 +631,7 @@ export class World {
           stage: "site",
           progress: 0,
           pos: { ...dock.pos },
+          age: island.age,
         });
         return { order, ok: true };
       }
@@ -649,6 +652,7 @@ export class World {
           stage: "site",
           progress: 0,
           pos: { ...airfield.pos },
+          age: island.age,
         });
         return { order, ok: true };
       }
@@ -943,13 +947,26 @@ export class World {
     return events;
   }
 
+  /**
+   * Every structure the civilization owns crosses into the age with it — one
+   * cheap idempotent pass. Sites and half-built frames are stamped too, so a
+   * building begun in the old age completes as a building of the new one.
+   */
+  private retrofitBuildings(island: Island, age: Age): void {
+    for (const b of island.buildings) b.age = age;
+  }
+
   private advanceOneAge(island: Island, next: NonNullable<ReturnType<typeof nextAge>>): GameEvent {
     island.age = next;
+    this.retrofitBuildings(island, next);
     // A colony is part of its home civilization. Keep its laws and every
     // building model on the same age without inventing separate colony work.
     if (island.kind === "home") {
       for (const colony of this.islandsMap.values()) {
-        if (colony.kind === "colony" && colony.ownerId === island.id) colony.age = next;
+        if (colony.kind === "colony" && colony.ownerId === island.id) {
+          colony.age = next;
+          this.retrofitBuildings(colony, next);
+        }
       }
     }
     return {
@@ -1374,6 +1391,7 @@ export class World {
       stage: "site",
       progress: 0,
       pos: this.buildSite(island, pick.type),
+      age: island.age,
     });
     const e: GameEvent = {
       at: this.t,
@@ -1731,6 +1749,11 @@ export class World {
     if (attack > defense) {
       const fallenName = to.name;
       to.ownerId = from.id;
+      // conquered land joins the conqueror's civilization — colors and age both,
+      // and every standing building crosses into that age with it
+      to.civ = from.civ;
+      to.age = from.age;
+      this.retrofitBuildings(to, from.age);
       to.lastPulseAt = this.t;
       to.dormant = false;
       // the fallen defenders' constructs are broken with them
@@ -1895,6 +1918,7 @@ export class World {
     to.ownerId = from.id;
     to.civ = from.civ;
     to.age = from.age;
+    this.retrofitBuildings(to, from.age);
     to.lastPulseAt = this.t;
     to.settledAt = this.t; // the colony's own first day starts at landfall
     to.dormant = false;
@@ -1937,6 +1961,11 @@ export class World {
     if (crew.length > defense) {
       const fallenName = to.name;
       to.ownerId = from.id;
+      // conquered land joins the conqueror's civilization — colors and age both,
+      // and every standing building crosses into that age with it
+      to.civ = from.civ;
+      to.age = from.age;
+      this.retrofitBuildings(to, from.age);
       to.lastPulseAt = this.t;
       to.dormant = false;
       // the fallen defenders' constructs are broken with them
@@ -2222,7 +2251,10 @@ export class World {
   debugGrant(islandId: string, grant: DebugGrant): void {
     const island = this.islandsMap.get(islandId);
     if (!island) throw new Error("unknown island");
-    if (grant.age) island.age = grant.age;
+    if (grant.age) {
+      island.age = grant.age;
+      this.retrofitBuildings(island, grant.age);
+    }
     if (grant.stocks) Object.assign(island.stocks, grant.stocks);
     if (grant.workPoints !== undefined) island.workPoints = grant.workPoints;
     if (grant.clearFoodSources) {
@@ -2235,6 +2267,7 @@ export class World {
         stage: grant.addBuilding.stage,
         progress: 0,
         pos: this.buildSite(island, grant.addBuilding.type),
+        age: island.age,
       });
     }
     if (grant.addBoat) {
@@ -2304,6 +2337,9 @@ export class World {
       w.seedMinerals(island);
       w.settleCoast(island);
       island.happiness ??= computeHappiness(island, w.balance).score;
+      // saves from before buildings carried an age: every structure stands in
+      // its island's current age. Idempotent — stamped buildings keep theirs.
+      for (const b of island.buildings) b.age ??= island.age;
       // the conquest-name law applied to worlds saved before it existed:
       // conquered land bears its ruler's name. Idempotent — a colony already
       // named for its ruler stays put — and only a new conquest changes it.

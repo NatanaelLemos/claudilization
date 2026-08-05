@@ -2667,16 +2667,32 @@ export function buildingModelSpec(type: string, modelAge: Age): BuildingSpec {
   return { ...catalog, age: modelAge };
 }
 
-/** Island age is part of the mesh cache key, so an age-up redraws immediately. */
+/**
+ * The age a building is drawn in: its own server-stamped age first, the
+ * island's age when the stamp is missing (old saves), and — if a newer server
+ * ever sends an age this client has never heard of — the closest age we do
+ * know rather than nothing at all.
+ */
+export function resolveModelAge(building: Building, islandAge: Age): Age {
+  const own = building.age;
+  if (own && ageIndex(own) >= 0) return own;
+  if (ageIndex(islandAge) >= 0) return islandAge;
+  return "stone";
+}
+
+/** Ages are part of the mesh cache key, so an age-up redraws immediately. */
 export function buildingRenderSignature(buildings: Building[], modelAge: Age): string {
-  return `${modelAge}|${buildings.map((b) => `${b.id}:${b.stage}`).join(",")}`;
+  return `${modelAge}|${buildings
+    .map((b) => `${b.id}:${b.stage}:${b.age ?? ""}`)
+    .join(",")}`;
 }
 
 export function createBuildingMesh(
   building: Building,
   civ: CivSpec,
-  modelAge: Age,
+  islandAge: Age,
 ): THREE.Group {
+  const modelAge = resolveModelAge(building, islandAge);
   const group = new THREE.Group();
   group.userData.modelAge = modelAge;
   // buildings must dwarf the settlers (~1.65 tall), so the whole composition

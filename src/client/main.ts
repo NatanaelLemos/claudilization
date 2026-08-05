@@ -9,7 +9,8 @@ import { DEFAULT_BALANCE } from "../shared/balance";
 import { civAccented, shadeCivColor } from "../shared/civColor";
 import { CIVS } from "../shared/civs";
 import type { Boat, CivSpec, GameEvent, Island } from "../shared/types";
-import { updateBoats } from "./boatsView";
+import { initAmbientLife } from "./ambientLife";
+import { tickBoats, updateBoats } from "./boatsView";
 import {
   registerCreationSpecs,
   tickCreations,
@@ -244,6 +245,24 @@ function focusIsland(id: string): void {
 net.onWorldClock = (worldSeconds, daySeconds, daylightShare) =>
   stage.setWorldClock(worldSeconds, daySeconds, daylightShare);
 
+// ambient life — trade sails, strollers, gulls, shoreline skirmishes — is a
+// pure function of the same world clock, so nothing a viewer does reseeds it
+const ambient = initAmbientLife(stage, {
+  anchor: (id) => {
+    const v = views.get(id);
+    if (!v || !v.terrainReady) return undefined;
+    return {
+      group: v.group,
+      heightAt: v.group.userData.heightAt as (x: number, y: number) => number,
+      half: v.group.userData.half as number,
+    };
+  },
+  law: () => ({
+    daySeconds: net.daySeconds ?? DEFAULT_BALANCE.daySeconds,
+    daylightShare: net.daylightShare ?? DEFAULT_BALANCE.daylightShare,
+  }),
+});
+
 net.onWorld = (summaries) => {
   const detailed = subscribedIds();
   // every design in the world registers first, so colony garrisons and bands
@@ -271,6 +290,7 @@ net.onWorld = (summaries) => {
       ageEl.textContent = ageLabel(s);
     }
   }
+  ambient.updateWorld(summaries);
 };
 
 net.onIsland = (island: Island) => {
@@ -317,6 +337,7 @@ net.onHello = (reply) => {
 initChat(Boolean(key), (text) => net.chat(text));
 stage.onFrame(tickSettlers);
 stage.onFrame(tickCreations);
+stage.onFrame(tickBoats);
 
 // the compass: world north is -Z for every viewer — the dial turns with the
 // camera so N always points at the same true north no matter who is looking

@@ -21,6 +21,9 @@ export interface Stage {
   setDayFraction(f: number): void;
   /** the fraction of the day currently on screen (tests and tooling) */
   dayFraction(): number;
+  /** the world's clock as this viewer projects it — ambient life is a pure
+   * function of this value, so nothing a viewer does can reseed it */
+  worldTime(): number;
 }
 
 /** dawn and dusk each burn a while; the share is server law — the same
@@ -234,6 +237,9 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
     },
     dayFraction() {
       return clock.phase();
+    },
+    worldTime() {
+      return clock.worldTime();
     },
   };
 }

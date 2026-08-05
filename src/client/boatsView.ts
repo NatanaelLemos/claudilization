@@ -1,17 +1,128 @@
 import * as THREE from "three";
+import { hashString, mulberry32 } from "../shared/rng";
 import type { CivSpec, Island } from "../shared/types";
 
-/** Boats sail (and planes fly) in world space — visible crossing the open ocean. */
+/**
+ * Boats sail (and planes fly) in world space — visible crossing the open
+ * ocean. Server pulses land once a second, so each craft keeps a persistent
+ * mesh that glides toward its latest reported position, turns its bow into
+ * the direction of travel, bobs on the swell, and drags a foam wake — instead
+ * of teleporting a fresh mesh every pulse.
+ */
+
+const GLIDE = 5; // world units per second toward the server position (scaled up with distance)
+const PLANE_ALT = 14;
+
+interface CraftAnim {
+  group: THREE.Group;
+  wake: THREE.Mesh | null;
+  x: number;
+  z: number;
+  targetX: number;
+  targetZ: number;
+  yaw: number;
+  /** smoothed speed, world units/s — drives the wake and the bow wave */
+  speed: number;
+  phase: number;
+  plane: boolean;
+}
+
+interface ViewState {
+  crafts: Map<string, CraftAnim>;
+  time: number;
+}
+
+const views = new Map<THREE.Group, ViewState>();
+
 export function updateBoats(holder: THREE.Group, island: Island, civ: CivSpec): void {
-  holder.clear();
+  let view = views.get(holder);
+  if (!view) {
+    view = { crafts: new Map(), time: 0 };
+    views.set(holder, view);
+  }
+  const alive = new Set<string>();
   for (const boat of island.boats) {
     if (boat.state === "docked") continue;
-    const group = boat.craft === "plane" ? planeMesh(civ) : boatMesh(civ);
-    group.position.set(boat.pos.x, boat.craft === "plane" ? 14 : 0, boat.pos.y);
+    alive.add(boat.id);
+    const existing = view.crafts.get(boat.id);
+    if (existing) {
+      existing.targetX = boat.pos.x;
+      existing.targetZ = boat.pos.y;
+      continue;
+    }
+    const plane = boat.craft === "plane";
+    const group = plane ? planeMesh(civ) : boatMesh(civ);
+    group.position.set(boat.pos.x, plane ? PLANE_ALT : 0, boat.pos.y);
     group.userData.boatId = boat.id;
     group.userData.islandId = island.id;
     group.add(hitBubble());
+    let wake: THREE.Mesh | null = null;
+    if (!plane) {
+      wake = wakeMesh();
+      group.add(wake);
+    }
     holder.add(group);
+    view.crafts.set(boat.id, {
+      group,
+      wake,
+      x: boat.pos.x,
+      z: boat.pos.y,
+      targetX: boat.pos.x,
+      targetZ: boat.pos.y,
+      yaw: mulberry32(hashString(boat.id))() * Math.PI * 2,
+      speed: 0,
+      phase: hashString(boat.id) % 13,
+      plane,
+    });
+  }
+  for (const [id, anim] of [...view.crafts]) {
+    if (alive.has(id)) continue;
+    holder.remove(anim.group);
+    view.crafts.delete(id);
+  }
+}
+
+/** Advance every craft one frame: glide, steer, bob, and trail foam. */
+export function tickBoats(dt: number): void {
+  for (const view of views.values()) {
+    view.time += dt;
+    const t = view.time;
+    for (const anim of view.crafts.values()) {
+      const dx = anim.targetX - anim.x;
+      const dz = anim.targetZ - anim.z;
+      const dist = Math.hypot(dx, dz);
+      let moved = 0;
+      if (dist > 0.02) {
+        const pace = GLIDE * Math.max(1, dist * 0.45) * (anim.plane ? 3 : 1);
+        const step = Math.min(1, (pace * dt) / dist);
+        anim.x += dx * step;
+        anim.z += dz * step;
+        moved = dist * step;
+        const heading = Math.atan2(dx, dz);
+        let turn = heading - anim.yaw;
+        turn = ((((turn + Math.PI) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)) - Math.PI;
+        anim.yaw += turn * Math.min(1, dt * 4);
+      }
+      anim.speed += (moved / Math.max(dt, 1e-4) - anim.speed) * Math.min(1, dt * 3);
+      const g = anim.group;
+      // meshes are authored bow toward +x; heading is atan2(dx, dz) around y
+      g.rotation.y = anim.yaw - Math.PI / 2;
+      if (anim.plane) {
+        g.position.set(anim.x, PLANE_ALT + Math.sin(t * 1.3 + anim.phase) * 0.5, anim.z);
+        g.rotation.z = Math.sin(t * 0.9 + anim.phase) * 0.06;
+      } else {
+        g.position.set(anim.x, Math.sin(t * 1.7 + anim.phase) * 0.1, anim.z);
+        g.rotation.z = Math.sin(t * 1.4 + anim.phase) * 0.045;
+        g.rotation.x = Math.sin(t * 1.1 + anim.phase) * 0.03;
+        if (anim.wake) {
+          const strength = Math.min(1, anim.speed / 6);
+          const mat = anim.wake.material as THREE.MeshBasicMaterial;
+          mat.opacity = 0.38 * strength;
+          anim.wake.scale.set(1 + strength * 1.6, 1, 1 + strength * 0.3);
+          anim.wake.visible = strength > 0.04;
+        }
+      }
+    }
   }
 }
 
@@ -26,7 +137,25 @@ function hitBubble(): THREE.Mesh {
   return bubble;
 }
 
-function boatMesh(civ: CivSpec): THREE.Group {
+const wakeGeo = new THREE.PlaneGeometry(3.4, 1.4).translate(-2.6, 0, 0);
+
+/** foam trailing off the stern, stretched and faded by the craft's pace */
+function wakeMesh(): THREE.Mesh {
+  const wake = new THREE.Mesh(
+    wakeGeo,
+    new THREE.MeshBasicMaterial({
+      color: "#dff2f7",
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+    }),
+  );
+  wake.rotation.x = -Math.PI / 2;
+  wake.position.y = 0.06;
+  return wake;
+}
+
+export function boatMesh(civ: CivSpec): THREE.Group {
   const group = new THREE.Group();
   const hull = new THREE.Mesh(
     new THREE.BoxGeometry(2.4, 0.5, 1),
@@ -49,7 +178,7 @@ function boatMesh(civ: CivSpec): THREE.Group {
   return group;
 }
 
-function planeMesh(civ: CivSpec): THREE.Group {
+export function planeMesh(civ: CivSpec): THREE.Group {
   const group = new THREE.Group();
   const body = new THREE.MeshLambertMaterial({ color: civ.boat.sail });
   const trim = new THREE.MeshLambertMaterial({ color: civ.boat.hull });

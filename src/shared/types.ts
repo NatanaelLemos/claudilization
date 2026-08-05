@@ -99,6 +99,12 @@ export interface Building {
   stage: BuildingStage;
   progress: number;
   pos: Vec2;
+  /** The age this structure currently stands in. Stamped from the civilization's
+   * age at ground-breaking and re-stamped for every building the civilization
+   * owns — across its home island and all its colonies — whenever it advances,
+   * so the whole skyline crosses the age together. Absent on saves from before
+   * the field existed; readers fall back to the island's age. */
+  age?: Age;
 }
 
 export interface BuildingSpec {

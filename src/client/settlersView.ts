@@ -26,6 +26,25 @@ const SKIN_TONES = ["#f0c9a6", "#e3b68c", "#c98f5f", "#a96f43", "#7f5232"];
 const HAIR_TONES = ["#241b12", "#4a3320", "#6e4a26", "#8a6a3c", "#3a3a3f", "#8f8578"];
 const LEG_TONES = ["#5f4a36", "#4a3d33", "#6b5a44", "#41414a"];
 
+/** The little-person kit, shared with the ambient strollers so the town's
+ * background life is built from exactly the same figures as its workers. */
+export const PERSON = {
+  legGeo,
+  armGeo,
+  torsoGeo,
+  headGeo,
+  hairGeo,
+  mat: partMat,
+  HIP_Y,
+  SHOULDER_Y,
+  LEG_X,
+  ARM_X,
+  ARM_TILT,
+  SKIN_TONES,
+  HAIR_TONES,
+  LEG_TONES,
+} as const;
+
 /**
  * Deterministic per-settler offset around a shared target, so a crew sent to
  * one node spreads out instead of stacking into a single dot.

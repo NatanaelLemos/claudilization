@@ -61,12 +61,17 @@ function summary(island: Island, world: World) {
       stage: b.stage,
       progress: b.progress,
       pos: b.pos,
+      age: b.age,
     })),
     boats: island.boats.map((b) => ({
       id: b.id,
       pos: b.pos,
       state: b.state,
       craft: b.craft,
+      // destination and intent are public knowledge (the feed announces every
+      // departure) — the client uses them to stage skirmishes where raids land
+      dest: b.dest,
+      intent: b.intent,
     })),
     // player-invented creations are part of the visible world too: the specs
     // carry the pixel-art the client draws, the units and bands carry positions
@@ -86,6 +91,8 @@ function summary(island: Island, world: World) {
       pos: b.pos,
       state: b.state,
       units: b.units.length,
+      dest: b.dest,
+      intent: b.intent,
     })),
     time: world.time,
   };
