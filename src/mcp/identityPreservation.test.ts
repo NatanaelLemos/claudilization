@@ -21,11 +21,14 @@ import {
   type ServerResponse,
 } from "node:http";
 import {
+  chmodSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readdirSync,
   readFileSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import type { AddressInfo } from "node:net";
@@ -169,5 +172,76 @@ describe("install.sh is held to the identity law", () => {
     const check = spawnSync("sh", ["-n"], { input: script, encoding: "utf8" });
     expect(check.stderr).toBe("");
     expect(check.status).toBe(0);
+  });
+
+  it("executes the exact public curl-pipe command under POSIX /bin/sh", async () => {
+    scratch = mkdtempSync(join(tmpdir(), "clz-install-pipe-"));
+    const home = join(scratch, "home");
+    const bin = join(scratch, "bin");
+    mkdirSync(home);
+    mkdirSync(bin);
+
+    const archive = join(scratch, "claudilization.tgz");
+    writeFileSync(archive, "fixture archive bytes\n");
+    const digest = createHash("sha256").update(readFileSync(archive)).digest("hex");
+    const { installScriptForTest } = await import("../server/api");
+    const script = join(scratch, "install.sh");
+    writeFileSync(script, installScriptForTest("https://claudilization.com", digest));
+
+    const executable = (name: string, body: string) => {
+      const path = join(bin, name);
+      writeFileSync(path, `#!/bin/sh\nset -eu\n${body}\n`);
+      chmodSync(path, 0o755);
+    };
+
+    // The first curl emits install.sh into the pipe; the installer's second
+    // curl copies the deterministic fixture archive to its requested -o path.
+    executable(
+      "curl",
+      `out=""
+url=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -o) out="$2"; shift 2 ;;
+    -*) shift ;;
+    *) url="$1"; shift ;;
+  esac
+done
+case "$url" in
+  */install.sh) /bin/cat "$CLZ_TEST_SCRIPT" ;;
+  */claudilization.tgz) /bin/cp "$CLZ_TEST_ARCHIVE" "$out" ;;
+  *) echo "unexpected URL: $url" >&2; exit 64 ;;
+esac`,
+    );
+
+    // Restrict PATH to this macOS-shaped tool set: deliberately omit
+    // sha256sum so the installer must take its shasum -a 256 branch.
+    executable("shasum", `printf '%s  %s\\n' "$CLZ_TEST_DIGEST" "$3"`);
+    for (const command of ["tar", "npm", "claude", "npx"]) {
+      executable(command, "exit 0");
+    }
+    for (const command of ["sh", "mktemp", "rm", "mkdir", "awk", "date", "mv"]) {
+      const target = [`/bin/${command}`, `/usr/bin/${command}`].find(existsSync);
+      expect(target, `${command} must exist for the installer fixture`).toBeDefined();
+      symlinkSync(target!, join(bin, command));
+    }
+
+    const publicCommand = "curl -fsS https://claudilization.com/install.sh | sh";
+    const run = spawnSync("/bin/sh", ["-c", publicCommand], {
+      cwd: scratch,
+      encoding: "utf8",
+      env: {
+        HOME: home,
+        PATH: bin,
+        CLZ_TEST_SCRIPT: script,
+        CLZ_TEST_ARCHIVE: archive,
+        CLZ_TEST_DIGEST: digest,
+      },
+    });
+
+    expect(run.stderr).toBe("");
+    expect(run.status).toBe(0);
+    expect(run.stdout).toContain(`Installing Claudilization to ${home}/.claudilization/app...`);
+    expect(readBundleStamp(join(home, ".claudilization", "app"))?.sha256).toBe(digest);
   });
 });
