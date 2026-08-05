@@ -28,7 +28,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:scenario": "playwright test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "verify": "npm test && npm run typecheck",
+    "verify:release": "npm test && npm run typecheck && npm run build && npm run test:scenario"
   },
   "dependencies": {
     "@fontsource/fraunces": "^5.0.0",

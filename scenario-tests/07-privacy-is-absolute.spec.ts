@@ -32,13 +32,20 @@ test("the Stop hook sends only numbers — the prompt text never leaves the mach
       res.end("{}");
     });
   });
-  await new Promise<void>((resolve) => capture.listen(8799, resolve));
+  // ephemeral port: a fixed number collides with whatever else lives on the
+  // host running the suite
+  await new Promise<void>((resolve) => capture.listen(0, resolve));
+  const address = capture.address();
+  if (address === null || typeof address === "string") {
+    throw new Error("capture server has no port");
+  }
+  const capturePort = address.port;
 
   try {
     mkdirSync(join(home, ".claudilization"), { recursive: true });
     writeFileSync(
       join(home, ".claudilization", "identity.json"),
-      JSON.stringify({ secret: "s-test", serverUrl: "http://localhost:8799" }),
+      JSON.stringify({ secret: "s-test", serverUrl: `http://localhost:${capturePort}` }),
     );
     const transcriptPath = join(home, "transcript.jsonl");
     writeFileSync(transcriptPath, fixtureTranscript());

@@ -145,13 +145,29 @@ HTTP, SSE, and WebSocket URLs from `import.meta.env.BASE_URL`.
 
 ## Verification
 
+Two lanes. The fast lane is the push gate; the slow lane is on demand.
+
+**Push gate — run before every push (~10 seconds total):**
+
 ```bash
-npm test
-npm run typecheck
-npm run build
-npm run test:scenario
+npm run verify   # = npm test (vitest units, ~6 s) + npm run typecheck (~4 s)
+```
+
+**Release verification — only for releases or changes that touch the world
+loop, transports, persistence, or the client bundle (~8 minutes):**
+
+```bash
+npm run verify:release   # = verify + npm run build + npm run test:scenario
 npm audit --omit=dev
 ```
+
+The scenario suite (`npm run test:scenario`) drives a real browser against a
+dedicated server with an accelerated world clock; its runtime is dominated by
+deliberate real-time waits (dormancy, starvation, day boundaries) and it runs
+serially against one shared world. Do not fold it into the push gate.
+
+The agent-run QA walkthroughs in `evals/` take hours and are for major
+behavior changes only — never part of any automated gate.
 
 The scenario suite uses only `.test-data/` and `test-results/`, both ignored by
 Git. Postgres contract tests are skipped unless an isolated
