@@ -22,5 +22,18 @@ export default defineConfig({
       "/ws": { target: "ws://localhost:8787", ws: true },
     },
   },
-  build: { outDir: "dist" },
+  build: {
+    outDir: "dist",
+    rollupOptions: {
+      output: {
+        // the 3D engine dwarfs the app code and changes only when the
+        // dependency is bumped — its own chunk downloads in parallel on a
+        // cold visit and stays browser-cached across app deploys, so game
+        // updates cost returning players only the small app chunk
+        manualChunks: {
+          three: ["three", "camera-controls"],
+        },
+      },
+    },
+  },
 });

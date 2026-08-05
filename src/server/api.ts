@@ -483,6 +483,7 @@ export function createApi(
             civ: i.civ,
             age: i.age,
             kind: i.kind,
+            origin: i.origin,
             ownerId: i.ownerId,
             position: i.position,
             ruins: i.ruins,

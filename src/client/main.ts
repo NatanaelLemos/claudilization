@@ -43,6 +43,8 @@ const net = new Net();
 interface IslandView {
   summary: IslandSummary;
   group: THREE.Group;
+  /** terrain meshes are built on demand — false while the placeholder stands */
+  terrainReady: boolean;
   buildings: THREE.Group;
   settlers: THREE.Group;
   boats: THREE.Group;
@@ -54,13 +56,23 @@ interface IslandView {
 }
 
 const views = new Map<string, IslandView>();
+/** islands whose terrain still waits to be built — drained one per frame */
+const terrainQueue = new Set<string>();
 let focusedId: string | undefined;
 let myIslandId: string | undefined;
 
+/**
+ * Register an island without paying for its terrain. The heavy work —
+ * 166×166 noise, geometry, normals, nature meshes — used to run for every
+ * island synchronously on the first world frame, freezing the initial load
+ * for the whole ocean. Now each island starts as an empty, positioned group
+ * and the terrain builder fills it in on demand: the watched island first,
+ * then the rest nearest-first, one per frame, cached forever after.
+ */
 function ensureView(summary: IslandSummary): IslandView {
   let view = views.get(summary.id);
   if (!view) {
-    const group = createIslandGroup(summary.seed, summary.size ?? DEFAULT_BALANCE.islandSize);
+    const group = new THREE.Group();
     group.position.set(summary.position.x, 0, summary.position.y);
     stage.scene.add(group);
     const buildings = new THREE.Group();
@@ -70,13 +82,70 @@ function ensureView(summary: IslandSummary): IslandView {
     const boats = new THREE.Group();
     const bands = new THREE.Group();
     stage.scene.add(boats, bands); // boats and bands travel in world space
-    view = { summary, group, buildings, settlers, boats, creations, bands, buildingIds: "" };
+    view = {
+      summary,
+      group,
+      terrainReady: false,
+      buildings,
+      settlers,
+      boats,
+      creations,
+      bands,
+      buildingIds: "",
+    };
     views.set(summary.id, view);
-    if (summary.ruins) setIslandMood(group, true, false);
+    terrainQueue.add(summary.id);
   }
   view.summary = summary;
   return view;
 }
+
+/** Build one island's terrain now and move its content groups onto the land. */
+function buildTerrain(view: IslandView): void {
+  const s = view.summary;
+  const ground = createIslandGroup(s.seed, s.size ?? DEFAULT_BALANCE.islandSize);
+  ground.position.copy(view.group.position);
+  ground.add(view.buildings, view.settlers, view.creations);
+  stage.scene.remove(view.group);
+  stage.scene.add(ground);
+  view.group = ground;
+  view.terrainReady = true;
+  if (s.ruins) setIslandMood(ground, true, false);
+  // the world already told us what stands here — fill the fresh land in
+  applySummaryVisuals(view, s);
+  if (view.island) applyIslandDetail(view, view.island);
+}
+
+// the terrain builder: one island per frame keeps every frame fluid while
+// the ocean streams in — the watched island first, then nearest to the camera
+const buildTargetV3 = new THREE.Vector3();
+stage.onFrame(() => {
+  if (!terrainQueue.size) return;
+  stage.controls.getTarget(buildTargetV3);
+  let bestId: string | undefined;
+  let bestD = Infinity;
+  for (const id of terrainQueue) {
+    const v = views.get(id);
+    if (!v) {
+      terrainQueue.delete(id);
+      continue;
+    }
+    const d =
+      id === focusedId
+        ? -1
+        : Math.hypot(
+            v.summary.position.x - buildTargetV3.x,
+            v.summary.position.y - buildTargetV3.z,
+          );
+    if (d < bestD) {
+      bestD = d;
+      bestId = id;
+    }
+  }
+  if (!bestId) return;
+  terrainQueue.delete(bestId);
+  buildTerrain(views.get(bestId)!);
+});
 
 /** islands whose full detail arrives by subscription — summaries stand back */
 function subscribedIds(): Set<string> {
@@ -104,6 +173,33 @@ function rebuildBuildings(
     mesh.position.set(b.pos.x - half, Math.max(0.05, heightAt(b.pos.x, b.pos.y)), b.pos.y - half);
     view.buildings.add(mesh);
   }
+}
+
+/** Summary-driven meshes for an unfocused island — needs its terrain built. */
+function applySummaryVisuals(view: IslandView, s: IslandSummary): void {
+  if (!view.terrainReady) return;
+  const heightAt = view.group.userData.heightAt as (x: number, y: number) => number;
+  const half = view.group.userData.half as number;
+  rebuildBuildings(view, s.buildings ?? [], CIVS[s.civ], s.age);
+  updateBoats(
+    view.boats,
+    { id: s.id, boats: s.boats ?? [] } as unknown as Island,
+    CIVS[s.civ],
+  );
+  updateCreations(view.creations, s.creationSpecs, s.creations, heightAt, half);
+}
+
+/** Full-detail meshes for a subscribed island — needs its terrain built. */
+function applyIslandDetail(view: IslandView, island: Island): void {
+  if (!view.terrainReady) return;
+  const civ = CIVS[island.civ];
+  const heightAt = view.group.userData.heightAt as (x: number, y: number) => number;
+  const half = view.group.userData.half as number;
+  rebuildBuildings(view, island.buildings, civ, island.age);
+  updateSettlers(view.settlers, island, civ, heightAt, half);
+  updateBoats(view.boats, island, civ);
+  updateCreations(view.creations, island.creationSpecs, island.creations, heightAt, half);
+  updateCreationBands(view.bands, island.creationBands);
 }
 
 function ageLabel(s: IslandSummary): string {
@@ -144,20 +240,10 @@ net.onWorld = (summaries) => {
   for (const s of summaries) registerCreationSpecs(s.creationSpecs);
   for (const s of summaries) {
     const view = ensureView(s);
-    if (s.ruins) setIslandMood(view.group, true, false);
-    const heightAt = view.group.userData.heightAt as (x: number, y: number) => number;
-    const half = view.group.userData.half as number;
+    if (s.ruins && view.terrainReady) setIslandMood(view.group, true, false);
     // unfocused islands live off the summary: their villages and ships stay
     // on the map across refreshes instead of waiting for a subscription
-    if (!detailed.has(s.id)) {
-      rebuildBuildings(view, s.buildings ?? [], CIVS[s.civ], s.age);
-      updateBoats(
-        view.boats,
-        { id: s.id, boats: s.boats ?? [] } as unknown as Island,
-        CIVS[s.civ],
-      );
-      updateCreations(view.creations, s.creationSpecs, s.creations, heightAt, half);
-    }
+    if (!detailed.has(s.id)) applySummaryVisuals(view, s);
     updateCreationBands(view.bands, s.creationBands);
   }
   if (!focusedId && summaries.length) {
@@ -179,16 +265,8 @@ net.onIsland = (island: Island) => {
   const view = views.get(island.id);
   if (!view) return;
   view.island = island;
-  const civ = CIVS[island.civ];
-  const heightAt = view.group.userData.heightAt as (x: number, y: number) => number;
-  const half = view.group.userData.half as number;
-
-  rebuildBuildings(view, island.buildings, civ, island.age);
+  applyIslandDetail(view, island);
   if (island.id === focusedId) refreshBuildingPanel(island);
-  updateSettlers(view.settlers, island, civ, heightAt, half);
-  updateBoats(view.boats, island, civ);
-  updateCreations(view.creations, island.creationSpecs, island.creations, heightAt, half);
-  updateCreationBands(view.bands, island.creationBands);
   if (chase && chase.islandId === island.id) {
     const boat = island.boats.find((b) => b.id === chase!.boatId);
     const underway = boat && boat.state === chase.state && boat.state !== "docked";
@@ -206,7 +284,7 @@ net.onIsland = (island: Island) => {
     updateMood(island);
     updateAgeProgress(island);
   }
-  if (island.ruins) setIslandMood(view.group, true, island.dormant);
+  if (island.ruins && view.terrainReady) setIslandMood(view.group, true, island.dormant);
 };
 
 net.onEvents = (events: GameEvent[]) => {
@@ -298,6 +376,45 @@ stage.onFrame((dt) => {
   void stage.controls.moveTo(chasePos.x, 0, chasePos.z, false);
 });
 
+// ── arrow keys pan the camera: hold to glide across the sea ────────────────
+// Left/right slide the view sideways; up/down walk it forward and back over
+// the water, matching the drag gesture. Keys are ignored while typing in any
+// input so chat never fights the camera.
+const heldPanKeys = new Set<string>();
+const PAN_KEYS = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
+
+function isTyping(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el || !el.tagName) return false;
+  const tag = el.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el.isContentEditable;
+}
+
+window.addEventListener("keydown", (e) => {
+  if (!PAN_KEYS.has(e.key) || isTyping(e.target)) return;
+  e.preventDefault(); // the page must never scroll underneath the map
+  if (!heldPanKeys.has(e.key)) {
+    heldPanKeys.add(e.key);
+    stopChase(); // taking the wheel lets go of any followed craft
+  }
+});
+window.addEventListener("keyup", (e) => heldPanKeys.delete(e.key));
+window.addEventListener("blur", () => heldPanKeys.clear());
+
+stage.onFrame((dt) => {
+  if (!heldPanKeys.size) return;
+  const right =
+    (heldPanKeys.has("ArrowRight") ? 1 : 0) - (heldPanKeys.has("ArrowLeft") ? 1 : 0);
+  const ahead =
+    (heldPanKeys.has("ArrowUp") ? 1 : 0) - (heldPanKeys.has("ArrowDown") ? 1 : 0);
+  if (!right && !ahead) return;
+  // pace scales with height: the view crosses the same screen fraction per
+  // second whether the camera hugs an island or surveys the whole ocean
+  const step = stage.controls.distance * 0.9 * dt;
+  if (right) stage.controls.truck(right * step, 0, false);
+  if (ahead) stage.controls.forward(ahead * step, false);
+});
+
 // the corner name follows the camera: pan up to an island and it becomes the
 // one you are watching. The camera must be at rest, and the same island must
 // win two half-second looks in a row, so a fly-by never steals the title.
@@ -387,6 +504,11 @@ initPicking(
   views.get(id)?.buildings.children.length;
 (window as unknown as { __target?: () => unknown }).__target = () =>
   stage.controls.getTarget(new THREE.Vector3()).toArray();
+// how much of the ocean's terrain is built — the on-demand loader's gauge
+(window as unknown as { __terrain?: () => unknown }).__terrain = () => ({
+  built: [...views.values()].filter((v) => v.terrainReady).length,
+  pending: terrainQueue.size,
+});
 (window as unknown as { __lookAt?: (x: number, z: number) => void }).__lookAt = (x, z) =>
   stage.flyTo(x, z);
 

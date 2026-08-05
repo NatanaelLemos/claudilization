@@ -138,6 +138,18 @@ export interface Boat {
  */
 export type IslandKind = "home" | "wild" | "colony";
 
+/**
+ * Where an island came from — written at birth and never changed again.
+ * `home` marks a player's founding island; `neutral` marks land that rose
+ * empty from the sea. Protection law reads THIS field, not the mutable
+ * `kind`, so no state drift, migration bug, or forged payload can ever make
+ * a founding island conquerable — and no formerly-empty island can ever
+ * inherit a home's sanctity, no matter how many times it changes hands.
+ * Absent only on saves from before the field existed; the loader backfills
+ * it from `kind` exactly once.
+ */
+export type IslandOrigin = "home" | "neutral";
+
 export interface Island {
   id: string;
   name: string;
@@ -145,6 +157,8 @@ export interface Island {
   seed: number;
   age: Age;
   kind: IslandKind;
+  /** immutable provenance: founding island or formerly-empty land (see above) */
+  origin?: IslandOrigin;
   /** colonies only: the home island that currently rules them */
   ownerId?: string;
   /** Ed25519 public key (PEM) of the paired Claude — once set, only requests

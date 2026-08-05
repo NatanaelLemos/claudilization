@@ -14,6 +14,8 @@ export interface IslandSummary {
   civ: Island["civ"];
   age: Island["age"];
   kind: Island["kind"];
+  /** immutable provenance — home islands are sacred, neutral land is contested */
+  origin?: Island["origin"];
   ownerId?: string;
   seed: number;
   /** tiles per side — older servers may not send it */

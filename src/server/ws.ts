@@ -41,6 +41,7 @@ function summary(island: Island, world: World) {
     civ: island.civ,
     age: island.age,
     kind: island.kind,
+    origin: island.origin,
     ownerId: island.ownerId,
     seed: island.seed,
     size: island.size,

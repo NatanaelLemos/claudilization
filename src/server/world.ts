@@ -131,6 +131,10 @@ export function migrateRetrofitIsland(island: Island): Island {
   else if (kind === "neutral") island.kind = "wild";
   // a colony without a ruler is just land again
   if (island.kind === "colony" && !island.ownerId) island.kind = "wild";
+  // provenance, written exactly once: saves from before the origin field
+  // derive it from kind — a home island was founded, everything else rose
+  // empty from the sea. After this, origin never changes again.
+  island.origin ??= island.kind === "home" ? "home" : "neutral";
   return island;
 }
 
@@ -343,6 +347,7 @@ export class World {
       seed: islandSeed,
       age: "stone",
       kind: "home",
+      origin: "home",
       ownerKey: input.publicKey,
       position,
       size: this.balance.islandSize,
@@ -415,6 +420,7 @@ export class World {
       seed: islandSeed,
       age: "stone",
       kind: "wild",
+      origin: "neutral",
       position: {
         x: Math.round(r * Math.cos(theta) * 100) / 100,
         y: Math.round(r * Math.sin(theta) * 100) / 100,
@@ -838,7 +844,7 @@ export class World {
     if (!dest || dest.ruins || dest.id === island.id)
       return { order, ok: false, reason: "no such destination" };
     // the one law of the sea holds for every creature ever invented:
-    if (dest.kind === "home")
+    if (this.sacred(dest))
       return { order, ok: false, reason: "home islands are sacred — they can never be attacked" };
     if (dest.kind === "wild")
       return { order, ok: false, reason: "no one holds it — colonize it with settlers instead" };
@@ -936,14 +942,27 @@ export class World {
     };
   }
 
+  /**
+   * The one law above all others: a founding island can never be taken.
+   * Judged on the immutable `origin`, with the mutable `kind` as a second
+   * lock — whichever field a bug or forged save corrupts, the other still
+   * holds the door. Formerly-empty land is never sacred, no matter who
+   * holds it today or how many times it has changed hands.
+   */
+  private sacred(island: Island): boolean {
+    return island.origin === "home" || island.kind === "home";
+  }
+
   /** The laws of the sea: who may sail where, for what. Null means "go ahead". */
   private voyageGate(from: Island, dest: Island, intent: VoyageIntent): string | null {
     switch (intent) {
       case "colonize":
         if (dest.kind !== "wild") return "only an empty island can be colonized";
+        // a forged save could claim a home island is wild — origin still holds
+        if (this.sacred(dest)) return "home islands are sacred — they can never be taken";
         return null;
       case "attack":
-        if (dest.kind === "home") return "home islands are sacred — they can never be attacked";
+        if (this.sacred(dest)) return "home islands are sacred — they can never be attacked";
         if (dest.kind === "wild") return "no one holds it — colonize it instead";
         if (dest.ownerId === from.id) return "that colony already flies your banner";
         return null;
@@ -951,6 +970,16 @@ export class World {
         if (dest.kind === "wild") return "no one lives there to meet you";
         return null;
     }
+  }
+
+  /**
+   * The law of conquest names: land that rose empty from the sea takes the
+   * name of whoever holds it. Colonize it or storm it and it is renamed for
+   * the conqueror's civilization — until somebody else takes it in turn.
+   */
+  private adoptConquerorName(colony: Island, conqueror: Island): void {
+    if (this.sacred(colony)) return; // founding islands keep their own names
+    colony.name = conqueror.name;
   }
 
   private afford(island: Island, cost: Partial<Record<ResourceId, number>>): boolean {
@@ -1676,22 +1705,24 @@ export class World {
       return true;
     }
     // a raid — but only a rival colony is ever a lawful target
-    if (to.kind !== "colony" || to.ownerId === from.id) return false;
+    if (this.sacred(to) || to.kind !== "colony" || to.ownerId === from.id) return false;
     const attack = bandPower(spec, band.units.length);
     const defense = this.islandDefense(to);
     if (attack > defense) {
+      const fallenName = to.name;
       to.ownerId = from.id;
       to.lastPulseAt = this.t;
       to.dormant = false;
       // the fallen defenders' constructs are broken with them
       to.creations = [];
+      this.adoptConquerorName(to, from);
       landUnits();
       const e: GameEvent = {
         at: this.t,
         type: "conquest",
         world: true,
         islandId: to.id,
-        text: `The ${spec.name} of ${from.name} storm ${to.name} — the colony changes hands.`,
+        text: `The ${spec.name} of ${from.name} storm ${fallenName} — the colony changes hands and now bears the name ${to.name}.`,
       };
       this.emit(e);
       batch.push(e);
@@ -1827,7 +1858,7 @@ export class World {
   /** Landfall on an empty shore: the crew steps off and a colony is born. */
   private arriveColonize(from: Island, to: Island, boat: Boat, batch: GameEvent[]): void {
     const crew = boat.crew ?? [];
-    if (to.kind !== "wild" || crew.length === 0) {
+    if (this.sacred(to) || to.kind !== "wild" || crew.length === 0) {
       // claimed while the boat was at sea — the crew stays aboard and sails home
       const e: GameEvent = {
         at: this.t,
@@ -1839,6 +1870,7 @@ export class World {
       batch.push(e);
       return;
     }
+    const landName = to.name;
     to.kind = "colony";
     to.ownerId = from.id;
     to.civ = from.civ;
@@ -1846,6 +1878,7 @@ export class World {
     to.lastPulseAt = this.t;
     to.settledAt = this.t; // the colony's own first day starts at landfall
     to.dormant = false;
+    this.adoptConquerorName(to, from);
     const terrain = this.islandTerrain(to);
     crew.forEach((s, i) => {
       s.task = { kind: "idle" };
@@ -1862,7 +1895,7 @@ export class World {
       type: "colony-founded",
       world: true,
       islandId: to.id,
-      text: `Settlers from ${from.name} raise their banner over ${to.name} — a colony is founded.`,
+      text: `Settlers from ${from.name} raise their banner over ${landName} — a colony is founded, and the island takes the name ${to.name}.`,
     };
     this.emit(e);
     batch.push(e);
@@ -1876,17 +1909,19 @@ export class World {
    */
   private arriveAttack(from: Island, to: Island, boat: Boat, batch: GameEvent[]): void {
     const crew = boat.crew ?? [];
-    if (to.kind !== "colony" || to.ownerId === from.id || crew.length === 0) {
+    if (this.sacred(to) || to.kind !== "colony" || to.ownerId === from.id || crew.length === 0) {
       // nothing left to fight — the raiders stay aboard and sail home
       return;
     }
     const defense = this.islandDefense(to);
     if (crew.length > defense) {
+      const fallenName = to.name;
       to.ownerId = from.id;
       to.lastPulseAt = this.t;
       to.dormant = false;
       // the fallen defenders' constructs are broken with them
       to.creations = [];
+      this.adoptConquerorName(to, from);
       const terrain = this.islandTerrain(to);
       crew.forEach((s, i) => {
         s.task = { kind: "idle" };
@@ -1899,7 +1934,7 @@ export class World {
         type: "conquest",
         world: true,
         islandId: to.id,
-        text: `Raiders from ${from.name} storm ${to.name} — the colony changes hands.`,
+        text: `Raiders from ${from.name} storm ${fallenName} — the colony changes hands and now bears the name ${to.name}.`,
       };
       this.emit(e);
       batch.push(e);
@@ -2249,6 +2284,13 @@ export class World {
       w.seedMinerals(island);
       w.settleCoast(island);
       island.happiness ??= computeHappiness(island, w.balance).score;
+      // the conquest-name law applied to worlds saved before it existed:
+      // conquered land bears its ruler's name. Idempotent — a colony already
+      // named for its ruler stays put — and only a new conquest changes it.
+      if (island.kind === "colony" && island.ownerId) {
+        const ruler = w.islandsMap.get(island.ownerId);
+        if (ruler && !w.sacred(island)) island.name = ruler.name;
+      }
     }
     return w;
   }
