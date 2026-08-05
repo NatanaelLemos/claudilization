@@ -3,6 +3,7 @@ import type { Balance } from "../shared/balance";
 import { DEFAULT_BALANCE } from "../shared/balance";
 import { BUILDINGS, buildingSpec } from "../shared/buildings";
 import { CIVS } from "../shared/civs";
+import { ensureCivColors, pickCivColor } from "../shared/civColor";
 import {
   bandPower,
   bandSpeed,
@@ -344,6 +345,7 @@ export class World {
       id,
       name,
       civ: input.civ,
+      color: this.newCivColor(islandSeed),
       seed: islandSeed,
       age: "stone",
       kind: "home",
@@ -382,6 +384,24 @@ export class World {
       text: `A new island rises from the sea: ${name}, home of a ${civ.label} people.`,
     });
     return { secret, islandId: id, islandName: name, isNew: true };
+  }
+
+  /** Roll a founding civilization's banner color, distinct from every color
+   * already flying anywhere in the world. Deterministic per island seed. */
+  private newCivColor(islandSeed: number): string {
+    const flying = [...this.islandsMap.values()]
+      .map((i) => i.color)
+      .filter((c): c is string => typeof c === "string");
+    return pickCivColor(flying, mulberry32(hashString(`${islandSeed}|civ-color`)));
+  }
+
+  /** The color an island flies: its own if it is a founded civilization,
+   * its ruler's if it is a colony, none if it is wild. Resolved at read time
+   * so a conquest recolors a colony the instant it changes hands. */
+  colorOf(island: Island): string | undefined {
+    if (island.color) return island.color;
+    if (island.ownerId) return this.islandsMap.get(island.ownerId)?.color;
+    return undefined;
   }
 
   private landTile(terrain: ReturnType<typeof generateIsland>, salt: number): Vec2 {
@@ -2292,6 +2312,9 @@ export class World {
         if (ruler && !w.sacred(island)) island.name = ruler.name;
       }
     }
+    // civilizations founded before colors existed roll theirs now — once,
+    // deterministically, each distinct from every color already flying
+    ensureCivColors([...w.islandsMap.values()]);
     return w;
   }
 }

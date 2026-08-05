@@ -6,6 +6,7 @@ import "./style.css";
 
 import * as THREE from "three";
 import { DEFAULT_BALANCE } from "../shared/balance";
+import { civAccented, shadeCivColor } from "../shared/civColor";
 import { CIVS } from "../shared/civs";
 import type { Boat, CivSpec, GameEvent, Island } from "../shared/types";
 import { updateBoats } from "./boatsView";
@@ -161,7 +162,9 @@ function rebuildBuildings(
   civ: CivSpec,
   age: Island["age"],
 ): void {
-  const signature = buildingRenderSignature(buildings, age);
+  // the civ's accent is part of the look — a conquest that recolors an island
+  // must rebuild its roofs even when the building list is unchanged
+  const signature = `${civ.accent}|${buildingRenderSignature(buildings, age)}`;
   if (signature === view.buildingIds) return;
   view.buildingIds = signature;
   view.buildings.clear();
@@ -180,11 +183,12 @@ function applySummaryVisuals(view: IslandView, s: IslandSummary): void {
   if (!view.terrainReady) return;
   const heightAt = view.group.userData.heightAt as (x: number, y: number) => number;
   const half = view.group.userData.half as number;
-  rebuildBuildings(view, s.buildings ?? [], CIVS[s.civ], s.age);
+  const civ = civAccented(CIVS[s.civ], s.color);
+  rebuildBuildings(view, s.buildings ?? [], civ, s.age);
   updateBoats(
     view.boats,
     { id: s.id, boats: s.boats ?? [] } as unknown as Island,
-    CIVS[s.civ],
+    civ,
   );
   updateCreations(view.creations, s.creationSpecs, s.creations, heightAt, half);
 }
@@ -192,7 +196,8 @@ function applySummaryVisuals(view: IslandView, s: IslandSummary): void {
 /** Full-detail meshes for a subscribed island — needs its terrain built. */
 function applyIslandDetail(view: IslandView, island: Island): void {
   if (!view.terrainReady) return;
-  const civ = CIVS[island.civ];
+  // colonies fly their ruler's color, which only the summary resolves
+  const civ = civAccented(CIVS[island.civ], view.summary.color ?? island.color);
   const heightAt = view.group.userData.heightAt as (x: number, y: number) => number;
   const half = view.group.userData.half as number;
   rebuildBuildings(view, island.buildings, civ, island.age);
@@ -208,6 +213,11 @@ function ageLabel(s: IslandSummary): string {
   return `${s.age} age · ${CIVS[s.civ].label}${owner}${s.dormant ? " · sleeping" : ""}`;
 }
 
+/** The corner name wears the civilization's color, lifted for legibility. */
+function tintTitle(color?: string): void {
+  titleEl.style.color = color ? shadeCivColor(color, 0.22) : "";
+}
+
 /** Point the corner name (and the detail stream) at an island — no camera motion. */
 function watchIsland(id: string): void {
   focusedId = id;
@@ -216,6 +226,7 @@ function watchIsland(id: string): void {
   if (!view) return;
   net.subscribe([id]);
   titleEl.textContent = view.summary.name;
+  tintTitle(view.summary.color);
   ageEl.textContent = ageLabel(view.summary);
 }
 
@@ -256,6 +267,7 @@ net.onWorld = (summaries) => {
     const s = summaries.find((x) => x.id === focusedId);
     if (s) {
       titleEl.textContent = s.name;
+      tintTitle(s.color);
       ageEl.textContent = ageLabel(s);
     }
   }

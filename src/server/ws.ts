@@ -39,6 +39,8 @@ function summary(island: Island, world: World) {
     id: island.id,
     name: island.name,
     civ: island.civ,
+    // resolved through the ruler for colonies — the flown color, not the field
+    color: world.colorOf(island),
     age: island.age,
     kind: island.kind,
     origin: island.origin,

@@ -154,6 +154,11 @@ export interface Island {
   id: string;
   name: string;
   civ: CivId;
+  /** this civilization's banner color (#rrggbb) — rolled at founding, distinct
+   * from every other civ's. Colonies never own one: they fly their ruler's,
+   * resolved at read time. Absent on wild land and on pre-color saves (the
+   * loader backfills homes exactly once). */
+  color?: string;
   seed: number;
   age: Age;
   kind: IslandKind;

@@ -12,6 +12,8 @@ export interface IslandSummary {
   id: string;
   name: string;
   civ: Island["civ"];
+  /** the civilization's banner color, resolved through the ruler for colonies */
+  color?: string;
   age: Island["age"];
   kind: Island["kind"];
   /** immutable provenance — home islands are sacred, neutral land is contested */
