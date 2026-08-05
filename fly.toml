@@ -1,0 +1,51 @@
+# Claudilization on Fly.io — one warm machine, one world.
+#
+# The world is a single in-memory simulation that event-sources every command
+# to Postgres. Two machines would be two divergent worlds appending to the same
+# log, so this app is deliberately single-instance: deploy with `--ha=false`,
+# never scale count above 1, and keep the machine from stopping so live
+# WebSockets are not cut and reopened on every idle period.
+
+app = "claudilization"
+primary_region = "dfw"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+  # containers set HOSTNAME to the container id; say the bind address plainly
+  CLAUDILIZATION_HOST = "0.0.0.0"
+  # canonical origin for generated installer and player links
+  CLAUDILIZATION_PUBLIC_URL = "https://claudilization.com"
+  # standalone owns the origin — no mount prefix (Clawdia sets one, Fly must not)
+  CLAUDILIZATION_BASE_PATH = "/"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  # long-lived WebSocket/SSE clients: count connections, not requests
+  [http_service.concurrency]
+    type = "connections"
+    soft_limit = 200
+    hard_limit = 400
+
+  # the world boots in ~2 s; check early and often so `deploy`/`restart` see
+  # health before their own wait deadline expires
+  [[http_service.checks]]
+    interval = "15s"
+    timeout = "5s"
+    grace_period = "5s"
+    method = "GET"
+    path = "/api/world"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1

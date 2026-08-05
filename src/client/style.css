@@ -1,0 +1,888 @@
+:root {
+  --ocean: #0d3b4f;
+  --sand: #e6d3a3;
+  --grass: #7fa15a;
+  --stone: #8d8d93;
+  --panel: rgba(12, 20, 26, 0.82);
+  --panel-line: rgba(230, 211, 163, 0.14);
+  --ink: #e9e4d8;
+  --ink-dim: #a9b4b8;
+  --accent: #e6d3a3;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* id-selector display rules below must never resurrect [hidden] elements */
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--ocean);
+  color: var(--ink);
+  font-family: "Inter", system-ui, sans-serif;
+  overflow: hidden;
+}
+
+#app {
+  position: relative;
+  height: 100%;
+}
+
+#world {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* HUD — island name carries the display face */
+#hud {
+  position: absolute;
+  top: 1.25rem;
+  left: 1.5rem;
+  pointer-events: none;
+}
+
+#island-title {
+  font-family: "Fraunces", serif;
+  font-weight: 600;
+  font-size: clamp(1.4rem, 3vw, 2.4rem);
+  margin: 0;
+  letter-spacing: 0.01em;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.55);
+}
+
+#island-age {
+  margin: 0.15rem 0 0 0.1rem;
+  font-size: 0.85rem;
+  text-transform: capitalize;
+  letter-spacing: 0.14em;
+  color: var(--ink-dim);
+}
+
+/* the key-holder's larder — resource chips under the island name */
+#stocks {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.7rem 0 0;
+  padding: 0;
+  max-width: min(24rem, 70vw);
+}
+
+#stocks li {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: 999px;
+  padding: 0.28rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+#stocks b {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+#stocks .stock-label {
+  color: var(--ink-dim);
+}
+
+/* unlocked but not yet gathered — visible as an invitation, not a boast */
+#stocks li.stock-empty {
+  opacity: 0.55;
+}
+
+#mood {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: 999px;
+  padding: 0.28rem 0.75rem;
+  font-size: 0.8rem;
+  cursor: help;
+}
+
+/* the road to the next age — a small reading under the larder */
+#age-progress {
+  margin-top: 0.55rem;
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: 0.75rem;
+  padding: 0.55rem 0.8rem 0.6rem;
+  max-width: min(17rem, 70vw);
+}
+
+#age-progress .age-next {
+  font-family: "Fraunces", serif;
+  font-size: 0.9rem;
+  color: var(--accent);
+  text-transform: capitalize;
+}
+
+#age-progress .age-track {
+  height: 0.35rem;
+  margin: 0.4rem 0 0.3rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+#age-progress .age-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #b98d45, var(--sand));
+  transition: width 600ms ease;
+}
+
+#age-progress .age-reading {
+  font-size: 0.72rem;
+  color: var(--ink-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* riding along with a craft at sea */
+#follow-pill {
+  position: fixed;
+  bottom: 4.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.8rem;
+  z-index: 5;
+  pointer-events: none;
+}
+
+#compass {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  width: 3.2rem;
+  height: 3.2rem;
+  border-radius: 50%;
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  z-index: 5;
+  pointer-events: none;
+}
+
+#compass-dial {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+
+.compass-n {
+  position: absolute;
+  top: 0.18rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.compass-needle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border-left: 0.28rem solid transparent;
+  border-right: 0.28rem solid transparent;
+  border-bottom: 1.05rem solid #c0392b;
+  transform: translate(-50%, -100%);
+}
+
+/* building inspector — click a structure on the map to read its card */
+#building-panel {
+  position: absolute;
+  width: min(19rem, 82vw);
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: 0.9rem;
+  padding: 0.85rem 1rem 0.95rem;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.45);
+  z-index: 5;
+}
+
+#building-panel h2 {
+  font-family: "Fraunces", serif;
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin: 0;
+  padding-right: 1.6rem;
+}
+
+#building-panel .building-meta {
+  margin: 0.15rem 0 0.5rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: capitalize;
+  color: var(--ink-dim);
+}
+
+#building-panel .building-desc {
+  margin: 0 0 0.55rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+#building-panel ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: var(--ink-dim);
+}
+
+#building-panel .panel-close {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.55rem;
+  background: none;
+  border: 0;
+  color: var(--ink-dim);
+  font-size: 1.15rem;
+  line-height: 1;
+  padding: 0.25rem;
+  cursor: pointer;
+}
+
+#building-panel .panel-close:hover {
+  color: var(--ink);
+}
+
+/* world-moment banner — the one loud element */
+#banner {
+  position: absolute;
+  top: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(46rem, 86vw);
+  padding: 0.7rem 1.4rem;
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: 999px;
+  font-family: "Fraunces", serif;
+  font-size: 1rem;
+  text-align: center;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  animation: banner-in 480ms ease-out;
+}
+
+@keyframes banner-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-0.6rem);
+  }
+}
+
+/* fleeting event toasts — not a log; they appear, breathe, and fade */
+#feed {
+  position: absolute;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  width: min(20rem, 78vw);
+  pointer-events: none;
+}
+
+/* spectator onboarding — Play button and the rulebook editor */
+#play-button {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--sand);
+  color: #22303a;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.8rem 2rem;
+  font-family: "Fraunces", serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+#play-button:hover {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55);
+}
+
+#join-modal {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(6, 12, 16, 0.72);
+  padding: 1.5rem;
+  z-index: 10;
+}
+
+.modal-card {
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: 1rem;
+  padding: 1.4rem 1.6rem;
+  width: min(54rem, 94vw);
+  max-height: 88vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+/* ── the wizard: title screen → a people and a name → the doctrine ── */
+
+.modal-actions button.ghost {
+  background: transparent;
+  border: 1px solid var(--panel-line);
+  color: var(--ink-dim);
+}
+
+#wiz-logo {
+  text-align: center;
+  padding: 2.6rem 1rem 2.2rem;
+}
+
+.modal-card .logo-kicker {
+  font-family: "Fraunces", serif;
+  font-style: italic;
+  font-size: 1.05rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin: 0 0 0.2rem;
+}
+
+.modal-card .logo-title {
+  font-family: "Fraunces", serif;
+  font-weight: 700;
+  font-size: clamp(2.6rem, 7vw, 4.6rem);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0;
+  background: linear-gradient(180deg, #f6e7bb 0%, #e0bd72 45%, #a87e3c 85%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 3px 14px rgba(0, 0, 0, 0.55));
+}
+
+.logo-rule {
+  position: relative;
+  width: min(22rem, 70%);
+  height: 1px;
+  margin: 1.1rem auto 1rem;
+  background: linear-gradient(90deg, transparent, #cfa85e 20%, #cfa85e 80%, transparent);
+}
+
+.logo-rule::after {
+  content: "◆";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #cfa85e;
+  font-size: 0.55rem;
+  background: var(--panel);
+  padding: 0 0.5rem;
+}
+
+.modal-card .logo-sub {
+  font-family: "Fraunces", serif;
+  font-style: italic;
+  font-size: 0.95rem;
+  color: var(--ink-dim);
+  margin: 0 0 1.6rem;
+}
+
+.logo-actions {
+  justify-content: center;
+}
+
+/* the little credits line, as every old title screen swears one */
+.logo-credit {
+  font-family: "Fraunces", serif;
+  font-style: italic;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-dim);
+  opacity: 0.7;
+  margin: 1.6rem 0 0;
+}
+
+.logo-credit a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.logo-credit a:hover {
+  color: #cfa85e;
+}
+
+/* the rules of the ocean, told before any customization begins */
+.howto-list {
+  list-style: none;
+  margin: 1rem 0 0.4rem;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.howto-list li {
+  display: grid;
+  grid-template-columns: 2.4rem 1fr;
+  gap: 0.7rem;
+  align-items: start;
+}
+
+.howto-glyph {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 1px solid var(--panel-line);
+  border-radius: 50%;
+  background: rgba(230, 211, 163, 0.06);
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.howto-list div {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--ink-dim);
+}
+
+.howto-list b {
+  font-family: "Fraunces", serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--accent);
+}
+
+.modal-card .howto-note {
+  font-family: "Fraunces", serif;
+  font-style: italic;
+  text-align: center;
+  margin: 1rem 0 0.4rem;
+}
+
+#name-row {
+  display: block;
+  margin: 1rem 0 0.3rem;
+  font-size: 0.8rem;
+  color: var(--ink-dim);
+}
+
+#island-name {
+  display: block;
+  width: 100%;
+  margin-top: 0.3rem;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--panel-line);
+  border-radius: 0.6rem;
+  color: var(--ink);
+  padding: 0.55rem 0.8rem;
+  font-family: "Fraunces", serif;
+  font-size: 1.05rem;
+}
+
+.hint {
+  font-size: 0.74rem;
+  color: var(--ink-dim);
+  margin: 0.2rem 0 0.6rem;
+}
+
+/* the doctrine page: raw Markdown on the left, the living page on the right */
+#doctrine-editor {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+  margin: 0.6rem 0 0.2rem;
+}
+
+#skill-preview {
+  border: 1px solid var(--panel-line);
+  border-radius: 0.6rem;
+  background: rgba(255, 248, 231, 0.03);
+  padding: 0.8rem 1rem;
+  min-height: 15rem;
+  max-height: 24rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+#skill-preview h1,
+#skill-preview h2,
+#skill-preview h3 {
+  font-family: "Fraunces", serif;
+  color: var(--accent);
+  margin: 0.5rem 0 0.35rem;
+  line-height: 1.25;
+}
+
+#skill-preview h1 {
+  font-size: 1.15rem;
+}
+
+#skill-preview h2 {
+  font-size: 1rem;
+}
+
+#skill-preview h3 {
+  font-size: 0.9rem;
+}
+
+#skill-preview p {
+  margin: 0.35rem 0;
+  color: var(--ink);
+  font-size: 0.8rem;
+}
+
+#skill-preview ul,
+#skill-preview ol {
+  margin: 0.35rem 0;
+  padding-left: 1.2rem;
+}
+
+#skill-preview li {
+  margin: 0.2rem 0;
+}
+
+#skill-preview code {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 0.3rem;
+  padding: 0.05rem 0.35rem;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.72rem;
+}
+
+#skill-preview hr {
+  border: 0;
+  border-top: 1px solid var(--panel-line);
+  margin: 0.6rem 0;
+}
+
+@media (max-width: 720px) {
+  #doctrine-editor {
+    grid-template-columns: 1fr;
+  }
+  #skill-preview {
+    display: none;
+  }
+}
+
+.modal-card h2 {
+  font-family: "Fraunces", serif;
+  font-weight: 600;
+  font-size: 1.4rem;
+  margin: 0 0 0.5rem;
+  color: var(--accent);
+}
+
+.modal-card p {
+  margin: 0.4rem 0;
+  font-size: 0.86rem;
+  color: var(--ink-dim);
+  line-height: 1.5;
+}
+
+#civ-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.8rem 0;
+}
+
+#civ-chips button {
+  background: transparent;
+  border: 1px solid var(--panel-line);
+  border-radius: 999px;
+  color: var(--ink);
+  padding: 0.35rem 0.9rem;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+#civ-chips button[data-active] {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+#edit-name-row {
+  display: block;
+  margin: 0 0 0.7rem;
+  font-size: 0.8rem;
+  color: var(--ink-dim);
+}
+
+#edit-name {
+  display: block;
+  width: 100%;
+  margin-top: 0.3rem;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--panel-line);
+  border-radius: 0.6rem;
+  color: var(--ink);
+  padding: 0.55rem 0.8rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+#skill-editor {
+  width: 100%;
+  min-height: 15rem;
+  resize: vertical;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--panel-line);
+  border-radius: 0.6rem;
+  color: var(--ink);
+  padding: 0.8rem;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+#skill-status {
+  font-size: 0.75rem;
+  color: var(--ink-dim);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin: 0.8rem 0;
+}
+
+.modal-actions button,
+#copy-prompt {
+  background: var(--sand);
+  color: #22303a;
+  border: 0;
+  border-radius: 0.5rem;
+  padding: 0.55rem 1.2rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#modal-close {
+  background: transparent;
+  border: 1px solid var(--panel-line);
+  color: var(--ink-dim);
+}
+
+#install-prompt {
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--panel-line);
+  border-radius: 0.6rem;
+  padding: 0.8rem;
+  font-size: 0.74rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 14rem;
+  overflow-y: auto;
+  user-select: all;
+}
+
+#feed-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+#feed-list li {
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  transition: opacity 600ms ease;
+  animation: toast-in 320ms ease-out;
+}
+
+#feed-list li.fading {
+  opacity: 0;
+}
+
+#feed-list li.world-moment {
+  border-color: var(--accent);
+  font-family: "Fraunces", serif;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
+
+/* chat */
+#chat {
+  position: absolute;
+  left: 1.25rem;
+  bottom: 1.25rem;
+  width: min(19rem, 80vw);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+#chat-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 11rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  scrollbar-width: thin;
+}
+
+#chat-list li {
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+#chat-list li b {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+#chat-form {
+  display: flex;
+  gap: 0.4rem;
+}
+
+#chat-form input {
+  flex: 1;
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: 0.5rem;
+  color: var(--ink);
+  padding: 0.5rem 0.7rem;
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+#chat-form button {
+  background: var(--sand);
+  color: #22303a;
+  border: 0;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.9rem;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* recap overlay */
+#recap {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 0.8rem;
+  background: rgba(6, 12, 16, 0.78);
+  padding: 2rem;
+  text-align: center;
+}
+
+#recap h2 {
+  font-family: "Fraunces", serif;
+  font-size: 2rem;
+  margin: 0;
+}
+
+#recap p {
+  max-width: 38rem;
+  color: var(--ink-dim);
+}
+
+#recap ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 40vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+#recap li {
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.8rem;
+  font-size: 0.85rem;
+}
+
+#recap button {
+  justify-self: center;
+  background: var(--sand);
+  color: #22303a;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.6rem 1.6rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--sand);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  #feed {
+    width: 14rem;
+    font-size: 0.9em;
+  }
+  #hud {
+    left: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #banner {
+    animation: none;
+  }
+}

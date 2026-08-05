@@ -1,0 +1,378 @@
+import "@fontsource/fraunces/500.css";
+import "@fontsource/fraunces/600.css";
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/600.css";
+import "./style.css";
+
+import * as THREE from "three";
+import { DEFAULT_BALANCE } from "../shared/balance";
+import { CIVS } from "../shared/civs";
+import type { Boat, CivSpec, GameEvent, Island } from "../shared/types";
+import { updateBoats } from "./boatsView";
+import { createIslandGroup, setIslandMood } from "./islandMesh";
+import { Net, type IslandSummary } from "./net";
+import { createStage } from "./scene";
+import { tickSettlers, updateSettlers } from "./settlersView";
+import { initPicking } from "./picking";
+import { buildingRenderSignature, createBuildingMesh } from "./structures";
+import { hideBuildingPanel, refreshBuildingPanel, showBuildingPanel } from "./ui/buildingPanel";
+import { addChatMessage, initChat } from "./ui/chat";
+import { initJoinFlow } from "./ui/joinFlow";
+import { initUpdateFlow } from "./ui/updateFlow";
+import { updateMood } from "./ui/mood";
+import { updateAgeProgress } from "./ui/ageProgress";
+import { updateStocks } from "./ui/stocks";
+import { addFeedEvents } from "./ui/feed";
+import { showBanner } from "./ui/banner";
+import { showRecap } from "./ui/recap";
+
+const key = new URLSearchParams(location.search).get("key") ?? undefined;
+const canvas = document.getElementById("world") as HTMLCanvasElement;
+const titleEl = document.getElementById("island-title")!;
+const ageEl = document.getElementById("island-age")!;
+
+const stage = createStage(canvas);
+const net = new Net();
+
+interface IslandView {
+  summary: IslandSummary;
+  group: THREE.Group;
+  buildings: THREE.Group;
+  settlers: THREE.Group;
+  boats: THREE.Group;
+  buildingIds: string;
+  /** last full pulse — the inspector reads buildings and tenants from it */
+  island?: Island;
+}
+
+const views = new Map<string, IslandView>();
+let focusedId: string | undefined;
+let myIslandId: string | undefined;
+
+function ensureView(summary: IslandSummary): IslandView {
+  let view = views.get(summary.id);
+  if (!view) {
+    const group = createIslandGroup(summary.seed, summary.size ?? DEFAULT_BALANCE.islandSize);
+    group.position.set(summary.position.x, 0, summary.position.y);
+    stage.scene.add(group);
+    const buildings = new THREE.Group();
+    const settlers = new THREE.Group();
+    group.add(buildings, settlers);
+    const boats = new THREE.Group();
+    stage.scene.add(boats); // boats sail in world space
+    view = { summary, group, buildings, settlers, boats, buildingIds: "" };
+    views.set(summary.id, view);
+    if (summary.ruins) setIslandMood(group, true, false);
+  }
+  view.summary = summary;
+  return view;
+}
+
+/** islands whose full detail arrives by subscription — summaries stand back */
+function subscribedIds(): Set<string> {
+  const ids = new Set<string>();
+  if (focusedId) ids.add(focusedId);
+  if (chase) ids.add(chase.islandId);
+  return ids;
+}
+
+function rebuildBuildings(
+  view: IslandView,
+  buildings: Island["buildings"],
+  civ: CivSpec,
+  age: Island["age"],
+): void {
+  const signature = buildingRenderSignature(buildings, age);
+  if (signature === view.buildingIds) return;
+  view.buildingIds = signature;
+  view.buildings.clear();
+  const heightAt = view.group.userData.heightAt as (x: number, y: number) => number;
+  const half = view.group.userData.half as number;
+  for (const b of buildings) {
+    const mesh = createBuildingMesh(b, civ, age);
+    mesh.userData.buildingId = b.id;
+    mesh.position.set(b.pos.x - half, Math.max(0.05, heightAt(b.pos.x, b.pos.y)), b.pos.y - half);
+    view.buildings.add(mesh);
+  }
+}
+
+function ageLabel(s: IslandSummary): string {
+  if (s.kind === "wild") return "uncharted · uninhabited";
+  const owner = s.kind === "colony" ? " colony" : "";
+  return `${s.age} age · ${CIVS[s.civ].label}${owner}${s.dormant ? " · sleeping" : ""}`;
+}
+
+/** Point the corner name (and the detail stream) at an island — no camera motion. */
+function watchIsland(id: string): void {
+  focusedId = id;
+  hideBuildingPanel();
+  const view = views.get(id);
+  if (!view) return;
+  net.subscribe([id]);
+  titleEl.textContent = view.summary.name;
+  ageEl.textContent = ageLabel(view.summary);
+}
+
+function focusIsland(id: string): void {
+  if (focusedId === id) return;
+  stopChase();
+  watchIsland(id);
+  const view = views.get(id);
+  if (view) stage.flyTo(view.summary.position.x, view.summary.position.y);
+}
+
+// the sun belongs to the world, not to whichever island is on screen: the sky
+// is anchored on world frames alone, so focusing, peeking and subscribing
+// cannot touch the hour
+net.onWorldClock = (worldSeconds, daySeconds, daylightShare) =>
+  stage.setWorldClock(worldSeconds, daySeconds, daylightShare);
+
+net.onWorld = (summaries) => {
+  const detailed = subscribedIds();
+  for (const s of summaries) {
+    const view = ensureView(s);
+    if (s.ruins) setIslandMood(view.group, true, false);
+    // unfocused islands live off the summary: their villages and ships stay
+    // on the map across refreshes instead of waiting for a subscription
+    if (!detailed.has(s.id)) {
+      rebuildBuildings(view, s.buildings ?? [], CIVS[s.civ], s.age);
+      updateBoats(
+        view.boats,
+        { id: s.id, boats: s.boats ?? [] } as unknown as Island,
+        CIVS[s.civ],
+      );
+    }
+  }
+  if (!focusedId && summaries.length) {
+    // spectators never see dead air: land on the most recently active island
+    const target = myIslandId ??
+      [...summaries].sort((a, b) => b.lastPulseSeq - a.lastPulseSeq)[0]!.id;
+    focusIsland(target);
+  }
+  if (focusedId) {
+    const s = summaries.find((x) => x.id === focusedId);
+    if (s) {
+      titleEl.textContent = s.name;
+      ageEl.textContent = ageLabel(s);
+    }
+  }
+};
+
+net.onIsland = (island: Island) => {
+  const view = views.get(island.id);
+  if (!view) return;
+  view.island = island;
+  const civ = CIVS[island.civ];
+  const heightAt = view.group.userData.heightAt as (x: number, y: number) => number;
+  const half = view.group.userData.half as number;
+
+  rebuildBuildings(view, island.buildings, civ, island.age);
+  if (island.id === focusedId) refreshBuildingPanel(island);
+  updateSettlers(view.settlers, island, civ, heightAt, half);
+  updateBoats(view.boats, island, civ);
+  if (chase && chase.islandId === island.id) {
+    const boat = island.boats.find((b) => b.id === chase!.boatId);
+    const underway = boat && boat.state === chase.state && boat.state !== "docked";
+    if (!underway) {
+      // the leg we were riding has ended — settle on wherever it arrived
+      const arrivedAt = chase.state === "returning" ? island.id : boat?.dest;
+      stopChase();
+      const port = arrivedAt ? views.get(arrivedAt) : undefined;
+      if (port && arrivedAt !== focusedId) focusIsland(arrivedAt!);
+      else if (port) stage.flyTo(port.summary.position.x, port.summary.position.y);
+    }
+  }
+  if (island.id === myIslandId) {
+    updateStocks(island);
+    updateMood(island);
+    updateAgeProgress(island);
+  }
+  if (island.ruins) setIslandMood(view.group, true, island.dormant);
+};
+
+net.onEvents = (events: GameEvent[]) => {
+  addFeedEvents(events);
+  for (const e of events) {
+    if (e.world) showBanner(e.text);
+  }
+};
+
+net.onChat = addChatMessage;
+
+net.onHello = (reply) => {
+  myIslandId = reply.islandId;
+  focusIsland(reply.islandId);
+  if (reply.recap) showRecap(reply.recap);
+};
+
+initChat(Boolean(key), (text) => net.chat(text));
+stage.onFrame(tickSettlers);
+
+// the compass: world north is -Z for every viewer — the dial turns with the
+// camera so N always points at the same true north no matter who is looking
+const compassDial = document.getElementById("compass-dial");
+const NORTH = new THREE.Vector3(0, 0, -1);
+const northOnScreen = new THREE.Vector3();
+const invQuat = new THREE.Quaternion();
+stage.onFrame(() => {
+  if (!compassDial) return;
+  invQuat.copy(stage.camera.quaternion).invert();
+  northOnScreen.copy(NORTH).applyQuaternion(invQuat);
+  const angle = Math.atan2(northOnScreen.x, northOnScreen.y);
+  compassDial.style.transform = `rotate(${angle}rad)`;
+});
+
+// ── the chase camera: click a craft at sea and ride along until it arrives ──
+const followPill = document.getElementById("follow-pill");
+interface Chase {
+  islandId: string;
+  boatId: string;
+  /** the leg being ridden — when the boat's state changes, it has arrived */
+  state: Boat["state"];
+}
+let chase: Chase | undefined;
+const chasePos = new THREE.Vector3();
+
+function chasedMesh(): THREE.Object3D | undefined {
+  if (!chase) return undefined;
+  return views
+    .get(chase.islandId)
+    ?.boats.children.find((c) => c.userData.boatId === chase!.boatId);
+}
+
+function startChase(islandId: string, boatId: string): void {
+  const boat = views.get(islandId)?.island?.boats.find((b) => b.id === boatId);
+  hideBuildingPanel();
+  chase = { islandId, boatId, state: boat?.state ?? "sailing" };
+  const mesh = chasedMesh();
+  if (!mesh) {
+    chase = undefined;
+    return;
+  }
+  chasePos.copy(mesh.position);
+  if (followPill) {
+    followPill.textContent = `${
+      boat?.craft === "plane" ? "✈ Following the plane" : "⛵ Following the ship"
+    } — click anywhere to let go`;
+    followPill.hidden = false;
+  }
+  // keep the craft's home island pulsing even while watching another
+  if (focusedId && islandId !== focusedId) net.subscribe([focusedId, islandId]);
+  if (stage.controls.distance > 220) void stage.controls.dollyTo(110, true);
+}
+
+function stopChase(): void {
+  if (!chase) return;
+  chase = undefined;
+  if (followPill) followPill.hidden = true;
+  if (focusedId) net.subscribe([focusedId]);
+}
+
+stage.onFrame((dt) => {
+  if (!chase) return;
+  const mesh = chasedMesh();
+  if (!mesh) return; // arrivals are judged on pulses, not on missing meshes
+  // pulses land once a second, so the craft hops — the camera glides after it
+  chasePos.lerp(mesh.position, 1 - Math.exp(-2.5 * dt));
+  // aim at the sea beneath the craft — the look target stays on the plane
+  void stage.controls.moveTo(chasePos.x, 0, chasePos.z, false);
+});
+
+// the corner name follows the camera: pan up to an island and it becomes the
+// one you are watching. The camera must be at rest, and the same island must
+// win two half-second looks in a row, so a fly-by never steals the title.
+const FOCUS_RADIUS = 110;
+const camTarget = new THREE.Vector3();
+let focusPollIn = 0.5;
+let focusCandidate: string | null = null;
+stage.onFrame((dt) => {
+  focusPollIn -= dt;
+  if (focusPollIn > 0) return;
+  focusPollIn = 0.5;
+  if (chase || stage.controls.active) return; // riding a boat or still moving
+  stage.controls.getTarget(camTarget);
+  let nearest: IslandView | undefined;
+  let nearestD = Infinity;
+  for (const view of views.values()) {
+    const d = Math.hypot(
+      view.summary.position.x - camTarget.x,
+      view.summary.position.y - camTarget.z,
+    );
+    if (d < nearestD) {
+      nearestD = d;
+      nearest = view;
+    }
+  }
+  const id = nearest && nearestD <= FOCUS_RADIUS ? nearest.summary.id : null;
+  if (!id || id === focusedId) {
+    focusCandidate = null;
+    return;
+  }
+  if (focusCandidate === id) {
+    focusCandidate = null;
+    watchIsland(id);
+  } else {
+    focusCandidate = id;
+  }
+});
+
+initPicking(
+  canvas,
+  stage.camera,
+  () => (focusedId ? views.get(focusedId)?.buildings : undefined),
+  () => [...views.values()].map((v) => v.boats),
+  (buildingId, at) => {
+    stopChase();
+    const view = focusedId ? views.get(focusedId) : undefined;
+    const building = view?.island?.buildings.find((b) => b.id === buildingId);
+    if (view?.island && building) showBuildingPanel(view.island, building, at);
+  },
+  startChase,
+  () => {
+    stopChase();
+    hideBuildingPanel();
+  },
+);
+
+// let the console (and screenshot tooling) spin the sun by hand, find the
+// craft at sea on screen, and read where the camera is looking
+(window as unknown as { __day?: (f: number) => void }).__day = (f) =>
+  stage.setDayFraction(f);
+// what the sky actually reads right now — the world's day, not any island's
+(window as unknown as { __dayFrac?: () => number }).__dayFrac = () =>
+  stage.dayFraction();
+(window as unknown as { __worldTime?: () => number | undefined }).__worldTime = () =>
+  net.worldTime;
+(window as unknown as { __boats?: () => unknown }).__boats = () => {
+  const v3 = new THREE.Vector3();
+  const out: { islandId: string; boatId: string; x: number; y: number }[] = [];
+  for (const view of views.values())
+    for (const c of view.boats.children) {
+      v3.copy(c.position).project(stage.camera);
+      out.push({
+        islandId: c.userData.islandId as string,
+        boatId: c.userData.boatId as string,
+        x: (v3.x * 0.5 + 0.5) * canvas.clientWidth,
+        y: (-v3.y * 0.5 + 0.5) * canvas.clientHeight,
+      });
+    }
+  return out;
+};
+(window as unknown as { __chasing?: () => unknown }).__chasing = () => chase?.boatId;
+(window as unknown as { __focused?: () => unknown }).__focused = () => ({
+  id: focusedId,
+  title: titleEl.textContent,
+});
+(window as unknown as { __buildings?: (id: string) => unknown }).__buildings = (id) =>
+  views.get(id)?.buildings.children.length;
+(window as unknown as { __target?: () => unknown }).__target = () =>
+  stage.controls.getTarget(new THREE.Vector3()).toArray();
+(window as unknown as { __lookAt?: (x: number, z: number) => void }).__lookAt = (x, z) =>
+  stage.flyTo(x, z);
+
+// spectators get the Play button and the rulebook editor; players live here —
+// and the owner's edit link (playerUrl + &edit=1) opens the visual updater
+if (!key) initJoinFlow();
+else if (new URLSearchParams(location.search).get("edit") === "1")
+  void initUpdateFlow(key);
+net.connect(key);

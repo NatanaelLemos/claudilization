@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Claudilization</title>
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="world" aria-label="The ocean world"></canvas>
+      <header id="hud">
+        <h1 id="island-title" data-testid="island-title"></h1>
+        <p id="island-age" data-testid="island-age"></p>
+        <ul id="stocks" data-testid="stocks" aria-label="Your resources" hidden></ul>
+        <div id="mood" data-testid="mood" aria-label="Happiness" hidden></div>
+        <div
+          id="age-progress"
+          data-testid="age-progress"
+          aria-label="Progress toward the next age"
+          hidden
+        ></div>
+      </header>
+      <div id="compass" aria-label="Compass" data-testid="compass">
+        <div id="compass-dial">
+          <span class="compass-n">N</span>
+          <span class="compass-needle" aria-hidden="true"></span>
+        </div>
+      </div>
+      <div id="banner" role="status" aria-live="polite" data-testid="banner" hidden></div>
+      <div id="follow-pill" role="status" data-testid="follow-pill" hidden></div>
+      <aside
+        id="building-panel"
+        data-testid="building-panel"
+        aria-label="Building details"
+        hidden
+      ></aside>
+      <aside id="feed" aria-label="Island events">
+        <ul id="feed-list" data-testid="feed"></ul>
+      </aside>
+      <button id="play-button" data-testid="play-button" type="button" hidden>
+        Play — claim your island
+      </button>
+      <div id="join-modal" data-testid="join-modal" hidden>
+        <div class="modal-card">
+          <!-- step 1 — the title screen -->
+          <section id="wiz-logo" class="wiz-step" data-testid="wiz-logo">
+            <p class="logo-kicker">Sad Meh-ier's</p>
+            <h2 class="logo-title">Claudilization</h2>
+            <div class="logo-rule" aria-hidden="true"></div>
+            <p class="logo-sub">Build an empire to withstand the test of prompts.</p>
+            <div class="modal-actions logo-actions">
+              <button id="wiz-begin" data-testid="wiz-begin" type="button">
+                Begin your legacy
+              </button>
+              <button id="logo-close" type="button" class="ghost">Close</button>
+            </div>
+            <p class="logo-credit">
+              Definitely not built by
+              <a href="https://nate.lemos.dev" target="_blank" rel="noopener">not.nate.lemos</a>
+            </p>
+          </section>
+
+          <!-- step 2 — how the game is played -->
+          <section id="wiz-howto" class="wiz-step" data-testid="wiz-howto" hidden>
+            <h2>How to play</h2>
+            <ul class="howto-list">
+              <li>
+                <span class="howto-glyph">⌨</span>
+                <div>
+                  <b>Play by prompting.</b> Your island lives off your Claude
+                  Code sessions — every prompt you complete sends a pulse of
+                  energy that sets your settlers to work.
+                </div>
+              </li>
+              <li>
+                <span class="howto-glyph">📜</span>
+                <div>
+                  <b>Rule by doctrine.</b> You never micromanage. Your
+                  rulebook steers what the settlers prioritize; they decide
+                  the rest on their own, in the background.
+                </div>
+              </li>
+              <li>
+                <span class="howto-glyph">🏛</span>
+                <div>
+                  <b>Advance through the ages.</b> Work accumulates into new
+                  ages — stone to bronze to iron and beyond — unlocking
+                  buildings, boats, and wonders along the way.
+                </div>
+              </li>
+              <li>
+                <span class="howto-glyph">⛵</span>
+                <div>
+                  <b>Share one ocean.</b> Every player is an island in the
+                  same world: trade with neighbors, help allies, colonize
+                  empty land, or raid rival colonies.
+                </div>
+              </li>
+              <li>
+                <span class="howto-glyph">🔭</span>
+                <div>
+                  <b>Watch it live.</b> Your personal link opens this view of
+                  your island, day and night, while the game plays itself as
+                  you work.
+                </div>
+              </li>
+            </ul>
+            <p class="howto-note">
+              The laws of the world — gathering rates, costs, timers — are
+              the same for everyone. Your prompts are your island's weather.
+            </p>
+            <div class="modal-actions">
+              <button id="wiz-howto-next" data-testid="wiz-howto-next" type="button">
+                Continue
+              </button>
+              <button id="wiz-howto-back" type="button" class="ghost">Back</button>
+            </div>
+          </section>
+
+          <!-- step 3 — a people and a name -->
+          <section id="wiz-people" class="wiz-step" hidden>
+            <h2>Choose your people</h2>
+            <p>
+              Every people opens with its own doctrine — the rulebook your
+              settlers will live by. The laws of the world (gathering rates,
+              costs, timers) are the same for everyone.
+            </p>
+            <div id="civ-chips" role="group" aria-label="Choose a civilization"></div>
+            <label id="name-row"
+              >Name your island
+              <input
+                id="island-name"
+                data-testid="island-name"
+                type="text"
+                maxlength="40"
+                aria-label="Island name"
+            /></label>
+            <p class="hint">
+              A name in your people's tongue — keep it, reroll it by picking
+              the people again, or write your own.
+            </p>
+            <div class="modal-actions">
+              <button id="wiz-to-doctrine" data-testid="wiz-next" type="button">
+                Continue
+              </button>
+              <button id="wiz-back-howto" type="button" class="ghost">Back</button>
+            </div>
+          </section>
+
+          <!-- step 4 — the doctrine -->
+          <section id="wiz-doctrine" class="wiz-step" hidden>
+            <h2 id="doctrine-title">Your civilization's rulebook</h2>
+            <p id="doctrine-intro">
+              This is how your civilization lives through the game. The rules
+              in this skill.md define how your settlers behave and what they
+              focus on — edit it in Markdown, the preview shows the page your
+              island will live by.
+            </p>
+            <label id="edit-name-row" hidden
+              >Island name
+              <input
+                id="edit-name"
+                data-testid="edit-name"
+                type="text"
+                maxlength="40"
+                aria-label="Island name"
+            /></label>
+            <div id="doctrine-editor">
+              <textarea
+                id="skill-editor"
+                data-testid="skill-editor"
+                spellcheck="false"
+                aria-label="Your skill file"
+              ></textarea>
+              <div id="skill-preview" data-testid="skill-preview" aria-hidden="true"></div>
+            </div>
+            <p id="skill-status"></p>
+            <div class="modal-actions">
+              <button id="install-btn" data-testid="install-btn" type="button">Install</button>
+              <button id="wiz-back-people" type="button" class="ghost">Back</button>
+              <button id="modal-close" type="button" class="ghost">Close</button>
+            </div>
+            <div id="install-out" hidden>
+              <p>
+                Paste this one prompt into Claude Code — it installs the client,
+                saves your rulebook, joins you in, and hands back your link:
+              </p>
+              <pre id="install-prompt" data-testid="install-prompt"></pre>
+              <button id="copy-prompt" type="button">Copy the prompt</button>
+            </div>
+          </section>
+        </div>
+      </div>
+      <section id="chat" aria-label="World chat">
+        <ul id="chat-list" data-testid="chat-list"></ul>
+        <form id="chat-form" hidden>
+          <input
+            id="chat-input"
+            data-testid="chat-input"
+            type="text"
+            maxlength="280"
+            placeholder="Say something to the world…"
+            aria-label="Chat message"
+          />
+          <button type="submit">Send</button>
+        </form>
+      </section>
+      <div id="recap" data-testid="recap" hidden>
+        <h2>While you were gone</h2>
+        <p id="recap-line"></p>
+        <ul id="recap-list"></ul>
+        <button id="recap-close" type="button">Back to the island</button>
+      </div>
+    </div>
+    <script type="module" src="/src/client/main.ts"></script>
+  </body>
+</html>

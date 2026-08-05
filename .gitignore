@@ -1,0 +1,32 @@
+# Dependencies and generated output
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+
+# Runtime state and operator-only material
+data/
+backups/
+.nate/
+*.log
+
+# Test artifacts
+.test-data/
+playwright-report/
+test-results/
+
+# Internal project planning (kept in the Clawdia workspace, not published)
+GOALS.md
+PLAN.md
+STRATEGIES.md
+
+# Editor and OS noise
+.DS_Store
+.idea/
+.vscode/
+*.swp

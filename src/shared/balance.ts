@@ -1,0 +1,83 @@
+export interface Balance {
+  /** real seconds per simulation tick */
+  tickSeconds: number;
+  /** real seconds per in-game day — one real hour, so dawn is every :00 */
+  daySeconds: number;
+  /** fraction of the day the sun is up — the rest is night, and the town
+   * sleeps: no gathering, no building until dawn */
+  daylightShare: number;
+  /** hours without a pulse before an island sleeps */
+  dormancyHours: number;
+  /** consecutive food-less in-game days before a settler dies */
+  starvationDays: number;
+  /** in-game days for a child to become an adult */
+  childGrowsDays: number;
+  /** chance per in-game day that an eligible house produces a child */
+  birthChancePerDay: number;
+  foodPerSettlerPerDay: number;
+  /** food a new island lands with, in days of full-population meals */
+  starterFoodDays: number;
+  /** world units within which an island "sees" its neighbours */
+  nearbyRadius: number;
+  /** spacing of the golden-angle island spiral */
+  islandSpacing: number;
+  /** island grid size (tiles per side) */
+  islandSize: number;
+  inspirationWindowSeconds: number;
+  /** minimum visible events per pulse — the floor that never breaks */
+  inspirationFloor: number;
+  /** tokens/day of the reference steady daily player (pace anchor) */
+  referenceDailyTokens: number;
+  workPointsPerToken: number;
+  /** stone→bronze work-point requirement; each later age is ×ageCostMultiplier */
+  bronzeWorkPoints: number;
+  ageCostMultiplier: number;
+  /** must stay ≤ 300 to honour the ≤5-minute-loss durability rule */
+  snapshotIntervalSeconds: number;
+  recapAwaySeconds: number;
+  boatSpeed: number;
+  /** planes cross the same ocean much faster than sails */
+  planeSpeed: number;
+  /** seconds between chances for an empty island to rise; 0 disables */
+  wildSpawnIntervalSeconds: number;
+  /** wild islands never outnumber living home islands × this factor */
+  maxWildPerHome: number;
+  /** settlers a colonizing voyage carries */
+  colonyCrew: number;
+  /** raiders an attacking voyage carries */
+  raidCrew: number;
+}
+
+export const DEFAULT_BALANCE: Balance = {
+  tickSeconds: 1,
+  // one real hour is one island day, split 50 minutes of sun and 10 of night.
+  // Written as the seconds themselves so the split is readable and exact:
+  // night begins the instant the day's 3000th second lands.
+  daySeconds: 3600,
+  daylightShare: 3000 / 3600,
+  dormancyHours: 24,
+  starvationDays: 3,
+  childGrowsDays: 5,
+  birthChancePerDay: 0.3,
+  foodPerSettlerPerDay: 1,
+  starterFoodDays: 3,
+  nearbyRadius: 500,
+  islandSpacing: 260,
+  // 96 × sqrt(3) = 166.28: the live world's islands were grown to three times
+  // their former area, so new ones are born at that same scale.
+  islandSize: 166,
+  inspirationWindowSeconds: 3600,
+  inspirationFloor: 1,
+  referenceDailyTokens: 200_000,
+  workPointsPerToken: 0.001,
+  bronzeWorkPoints: 900,
+  ageCostMultiplier: 2,
+  snapshotIntervalSeconds: 120,
+  recapAwaySeconds: 1800,
+  boatSpeed: 8,
+  planeSpeed: 40,
+  wildSpawnIntervalSeconds: 7200,
+  maxWildPerHome: 1,
+  colonyCrew: 3,
+  raidCrew: 4,
+};
