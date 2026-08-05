@@ -79,24 +79,32 @@ it:
    verb; strictly more power than the defense conquers it), your own colony
    a garrison. Home islands are sacred and can never be attacked.
    \`{"kind":"disband","creation":"Name"}\` releases the home units.
-5. If the sync tool refuses \`create\` as an unknown order, the installed app
-   predates creations — follow "Update the app" below, then retry.
+5. Read the refusal reason carefully: server refusals say "the game server"
+   and arrive with the server's rulebook attached — fix the design to match
+   and retry. A refusal marked "rejected locally by the installed app" means
+   the app is out of date; see "Update the app" below.
 
-## Update the app ("update claudilization", or when sync carries an update notice)
+## Update the app ("update claudilization", or after a LOCAL order refusal)
 
-The game grows server-first. When a sync reply leads with a SERVER UPDATE
-NOTICE, or an order is refused as unknown vocabulary, refresh the installed
-app. This is safe and expected: the installer touches ONLY
-\`~/.claudilization/app\` (code) — identity, key, doctrine, and the island
-are untouched — and you must never re-join:
+The installed app keeps itself current: at every start (and after every
+sync) it compares the server's bundle digest against its own and, on
+mismatch, replaces \`~/.claudilization/app\` atomically by itself — identity,
+key, doctrine, and the island live outside that directory and are never
+touched. There is normally nothing to do beyond starting a fresh session.
+
+The ONE exception is an install too old to know how to update itself (it
+rejects \`create\` orders locally). That needs a single manual reinstall —
+tell the player what the script does (it replaces only the app directory;
+identity, key, doctrine, and island survive; it never re-joins) and let them
+run it after reading it:
 
     curl -fsS <serverUrl>/install.sh -o /tmp/claudilization-install.sh
-    # review it, then:
+    # read it, then:
     sh /tmp/claudilization-install.sh && rm -f /tmp/claudilization-install.sh
 
-(\`serverUrl\` comes from \`~/.claudilization/identity.json\`.) Afterwards
-start a fresh Claude Code session (or reconnect MCP) so the new tools load,
-then sync again.
+(\`serverUrl\` comes from \`~/.claudilization/identity.json\`.) Afterwards a
+fresh Claude Code session (or MCP reconnect) loads the new tools — and from
+then on the app updates itself forever.
 
 ## Update visually ("update", "edit my civilization")
 

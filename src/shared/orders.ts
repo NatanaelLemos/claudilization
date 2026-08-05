@@ -35,10 +35,12 @@ const OrderSchema = z.discriminatedUnion("kind", [
 
 const OrdersSchema = z.array(OrderSchema).max(MAX_ORDERS);
 
-/** Every order kind this build of the vocabulary knows. */
-const KNOWN_KINDS = new Set<string>(
-  OrderSchema.options.map((option) => option.shape.kind.value),
+/** Every order kind this build of the vocabulary knows, in schema order. */
+export const ORDER_KINDS: readonly string[] = OrderSchema.options.map(
+  (option) => option.shape.kind.value,
 );
+
+const KNOWN_KINDS = new Set<string>(ORDER_KINDS);
 
 /**
  * Validate an untrusted payload against the closed order vocabulary.
@@ -88,6 +90,11 @@ export type ScreenedOrder =
  * hard error, but each order is judged on its own, so one unknown or
  * malformed order (say, from a newer or older client) refuses that order with
  * a reason instead of rejecting the player's whole batch.
+ *
+ * Every refusal names the judge ("the game server") and teaches: an unknown
+ * kind lists the real vocabulary, a malformed known kind reports the exact
+ * field at fault — and the orders endpoint attaches the full rules block to
+ * any response that refused something.
  */
 export function screenOrders(input: unknown): ScreenedOrder[] {
   if (!Array.isArray(input)) throw new Error("orders must be an array");
@@ -99,10 +106,21 @@ export function screenOrders(input: unknown): ScreenedOrder[] {
       entry && typeof entry === "object" && typeof (entry as { kind?: unknown }).kind === "string"
         ? ((entry as { kind: string }).kind)
         : null;
-    const reason =
-      kind !== null && !KNOWN_KINDS.has(kind)
-        ? `unknown order kind — not in this server's vocabulary`
-        : result.error.issues[0]?.message ?? "malformed order";
+    let reason: string;
+    if (kind !== null && !KNOWN_KINDS.has(kind)) {
+      reason =
+        `unknown order kind ${JSON.stringify(kind)} — the game server's ` +
+        `vocabulary is: ${ORDER_KINDS.join(", ")}`;
+    } else {
+      const issue = result.error.issues[0];
+      const at = issue && issue.path.length > 0 ? ` at ${issue.path.join(".")}` : "";
+      reason =
+        `the game server found ${kind ?? "this order"} malformed${at}: ` +
+        `${issue?.message ?? "unreadable order"}` +
+        (kind === "create"
+          ? " — the rules block in this reply carries the full create shape and a worked example"
+          : "");
+    }
     return { ok: false, order: entry, reason };
   });
 }

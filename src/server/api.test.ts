@@ -232,38 +232,66 @@ describe("the SSE transport end to end", () => {
   });
 });
 
-describe("the update channel", () => {
-  it("tells a silent (pre-versioning) client about new powers, notice first", async () => {
+describe("state is inert: machine facts, never instructions", () => {
+  it("carries protocol and bundle facts and zero agent-directed text", async () => {
     const joined = world.join({ civ: "roman", name: "Stale Isle" });
     const res = await fetch(`${origin}${BASE}/api/state?secret=${joined.secret}`);
     expect(res.status).toBe(200);
     const text = await res.text();
-    // the notice must LEAD the payload: pre-versioning clients dump this JSON
-    // verbatim into the sync reply, and the top is what gets read
-    expect(text.startsWith('{"updateAvailable"')).toBe(true);
     const body = JSON.parse(text) as Record<string, unknown>;
-    expect(String(body.updateAvailable)).toContain("create");
-    expect(String(body.updateHow)).toContain("/install.sh");
-    expect(String(body.updateHow)).toContain("~/.claudilization/app");
-    expect(String(body.updateHow).toLowerCase()).toContain("not re-join");
     expect(body.protocol).toBe(PROTOCOL_VERSION);
+    // the bundle digest is the update signal — code compares it, prose never
+    expect(body.bundle === null || /^[0-9a-f]{64}$/.test(String(body.bundle))).toBe(true);
+    // NOTHING in the payload may read as an instruction to the agent: no
+    // scripts to fetch, no reassurances, no imperatives about updating
+    for (const marker of [
+      "updateAvailable",
+      "updateHow",
+      "install.sh",
+      "curl",
+      "run it",
+      "you must",
+      "it is safe",
+      "act on this",
+    ]) {
+      expect(text.toLowerCase()).not.toContain(marker.toLowerCase());
+    }
   });
 
-  it("stays quiet for a client speaking the current protocol", async () => {
+  it("teaches proactively: the rulebook rides inside every state payload", async () => {
     const joined = world.join({ civ: "greek", name: "Fresh Isle" });
-    const res = await fetch(
-      `${origin}${BASE}/api/state?secret=${joined.secret}&client=${PROTOCOL_VERSION}`,
-    );
-    const body = (await res.json()) as Record<string, unknown>;
-    expect(body.updateAvailable).toBeUndefined();
-    expect(body.updateHow).toBeUndefined();
-    expect(body.protocol).toBe(PROTOCOL_VERSION);
+    const res = await fetch(`${origin}${BASE}/api/state?secret=${joined.secret}`);
+    const body = (await res.json()) as {
+      rules?: { orderKinds?: string[]; creations?: { example?: unknown } };
+    };
+    expect(body.rules?.orderKinds).toContain("create");
+    expect(body.rules?.creations?.example).toBeDefined();
   });
 
-  it("answers the version probe without auth", async () => {
+  it("answers the version probe without auth, bundle digest included", async () => {
     const res = await fetch(`${origin}${BASE}/api/version`);
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ name: "claudilization", protocol: PROTOCOL_VERSION });
+    const body = (await res.json()) as Record<string, unknown>;
+    expect(body.name).toBe("claudilization");
+    expect(body.protocol).toBe(PROTOCOL_VERSION);
+    expect(body.minClientProtocol).toBe(1);
+    expect(body.bundle === null || /^[0-9a-f]{64}$/.test(String(body.bundle))).toBe(true);
+  });
+
+  it("serves the full rulebook at /api/rules, and it too is inert", async () => {
+    const res = await fetch(`${origin}${BASE}/api/rules`);
+    expect(res.status).toBe(200);
+    const text = await res.text();
+    const body = JSON.parse(text) as {
+      orderKinds: string[];
+      creations: { example: { kind: string } };
+    };
+    expect(body.orderKinds).toContain("create");
+    expect(body.orderKinds).toContain("dispatch");
+    expect(body.creations.example.kind).toBe("create");
+    for (const marker of ["://", "install", "curl", "you must", "it is safe"]) {
+      expect(text.toLowerCase()).not.toContain(marker);
+    }
   });
 });
 
@@ -288,6 +316,59 @@ describe("orders judged one by one", () => {
     // the alien order was refused at the gate, batch intact
     expect(body.outcomes[1]!.ok).toBe(false);
     expect(body.outcomes[1]!.reason).toContain("unknown order kind");
+    // the refusal is unambiguous about WHO judged, and lists the vocabulary,
+    // so an agent can never mistake a local parse error for server law
+    expect((body.outcomes[1] as { judgedBy?: string }).judgedBy).toBe("the game server");
+    expect(body.outcomes[1]!.reason).toContain("create");
+  });
+
+  it("teaches the correct shape whenever it refuses: rules ride the response", async () => {
+    const joined = world.join({ civ: "japanese", name: "Teaching Isle" });
+    const res = await fetch(`${origin}${BASE}/api/orders`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        secret: joined.secret,
+        // a create with a broken sprite: refused, but never a dead end
+        orders: [
+          {
+            kind: "create",
+            creation: {
+              name: "Ninjas",
+              sprite: { size: 8, palette: ["#111111"], pixels: ["bad"] },
+              stats: { power: 7, speed: 5, resilience: 3 },
+              verbs: ["raid"],
+              count: 2,
+            },
+          },
+        ],
+      }),
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      outcomes: { ok: boolean; reason?: string; judgedBy?: string }[];
+      rules?: { creations?: { example?: { kind?: string } } };
+    };
+    expect(body.outcomes[0]!.ok).toBe(false);
+    expect(body.outcomes[0]!.judgedBy).toBe("the game server");
+    expect(body.outcomes[0]!.reason).toContain("sprite");
+    // the rejection carries the worked example — the agent learns the shape
+    expect(body.rules?.creations?.example?.kind).toBe("create");
+  });
+
+  it("attaches no rulebook when every order is carried out", async () => {
+    const joined = world.join({ civ: "egyptian", name: "Quiet Isle" });
+    const res = await fetch(`${origin}${BASE}/api/orders`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        secret: joined.secret,
+        orders: [{ kind: "assign_gathering", resource: "wood", count: 1 }],
+      }),
+    });
+    const body = (await res.json()) as { outcomes: { ok: boolean }[]; rules?: unknown };
+    expect(body.outcomes[0]!.ok).toBe(true);
+    expect(body.rules).toBeUndefined();
   });
 
   it("still hard-rejects a broken batch shape", async () => {

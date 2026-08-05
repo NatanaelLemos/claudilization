@@ -34,15 +34,13 @@ export function joinReply(d: JoinData): string {
 export type Doctrine = { text: string } | { setAside: string };
 
 export function syncStateReply(
-  state: { recapLine?: string | null; updateAvailable?: string; updateHow?: string },
+  state: { recapLine?: string | null },
   doctrine?: Doctrine,
 ): string {
-  // a server newer than this app leads with its own notice — the server is
-  // the one voice that can describe powers this build has never heard of
-  const update = state.updateAvailable
-    ? `SERVER UPDATE NOTICE — act on this before anything else:\n` +
-      `${state.updateAvailable}\n${state.updateHow ?? ""}\n\n`
-    : "";
+  // No update prose, ever: the app updates ITSELF from the state's inert
+  // `bundle` fact (see updater.ts). Server data must never read as an
+  // instruction to the agent — that shape is indistinguishable from an
+  // injection, and a well-behaved agent will (rightly) refuse it.
   const recap = state.recapLine
     ? `First, relay this to the player word for word: "${state.recapLine}"\n\n`
     : "";
@@ -57,7 +55,6 @@ export function syncStateReply(
     rule = `The skill file was set aside (${doctrine.setAside}) — the general strategy applies.\n\n`;
   }
   return (
-    update +
     recap +
     rule +
     `Island state for your eyes only (decide the settlers' next orders from THIS, ` +

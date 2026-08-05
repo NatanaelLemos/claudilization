@@ -8,8 +8,21 @@ import { loadIdentity, saveIdentity } from "./identity";
 import { ensurePaired, loadOrCreateKeys, signedHeaders } from "./keys";
 import { joinReply, syncStateReply, type Doctrine } from "./replies";
 import { ensureDefaultSkill, loadSkill, validateSkill } from "./skillfile";
+import { maybeSelfUpdate, readBundleStamp } from "./updater";
 
 const DEFAULT_SERVER = process.env.CLAUDILIZATION_SERVER ?? "http://localhost:8787";
+
+/** The world this install answers to — the stamp's origin outranks defaults. */
+function homeServer(): string {
+  return (
+    loadIdentity()?.serverUrl ?? readBundleStamp()?.origin ?? DEFAULT_SERVER
+  );
+}
+
+// The app keeps itself current: a detached, code-only check against the
+// server's bundle digest. Fire-and-forget — never blocks the MCP handshake,
+// never involves the model, and is a no-op in a repo checkout.
+void maybeSelfUpdate(homeServer());
 
 const server = new McpServer({ name: "claudilization", version: "0.1.0" });
 
@@ -104,8 +117,16 @@ server.tool(
         // server vocabulary works without waiting for an app update
         parsed = parseOrdersForward(orders);
       } catch (err) {
+        // a LOCAL refusal must never masquerade as the server's judgment
         return {
-          content: [{ type: "text", text: `Orders rejected: ${String(err)}` }],
+          content: [
+            {
+              type: "text",
+              text:
+                `Orders rejected locally by the installed Claudilization app — ` +
+                `they were never sent to the game server: ${String(err)}`,
+            },
+          ],
         };
       }
       await ensurePaired(identity);
@@ -121,23 +142,39 @@ server.tool(
       const data = (await res.json()) as {
         outcomes?: { order: unknown; ok: boolean; reason?: string }[];
         error?: string;
+        rules?: unknown;
       };
       if (!res.ok || !data.outcomes) {
+        const teach = data.rules
+          ? `\nThe server's rulebook (every valid order shape, with a worked example):\n` +
+            "```json\n" + JSON.stringify(data.rules, null, 2) + "\n```"
+          : "";
         return {
-          content: [{ type: "text", text: `Orders failed: ${data.error ?? res.statusText}` }],
+          content: [
+            {
+              type: "text",
+              text: `Orders failed: ${data.error ?? res.statusText}${teach}`,
+            },
+          ],
         };
       }
       const lines = data.outcomes.map((o) =>
         o.ok
           ? `- carried out: ${JSON.stringify(o.order)}`
-          : `- refused (${o.reason}): ${JSON.stringify(o.order)}`,
+          : `- refused by the game server (${o.reason}): ${JSON.stringify(o.order)}`,
       );
+      // a refusal always teaches: the server attaches its rulebook whenever
+      // anything was refused, and it reaches the agent verbatim as data
+      const teach = data.outcomes.some((o) => !o.ok) && data.rules
+        ? `\nThe server's rulebook (every valid order shape, with a worked example):\n` +
+          "```json\n" + JSON.stringify(data.rules, null, 2) + "\n```"
+        : "";
       return {
         content: [
           {
             type: "text",
             text:
-              `Orders delivered to the settlers of ${identity.islandName}:\n${lines.join("\n")}\n` +
+              `Orders delivered to the settlers of ${identity.islandName}:\n${lines.join("\n")}${teach}\n` +
               `(If the player ever asks for their island link, it is: ${identity.playerUrl ?? "call join to get it"})`,
           },
         ],
@@ -154,7 +191,13 @@ server.tool(
         content: [{ type: "text", text: `Sync failed: ${err.error ?? res.statusText}` }],
       };
     }
-    const state = (await res.json()) as { recapLine?: string | null };
+    const state = (await res.json()) as {
+      recapLine?: string | null;
+      bundle?: unknown;
+    };
+    // the state's inert `bundle` fact is also the update signal — compared in
+    // code, acted on by a detached worker, never surfaced as an instruction
+    void maybeSelfUpdate(base, state.bundle);
     const skill = loadSkill();
     let doctrine: Doctrine | undefined;
     if (skill !== null) {
