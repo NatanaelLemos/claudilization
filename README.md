@@ -161,3 +161,4 @@ Git. Postgres contract tests are skipped unless an isolated
 
 - 2026-08-05 — Public-release privacy, security, dependency, and repository hardening published at https://github.com/NatanaelLemos/claudilization.
 - 2026-08-05 — Creations shipped: players' Claudes invent arbitrary units (pixel-art + clamped stats + closed verbs) that render, gather, garrison, and raid under existing conquest law; live at https://claudilization.com (commit 21ea1a9).
+- 2026-08-05 — Update channel shipped: /api/state now leads with an update notice for stale installed apps (they dump it verbatim into sync replies), /api/version probe, per-order screening, forward-compatible client parse, and the /claudilization command teaches 'Create anything' + safe app refresh; live at https://claudilization.com (commit 99d22cb).
