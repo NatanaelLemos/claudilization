@@ -175,6 +175,7 @@ Git. Postgres contract tests are skipped unless an isolated
 
 ## Build log
 
+- 2026-08-05 — Production proof + identity law: stale-client create rejection root-caused (local Zod error, server never saw a create — world_log evidence); full flow proven on claudilization.com via a real stale install → `curl -fsS https://claudilization.com/install.sh | sh` → ninja create accepted, units in the WS render feed; identity-preservation now a failing-test law (identityPreservation.test.ts); Clawdia rejoined as Portus Solis after the Aug-4 world reseed.
 - 2026-08-05 — Test gate split: `npm run verify` (~10 s) is the push gate; scenario suite and evals moved behind explicit slow-lane commands; scenario 07 port collision fixed (commit 6127039).
 - 2026-08-05 — Public-release privacy, security, dependency, and repository hardening published at https://github.com/NatanaelLemos/claudilization.
 - 2026-08-05 — Creations shipped: players' Claudes invent arbitrary units (pixel-art + clamped stats + closed verbs) that render, gather, garrison, and raid under existing conquest law; live at https://claudilization.com (commit 21ea1a9).

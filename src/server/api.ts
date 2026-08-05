@@ -327,6 +327,9 @@ echo "The app now keeps itself current against $ORIGIN."
 `;
 }
 
+/** The exact installer template, for tests that audit its identity law. */
+export const installScriptForTest = installScript;
+
 /** The playable client, packed once per boot from this server's own source. */
 let archive: { path: string; digest: string } | null | undefined;
 function ensureArchive(): { path: string; digest: string } | null {
