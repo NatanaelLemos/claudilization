@@ -46,6 +46,8 @@ export interface Balance {
   colonyCrew: number;
   /** raiders an attacking voyage carries */
   raidCrew: number;
+  /** world-seconds before the same attacker→defender pair rings the bell again */
+  attackAlertCooldownSeconds: number;
 }
 
 export const DEFAULT_BALANCE: Balance = {
@@ -80,4 +82,7 @@ export const DEFAULT_BALANCE: Balance = {
   maxWildPerHome: 1,
   colonyCrew: 3,
   raidCrew: 4,
+  // a flotilla launched together rings once; a renewed assault two minutes
+  // later is news again
+  attackAlertCooldownSeconds: 120,
 };

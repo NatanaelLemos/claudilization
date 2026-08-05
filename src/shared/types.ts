@@ -290,6 +290,8 @@ export interface GameEvent {
   islandId?: string;
   world?: boolean;
   settler?: string;
+  /** `under-attack` events name the aggressor so any viewer can jump to the fight */
+  attackerId?: string;
 }
 
 export type Order =

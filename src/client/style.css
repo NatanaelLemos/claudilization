@@ -296,6 +296,79 @@ body {
   }
 }
 
+/* the tocsin — an island under attack; anyone may click through to watch */
+#alerts {
+  position: absolute;
+  top: 4.4rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 6;
+}
+
+.attack-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  max-width: min(46rem, 88vw);
+  padding: 0.45rem 0.55rem 0.45rem 1.1rem;
+  background: var(--panel);
+  border: 1px solid rgba(224, 90, 70, 0.55);
+  border-radius: 999px;
+  font-size: 0.9rem;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  animation: alert-in 480ms ease-out;
+  transition: opacity 600ms ease;
+}
+
+.attack-alert.fading {
+  opacity: 0;
+}
+
+.attack-alert-name {
+  font-family: "Fraunces", serif;
+  font-weight: 600;
+}
+
+.attack-alert-see {
+  background: rgba(224, 90, 70, 0.16);
+  color: var(--ink);
+  border: 1px solid rgba(224, 90, 70, 0.55);
+  border-radius: 999px;
+  padding: 0.25rem 0.8rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.attack-alert-see:hover {
+  background: rgba(224, 90, 70, 0.3);
+}
+
+.attack-alert-close {
+  background: none;
+  border: 0;
+  color: var(--ink-dim);
+  font-size: 1.05rem;
+  line-height: 1;
+  padding: 0.15rem 0.35rem;
+  cursor: pointer;
+}
+
+.attack-alert-close:hover {
+  color: var(--ink);
+}
+
+@keyframes alert-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.6rem);
+  }
+}
+
 /* fleeting event toasts — not a log; they appear, breathe, and fade */
 #feed {
   position: absolute;
@@ -879,10 +952,15 @@ body {
   #hud {
     left: 1rem;
   }
+  .attack-alert {
+    font-size: 0.8rem;
+    gap: 0.45rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #banner {
+  #banner,
+  .attack-alert {
     animation: none;
   }
 }

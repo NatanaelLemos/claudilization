@@ -31,6 +31,7 @@ import { updateMood } from "./ui/mood";
 import { updateAgeProgress } from "./ui/ageProgress";
 import { updateStocks } from "./ui/stocks";
 import { addFeedEvents } from "./ui/feed";
+import { attackAlertModel, showAttackAlert } from "./ui/alerts";
 import { showBanner } from "./ui/banner";
 import { showRecap } from "./ui/recap";
 
@@ -322,6 +323,16 @@ net.onIsland = (island: Island) => {
 net.onEvents = (events: GameEvent[]) => {
   addFeedEvents(events);
   for (const e of events) {
+    // an island under attack gets the tocsin card — names in banner colors and
+    // a button any viewer can click to fly to the fight
+    const alert = attackAlertModel(e, (id) => {
+      const s = views.get(id)?.summary;
+      return s ? { name: s.name, color: s.color } : undefined;
+    });
+    if (alert) {
+      showAttackAlert(alert, () => focusIsland(alert.defenderId));
+      continue; // the card is the louder element — no doubled banner
+    }
     if (e.world) showBanner(e.text);
   }
 };

@@ -175,6 +175,9 @@ export class World {
   private voyagePairs = new Set<string>();
   private feeds = new Map<string, GameEvent[]>();
   private deferred: GameEvent[] = [];
+  /** attacker→defender pair → world time the bell last rang. In-memory by
+   * design: a restart at worst rings one extra bell. */
+  private attackAlerts = new Map<string, number>();
 
   private constructor(seed: number, overrides: Partial<Balance>) {
     this.seed = seed;
@@ -695,6 +698,8 @@ export class World {
           islandId: island.id,
           text: `A ${boat.craft === "plane" ? "plane takes off" : "boat sets sail"} from ${island.name}, ${verb} ${dest.name}.`,
         });
+        // the gate already proved the target is a rival colony — sound the bell
+        if (order.intent === "attack") this.alertAttack(island, dest);
         return { order, ok: true };
       }
       case "advance_age": {
@@ -904,6 +909,7 @@ export class World {
           : `The ${spec.name} of ${island.name} set out to stand guard over ${dest.name}.`,
     };
     this.deferred.push(e);
+    if (intent === "raid") this.alertAttack(island, dest);
     return { order, ok: true };
   }
 
@@ -2280,6 +2286,31 @@ export class World {
   }
 
   // ── events & persistence ────────────────────────────────────────────────
+
+  /**
+   * The tocsin: the moment raiders put to sea toward someone's colony, the
+   * whole world hears "X is being attacked by Y". One bell per
+   * attacker→defender wave — the same pair rings again only after the
+   * cooldown, so a flotilla launched together lands as a single alarm while a
+   * renewed assault later still sounds. The event names the defender in
+   * `islandId` and the aggressor in `attackerId`, so any viewer can click
+   * straight to the fight.
+   */
+  private alertAttack(attacker: Island, defender: Island): void {
+    const key = `${attacker.id}>${defender.id}`;
+    const last = this.attackAlerts.get(key);
+    if (last !== undefined && this.t - last < this.balance.attackAlertCooldownSeconds)
+      return;
+    this.attackAlerts.set(key, this.t);
+    this.deferred.push({
+      at: this.t,
+      type: "under-attack",
+      world: true,
+      islandId: defender.id,
+      attackerId: attacker.id,
+      text: `${defender.name} is being attacked by ${attacker.name}!`,
+    });
+  }
 
   private emit(e: GameEvent): void {
     if (e.islandId) {
