@@ -298,7 +298,7 @@ NEXT="$ROOT/app.next"
 ORIGIN=${shellQuote(origin)}
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT HUP INT TERM
-echo "Installing Claudilization to $APP…"
+echo "Installing Claudilization to \${APP}..."
 mkdir -p "$ROOT"
 curl -fsS "$ORIGIN/claudilization.tgz" -o "$TMP/claudilization.tgz"
 if command -v sha256sum >/dev/null 2>&1; then

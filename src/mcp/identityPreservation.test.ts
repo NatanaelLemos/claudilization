@@ -156,4 +156,18 @@ describe("install.sh is held to the identity law", () => {
     // nothing world-writable comes out of this script
     expect(script).toContain("umask 077");
   });
+
+  it("is pure ASCII and parses under sh -n (set -u survives any sh)", async () => {
+    const { installScriptForTest } = await import("../server/api");
+    const script = installScriptForTest("https://claudilization.example", "f".repeat(64));
+
+    // a non-ASCII byte glued to $VAR becomes part of the variable name in
+    // some shells: `$APP…` was parsed as the unset `APP\xe2`, aborting set -u
+    expect(script).toMatch(/^[\x00-\x7F]*$/);
+
+    // the exact served bytes must be valid sh
+    const check = spawnSync("sh", ["-n"], { input: script, encoding: "utf8" });
+    expect(check.stderr).toBe("");
+    expect(check.status).toBe(0);
+  });
 });
