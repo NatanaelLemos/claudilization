@@ -75,7 +75,15 @@ server.tool(
       .describe(
         'e.g. [{"kind":"assign_gathering","resource":"wood","count":3},' +
           '{"kind":"build","building":"hut"},{"kind":"advance_age"},' +
-          '{"kind":"voyage","dest":"island-7","intent":"colonize"}]',
+          '{"kind":"voyage","dest":"island-7","intent":"colonize"},' +
+          '{"kind":"create","creation":{"name":"Moon Ninjas","description":"silent blades",' +
+          '"sprite":{"size":8,"palette":["#1a1a2e","#e94560"],"pixels":["..00....",".0110...",' +
+          '"..00....",".0000...","0.00.0..","..00....",".0..0...","0....0.."]},' +
+          '"stats":{"power":7,"speed":5,"resilience":3},"verbs":["raid","patrol"],"count":4}},' +
+          '{"kind":"dispatch","creation":"Moon Ninjas","dest":"island-7","count":3},' +
+          '{"kind":"disband","creation":"Moon Ninjas"}] — create invents any unit as pixel-art ' +
+          "data (verbs: guard, patrol, perform, gather, raid; stats 1-10, sum <= 15); dispatch " +
+          "raids a rival colony or garrisons your own; home islands can never be attacked.",
       ),
   },
   async ({ orders }) => {

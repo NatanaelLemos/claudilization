@@ -65,6 +65,25 @@ function summary(island: Island, world: World) {
       state: b.state,
       craft: b.craft,
     })),
+    // player-invented creations are part of the visible world too: the specs
+    // carry the pixel-art the client draws, the units and bands carry positions
+    creationSpecs: (island.creationSpecs ?? []).map((s) => ({
+      id: s.id,
+      name: s.name,
+      sprite: s.sprite,
+    })),
+    creations: (island.creations ?? []).map((u) => ({
+      id: u.id,
+      specId: u.specId,
+      pos: u.pos,
+    })),
+    creationBands: (island.creationBands ?? []).map((b) => ({
+      id: b.id,
+      specId: b.specId,
+      pos: b.pos,
+      state: b.state,
+      units: b.units.length,
+    })),
     time: world.time,
   };
 }

@@ -20,8 +20,10 @@ test("an age-up is refused until earned, then announced to every browser", async
   expect(refused.outcomes[0]!.ok).toBe(false);
   expect(refused.outcomes[0]!.reason).toBeTruthy();
 
-  // earned: strictly harder each age is unit-tested; here we advance once
-  await grant(r.islandId, { workPoints: 5000 });
+  // earned: strictly harder each age is unit-tested; here we advance once.
+  // Enough for bronze (900) but short of iron (1800) — a bigger grant crosses
+  // several ages in one batch and the banner only ever shows the last one.
+  await grant(r.islandId, { workPoints: 1000 });
   const granted = await sendOrders(r.secret, [{ kind: "advance_age" }]);
   expect(granted.outcomes[0]!.ok).toBe(true);
 

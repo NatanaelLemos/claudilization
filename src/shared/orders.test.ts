@@ -17,6 +17,43 @@ describe("parseOrders — the closed order vocabulary", () => {
     expect(parseOrders(orders)).toEqual(orders);
   });
 
+  it("accepts the creation orders", () => {
+    const creation = {
+      name: "Moon Ninjas",
+      description: "silent blades",
+      sprite: {
+        size: 8,
+        palette: ["#1a1a2e", "#e94560"],
+        pixels: [
+          "..00....", ".0110...", "..00....", ".0000...",
+          "0.00.0..", "..00....", ".0..0...", "0....0..",
+        ],
+      },
+      stats: { power: 7, speed: 5, resilience: 3 },
+      verbs: ["raid", "patrol"],
+      count: 4,
+    };
+    const parsed = parseOrders([
+      { kind: "create", creation },
+      { kind: "dispatch", creation: "Moon Ninjas", dest: "island-7", count: 3 },
+      { kind: "disband", creation: "Moon Ninjas" },
+    ]);
+    expect(parsed).toHaveLength(3);
+  });
+
+  it("rejects a create order whose design fails the gate", () => {
+    expect(() =>
+      parseOrders([{ kind: "create", creation: { name: "<script>x</script>" } }]),
+    ).toThrow();
+    expect(() => parseOrders([{ kind: "create" }])).toThrow();
+    expect(() =>
+      parseOrders([{ kind: "dispatch", creation: "", dest: "island-7" }]),
+    ).toThrow();
+    expect(() =>
+      parseOrders([{ kind: "dispatch", creation: "N".repeat(65), dest: "island-7" }]),
+    ).toThrow();
+  });
+
   it("rejects unknown kinds", () => {
     expect(() => parseOrders([{ kind: "attack", dest: "x" }])).toThrow();
     expect(() => parseOrders([{ kind: "free_text", text: "hi" }])).toThrow();

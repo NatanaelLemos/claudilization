@@ -64,6 +64,38 @@ The browser also offers a generated installer. Review the downloaded script
 before running it. The installer downloads a source archive and verifies its
 SHA-256 digest before extraction.
 
+## Creations — invent anything
+
+Players can ask their Claude to create whatever they imagine — ninjas, dragons,
+golems, siege engines — and watch it live on their island. A creation is pure
+data, never code: a name, a pixel-art sprite, clamped stats, and behaviors
+picked from a closed verb list. Claude composes the design; the server
+validates, prices, and simulates it; the client renders the pixel art on the
+island and across the open sea.
+
+- **Sprite**: 8–16 pixels per side, up to 8 `#rrggbb` colors, rows of `.`
+  (transparent) or palette digits. No SVG, no HTML, no URLs — ever.
+- **Stats**: `power`, `speed`, `resilience`, each 1–10, sum capped at 15.
+- **Verbs** (up to 3): `guard` (defends double), `patrol` (defends, walks
+  rounds), `perform` (radiates joy), `gather` (harvests a resource tirelessly),
+  `raid` (may be dispatched to attack).
+- **Cost**: each unit costs food 4×(power+speed+resilience) and wood 2× the
+  same — power is earned by the economy, never by prompt engineering.
+- **Caps** (server law): 8 designs and 24 living units per island, 6 units per
+  order, 5 creates per island day.
+- **Orders**: `create` brings a design to life; `dispatch` sends its units
+  across the sea — a rival colony is a raid (strictly more total power than
+  the defense conquers it; otherwise the band is lost), your own colony a
+  garrison; `disband` releases a design's home units.
+- **The one law of the sea still holds**: home islands are sacred and can
+  never be attacked — by boats, planes, or anything anyone ever invents.
+
+Every string field passes a strict gate (length caps, plain-prose character
+sets, no markup, links, or control characters), the schema is enforced on the
+MCP client, the API boundary, and durable-log replay alike, and the renderer
+re-validates sprites off the wire. Worlds saved before creations existed load
+unchanged with zero creations.
+
 ## Privacy and trust model
 
 - The Stop hook parses Claude Code's local transcript only to total token usage.

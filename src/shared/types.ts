@@ -179,6 +179,83 @@ export interface Island {
   dayClock: number;
   /** the people's mood, 0–100 — recomputed at every day boundary */
   happiness?: number;
+  /** player-invented designs this island keeps (absent on older saves) */
+  creationSpecs?: CreationSpec[];
+  /** living creation units on this island's soil */
+  creations?: CreationUnit[];
+  /** dispatched bands this island sent across the ocean */
+  creationBands?: CreationBand[];
+  /** create-order rate limiting: how many landed on which in-game day */
+  createsOnDay?: { day: number; count: number };
+}
+
+// ── player-invented creations ──────────────────────────────────────────────
+// A creation is data, never code: name + pixel sprite + clamped stats +
+// behaviors from a closed verb list. See shared/creations.ts for the gate.
+
+export type CreationVerb = "guard" | "patrol" | "perform" | "gather" | "raid";
+
+export interface CreationStats {
+  /** attack strength and gathering muscle, 1–10 */
+  power: number;
+  /** travel pace when dispatched, 1–10 */
+  speed: number;
+  /** defensive worth (guards count it double), 1–10 */
+  resilience: number;
+}
+
+export interface CreationSprite {
+  /** pixels per side, 8–16 */
+  size: number;
+  /** up to 8 #rrggbb colors */
+  palette: string[];
+  /** `size` rows of `size` characters: "." transparent, digits index the palette */
+  pixels: string[];
+}
+
+/** What a player's Claude submits — the untrusted definition. */
+export interface CreationInput {
+  name: string;
+  description: string;
+  sprite: CreationSprite;
+  stats: CreationStats;
+  verbs: CreationVerb[];
+  gathers?: ResourceId;
+  count: number;
+}
+
+/** A validated design an island keeps — every unit points back at one. */
+export interface CreationSpec {
+  id: string;
+  name: string;
+  description: string;
+  sprite: CreationSprite;
+  stats: CreationStats;
+  verbs: CreationVerb[];
+  gathers?: ResourceId;
+  createdAt: number;
+}
+
+/** One living unit of a design, at home or garrisoning a colony. */
+export interface CreationUnit {
+  id: string;
+  specId: string;
+  pos: Vec2;
+  /** gathering units bind to a node like settlers do */
+  nodeId?: string;
+}
+
+/** A dispatched band crossing the ocean — raiders or a garrison in transit. */
+export interface CreationBand {
+  id: string;
+  specId: string;
+  units: CreationUnit[];
+  pos: Vec2;
+  dest: string;
+  intent: "raid" | "garrison";
+  state: "outbound" | "returning";
+  /** world units per second — the slowest member set the pace at dispatch */
+  speed: number;
 }
 
 export interface GameEvent {
@@ -196,7 +273,13 @@ export type Order =
   | { kind: "build_boat" }
   | { kind: "build_plane" }
   | { kind: "voyage"; dest: string; intent: VoyageIntent }
-  | { kind: "advance_age" };
+  | { kind: "advance_age" }
+  /** bring a player-invented creation to life (validated, clamped, paid for) */
+  | { kind: "create"; creation: CreationInput }
+  /** send units of a design to a rival colony (raid) or your own (garrison) */
+  | { kind: "dispatch"; creation: string; dest: string; count?: number }
+  /** dismiss a design's home units; removes the design once none remain */
+  | { kind: "disband"; creation: string };
 
 export interface OrderOutcome {
   order: Order;

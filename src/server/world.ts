@@ -3,6 +3,16 @@ import type { Balance } from "../shared/balance";
 import { DEFAULT_BALANCE } from "../shared/balance";
 import { BUILDINGS, buildingSpec } from "../shared/buildings";
 import { CIVS } from "../shared/civs";
+import {
+  bandPower,
+  bandSpeed,
+  CREATION_GATHER_RATE_PER_POWER,
+  CREATION_LIMITS,
+  creationCost,
+  homeActivity,
+  parseCreationInput,
+  unitDefense,
+} from "../shared/creations";
 import { dayIndex, isNight, secondsIntoDay, worldSecondsAt } from "../shared/daylight";
 import { computeHappiness } from "../shared/happiness";
 import { computeInspiration } from "../shared/inspiration";
@@ -14,6 +24,9 @@ import type {
   Building,
   BuildingSpec,
   CivId,
+  CreationBand,
+  CreationInput,
+  CreationSpec,
   DebugGrant,
   Tile,
   GameEvent,
@@ -668,7 +681,226 @@ export class World {
         this.deferred.push(event);
         return { order, ok: true };
       }
+      case "create":
+        return this.applyCreate(island, order);
+      case "dispatch":
+        return this.applyDispatch(island, order);
+      case "disband":
+        return this.applyDisband(island, order);
     }
+  }
+
+  // ── player-invented creations ────────────────────────────────────────────
+
+  /** A design by id or exact name (case-insensitive) — how orders refer to it. */
+  private findSpec(island: Island, ref: string): CreationSpec | undefined {
+    const specs = island.creationSpecs ?? [];
+    return (
+      specs.find((s) => s.id === ref) ??
+      specs.find((s) => s.name.toLowerCase() === ref.trim().toLowerCase())
+    );
+  }
+
+  /** Resolve a unit's design: this island's own, or — for a colony garrison —
+   * the ruling home island's. */
+  private specOf(island: Island, specId: string): CreationSpec | undefined {
+    const own = (island.creationSpecs ?? []).find((s) => s.id === specId);
+    if (own) return own;
+    const owner = island.ownerId ? this.islandsMap.get(island.ownerId) : undefined;
+    return (owner?.creationSpecs ?? []).find((s) => s.id === specId);
+  }
+
+  /** What a colony's creation garrison adds to its walls. */
+  private creationDefense(island: Island): number {
+    let sum = 0;
+    for (const u of island.creations ?? []) {
+      const spec = this.specOf(island, u.specId);
+      if (spec) sum += unitDefense(spec);
+    }
+    return sum;
+  }
+
+  /** One number for "how hard this island is to take" — settlers, works, garrison. */
+  private islandDefense(island: Island): number {
+    return (
+      island.settlers.filter((s) => s.adult).length +
+      island.buildings.reduce(
+        (sum, b) => sum + (b.stage === "complete" ? DEFENSE_BONUS[b.type] ?? 0 : 0),
+        0,
+      ) +
+      this.creationDefense(island)
+    );
+  }
+
+  private applyCreate(
+    island: Island,
+    order: Order & { kind: "create" },
+  ): OrderOutcome {
+    // defense in depth: every path into the world — API, MCP, log replay —
+    // passes the same schema gate, even if a caller skipped parseOrders
+    let input: CreationInput;
+    try {
+      input = parseCreationInput(order.creation);
+    } catch {
+      return { order, ok: false, reason: "the design gate refused it" };
+    }
+    const today = dayIndex(this.t, this.balance.daySeconds);
+    const counter =
+      island.createsOnDay?.day === today ? island.createsOnDay : { day: today, count: 0 };
+    if (counter.count >= CREATION_LIMITS.maxCreatesPerDay)
+      return {
+        order,
+        ok: false,
+        reason: `the workshop rests — at most ${CREATION_LIMITS.maxCreatesPerDay} creations per island day`,
+      };
+    const units = (island.creations ??= []);
+    const atSea = (island.creationBands ?? []).reduce((n, b) => n + b.units.length, 0);
+    if (units.length + atSea + input.count > CREATION_LIMITS.maxUnitsPerIsland)
+      return {
+        order,
+        ok: false,
+        reason: `the island sustains at most ${CREATION_LIMITS.maxUnitsPerIsland} creation units`,
+      };
+    const specs = (island.creationSpecs ??= []);
+    const existing = specs.find(
+      (s) => s.name.toLowerCase() === input.name.toLowerCase(),
+    );
+    if (!existing && specs.length >= CREATION_LIMITS.maxSpecsPerIsland)
+      return {
+        order,
+        ok: false,
+        reason: `at most ${CREATION_LIMITS.maxSpecsPerIsland} designs — disband one first`,
+      };
+    // reinforcing an existing design pays for ITS stats, never the resubmission's
+    const stats = existing?.stats ?? input.stats;
+    const cost = creationCost(stats, input.count);
+    if (!this.afford(island, cost))
+      return { order, ok: false, reason: "not enough resources" };
+    this.spend(island, cost);
+    let spec = existing;
+    if (!spec) {
+      spec = {
+        id: `${island.id}-c${++this.idCounter}`,
+        name: input.name,
+        description: input.description,
+        sprite: input.sprite,
+        stats: input.stats,
+        verbs: input.verbs,
+        gathers: input.gathers,
+        createdAt: this.t,
+      };
+      specs.push(spec);
+    }
+    const half = ((island.size ?? this.balance.islandSize) - 1) / 2;
+    for (let i = 0; i < input.count; i++) {
+      const id = `${island.id}-u${++this.idCounter}`;
+      units.push({
+        id,
+        specId: spec.id,
+        pos: {
+          x: half + (roll(id, "cx") - 0.5) * 10,
+          y: half + (roll(id, "cy") - 0.5) * 10,
+        },
+      });
+    }
+    counter.count += 1;
+    island.createsOnDay = counter;
+    const e: GameEvent = existing
+      ? {
+          at: this.t,
+          type: "creation-reinforced",
+          islandId: island.id,
+          text: `${input.count} more of the ${spec.name} step forth on ${island.name}.`,
+        }
+      : {
+          at: this.t,
+          type: "creation-born",
+          world: true,
+          islandId: island.id,
+          text: `${island.name} breathes life into a new creation: the ${spec.name}. ${input.count} step forth.`,
+        };
+    this.deferred.push(e);
+    return { order, ok: true };
+  }
+
+  private applyDispatch(
+    island: Island,
+    order: Order & { kind: "dispatch" },
+  ): OrderOutcome {
+    if (ageIndex(island.age) < ageIndex("bronze"))
+      return { order, ok: false, reason: "crossing the sea awaits the bronze age" };
+    const spec = this.findSpec(island, order.creation);
+    if (!spec) return { order, ok: false, reason: "no such creation design" };
+    const home = (island.creations ?? []).filter((u) => u.specId === spec.id);
+    if (home.length === 0)
+      return { order, ok: false, reason: "no units of that design are home" };
+    const dest = this.islandsMap.get(order.dest);
+    if (!dest || dest.ruins || dest.id === island.id)
+      return { order, ok: false, reason: "no such destination" };
+    // the one law of the sea holds for every creature ever invented:
+    if (dest.kind === "home")
+      return { order, ok: false, reason: "home islands are sacred — they can never be attacked" };
+    if (dest.kind === "wild")
+      return { order, ok: false, reason: "no one holds it — colonize it with settlers instead" };
+    const intent: CreationBand["intent"] =
+      dest.ownerId === island.id ? "garrison" : "raid";
+    if (intent === "raid" && !spec.verbs.includes("raid"))
+      return {
+        order,
+        ok: false,
+        reason: `the ${spec.name} were not made for war — only a design with the "raid" verb may attack`,
+      };
+    const count = Math.min(order.count ?? home.length, home.length);
+    const taken = home.slice(0, count);
+    island.creations = (island.creations ?? []).filter((u) => !taken.includes(u));
+    (island.creationBands ??= []).push({
+      id: `${island.id}-band${++this.idCounter}`,
+      specId: spec.id,
+      units: taken,
+      pos: { ...island.position },
+      dest: dest.id,
+      intent,
+      state: "outbound",
+      speed: bandSpeed(spec.stats.speed),
+    });
+    const e: GameEvent = {
+      at: this.t,
+      type: "band-departs",
+      world: intent === "raid",
+      islandId: island.id,
+      text:
+        intent === "raid"
+          ? `The ${spec.name} of ${island.name} set out across the sea to raid ${dest.name}.`
+          : `The ${spec.name} of ${island.name} set out to stand guard over ${dest.name}.`,
+    };
+    this.deferred.push(e);
+    return { order, ok: true };
+  }
+
+  private applyDisband(
+    island: Island,
+    order: Order & { kind: "disband" },
+  ): OrderOutcome {
+    const spec = this.findSpec(island, order.creation);
+    if (!spec) return { order, ok: false, reason: "no such creation design" };
+    island.creations = (island.creations ?? []).filter((u) => u.specId !== spec.id);
+    // the design itself retires only when no unit anywhere still carries it
+    const atSea = (island.creationBands ?? []).some((b) => b.specId === spec.id);
+    const garrisoned = [...this.islandsMap.values()].some(
+      (i) =>
+        i.id !== island.id &&
+        i.ownerId === island.id &&
+        (i.creations ?? []).some((u) => u.specId === spec.id),
+    );
+    if (!atSea && !garrisoned)
+      island.creationSpecs = (island.creationSpecs ?? []).filter((s) => s.id !== spec.id);
+    this.deferred.push({
+      at: this.t,
+      type: "creation-disbanded",
+      islandId: island.id,
+      text: `The ${spec.name} of ${island.name} are released from service.`,
+    });
+    return { order, ok: true };
   }
 
   /**
@@ -913,7 +1145,10 @@ export class World {
         this.gather(island);
         this.construct(island, batch);
       }
+      // creations are tireless constructs — they work and watch through the night
+      this.creationsAct(island);
       this.sail(island, batch);
+      this.marchBands(island, batch);
 
       // dawn: the whole ocean turns its day together. A town that landed
       // yesterday evening is spared the first one — nobody eats a full day's
@@ -1278,6 +1513,203 @@ export class World {
     }
   }
 
+  /**
+   * The standing life of every creation on this island's soil, one second at a
+   * time — all of it stateless off (t, id), so replay lands every golem on the
+   * same tile. Gatherers harvest by their power; patrollers walk their rounds;
+   * guards and performers hold their posts.
+   */
+  private creationsAct(island: Island): void {
+    const units = island.creations;
+    if (!units?.length) return;
+    const half = ((island.size ?? this.balance.islandSize) - 1) / 2;
+    const guardPost = (() => {
+      const works = island.buildings.filter((b) => b.stage === "complete");
+      if (!works.length) return { x: half, y: half };
+      const cx = works.reduce((s, b) => s + b.pos.x, 0) / works.length;
+      const cy = works.reduce((s, b) => s + b.pos.y, 0) / works.length;
+      return { x: cx, y: cy };
+    })();
+    const stagePos = (() => {
+      const joyful = island.buildings.find(
+        (b) => b.stage === "complete" && (buildingSpec(b.type)?.joy ?? 0) > 0,
+      );
+      return joyful?.pos ?? guardPost;
+    })();
+    units.forEach((u, idx) => {
+      const spec = this.specOf(island, u.specId);
+      if (!spec) return;
+      switch (homeActivity(spec.verbs)) {
+        case "gather": {
+          if (!spec.gathers) return;
+          let node = island.nodes.find((n) => n.id === u.nodeId && n.remaining > 0);
+          if (!node) {
+            node = this.leastCrowdedNode(island, spec.gathers);
+            u.nodeId = node?.id;
+            if (node) u.pos = { ...node.pos };
+          }
+          if (!node) return;
+          const take = Math.min(
+            CREATION_GATHER_RATE_PER_POWER * spec.stats.power,
+            node.remaining,
+          );
+          node.remaining -= take;
+          island.stocks[spec.gathers] = (island.stocks[spec.gathers] ?? 0) + take;
+          return;
+        }
+        case "patrol": {
+          // each patroller rides its own deterministic ring around the town
+          const radius = half * (0.35 + roll(u.id, "ring") * 0.3);
+          const period = Math.max(60, 300 - spec.stats.speed * 20);
+          const angle =
+            ((this.t % period) / period) * Math.PI * 2 + roll(u.id, "phase") * Math.PI * 2;
+          u.pos = {
+            x: half + Math.cos(angle) * radius,
+            y: half + Math.sin(angle) * radius,
+          };
+          return;
+        }
+        case "guard": {
+          u.pos = {
+            x: guardPost.x + (roll(u.id, "gx") - 0.5) * 6,
+            y: guardPost.y + (roll(u.id, "gy") - 0.5) * 6,
+          };
+          return;
+        }
+        case "perform": {
+          u.pos = {
+            x: stagePos.x + Math.cos(this.t / 7 + idx) * 2,
+            y: stagePos.y + Math.sin(this.t / 7 + idx) * 2,
+          };
+          return;
+        }
+        default:
+          return;
+      }
+    });
+  }
+
+  /** Dispatched bands cross the open sea under their own power. */
+  private marchBands(island: Island, batch: GameEvent[]): void {
+    const bands = island.creationBands;
+    if (!bands?.length) return;
+    const finished = new Set<string>();
+    for (const band of bands) {
+      const target =
+        band.state === "outbound"
+          ? this.islandsMap.get(band.dest)?.position
+          : island.position;
+      if (!target) {
+        band.state = "returning";
+        continue;
+      }
+      const dx = target.x - band.pos.x;
+      const dy = target.y - band.pos.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > band.speed) {
+        band.pos = {
+          x: band.pos.x + (dx / dist) * band.speed,
+          y: band.pos.y + (dy / dist) * band.speed,
+        };
+        continue;
+      }
+      band.pos = { x: target.x, y: target.y };
+      if (band.state === "returning") {
+        // home again: the units step ashore and take up their posts
+        const half = ((island.size ?? this.balance.islandSize) - 1) / 2;
+        const units = (island.creations ??= []);
+        for (const u of band.units) {
+          u.pos = { x: half, y: half };
+          u.nodeId = undefined;
+          units.push(u);
+        }
+        finished.add(band.id);
+        continue;
+      }
+      const dest = this.islandsMap.get(band.dest);
+      if (!dest || dest.ruins) {
+        band.state = "returning";
+        continue;
+      }
+      if (this.bandArrives(island, dest, band, batch)) finished.add(band.id);
+      else band.state = "returning";
+    }
+    if (finished.size)
+      island.creationBands = bands.filter((b) => !finished.has(b.id));
+  }
+
+  /**
+   * Landfall for a creation band. True means the band is spent — its units
+   * moved ashore or were lost; false sends it home. The same conquest law as
+   * settler raids: strictly more force than the defense takes the colony.
+   * Home islands never reach here — the dispatch gate refuses them.
+   */
+  private bandArrives(
+    from: Island,
+    to: Island,
+    band: CreationBand,
+    batch: GameEvent[],
+  ): boolean {
+    const spec = (from.creationSpecs ?? []).find((s) => s.id === band.specId);
+    if (!spec || band.units.length === 0) return true; // design retired mid-voyage
+    const half = ((to.size ?? this.balance.islandSize) - 1) / 2;
+    const landUnits = () => {
+      const units = (to.creations ??= []);
+      for (const u of band.units) {
+        u.pos = { x: half, y: half };
+        u.nodeId = undefined;
+        units.push(u);
+      }
+    };
+    if (band.intent === "garrison") {
+      // still ours? then stand guard. Lost at sea-time? turn for home.
+      if (to.kind !== "colony" || to.ownerId !== from.id) return false;
+      landUnits();
+      const e: GameEvent = {
+        at: this.t,
+        type: "band-garrison",
+        islandId: to.id,
+        text: `The ${spec.name} of ${from.name} now stand guard over ${to.name}.`,
+      };
+      this.emit(e);
+      batch.push(e);
+      return true;
+    }
+    // a raid — but only a rival colony is ever a lawful target
+    if (to.kind !== "colony" || to.ownerId === from.id) return false;
+    const attack = bandPower(spec, band.units.length);
+    const defense = this.islandDefense(to);
+    if (attack > defense) {
+      to.ownerId = from.id;
+      to.lastPulseAt = this.t;
+      to.dormant = false;
+      // the fallen defenders' constructs are broken with them
+      to.creations = [];
+      landUnits();
+      const e: GameEvent = {
+        at: this.t,
+        type: "conquest",
+        world: true,
+        islandId: to.id,
+        text: `The ${spec.name} of ${from.name} storm ${to.name} — the colony changes hands.`,
+      };
+      this.emit(e);
+      batch.push(e);
+      return true;
+    }
+    const fell: GameEvent = {
+      at: this.t,
+      type: "raid-repelled",
+      world: true,
+      islandId: to.id,
+      text: `${to.name} shatters the ${spec.name} of ${from.name} upon its walls; none return.`,
+    };
+    this.emit(fell);
+    this.emit({ ...fell, islandId: from.id });
+    batch.push(fell);
+    return true; // the band is lost
+  }
+
   private sail(island: Island, batch: GameEvent[]): void {
     for (const boat of island.boats) {
       if (boat.state === "docked") continue;
@@ -1448,16 +1880,13 @@ export class World {
       // nothing left to fight — the raiders stay aboard and sail home
       return;
     }
-    const defense =
-      to.settlers.filter((s) => s.adult).length +
-      to.buildings.reduce(
-        (sum, b) => sum + (b.stage === "complete" ? DEFENSE_BONUS[b.type] ?? 0 : 0),
-        0,
-      );
+    const defense = this.islandDefense(to);
     if (crew.length > defense) {
       to.ownerId = from.id;
       to.lastPulseAt = this.t;
       to.dormant = false;
+      // the fallen defenders' constructs are broken with them
+      to.creations = [];
       const terrain = this.islandTerrain(to);
       crew.forEach((s, i) => {
         s.task = { kind: "idle" };
@@ -1694,12 +2123,7 @@ export class World {
     let intent: VoyageIntent = "colonize";
     if (!dest) {
       // 2. the weakest colony the raiders can honestly overcome
-      const defense = (i: Island) =>
-        i.settlers.filter((s) => s.adult).length +
-        i.buildings.reduce(
-          (sum, b) => sum + (b.stage === "complete" ? DEFENSE_BONUS[b.type] ?? 0 : 0),
-          0,
-        );
+      const defense = (i: Island) => this.islandDefense(i);
       dest = others
         .filter(
           (i) =>

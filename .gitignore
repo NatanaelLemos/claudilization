@@ -14,6 +14,7 @@ data/
 backups/
 .nate/
 *.log
+local-world-tables-backup.sql
 
 # Test artifacts
 .test-data/

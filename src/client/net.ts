@@ -2,6 +2,11 @@ import { DEFAULT_BALANCE } from "../shared/balance";
 import type { Boat, Building, GameEvent, Island } from "../shared/types";
 import type { Recap } from "../server/recap";
 import { apiUrl, isMounted, socketUrl } from "./base";
+import type {
+  CreationBandView,
+  CreationSpecView,
+  CreationUnitView,
+} from "./creationsView";
 
 export interface IslandSummary {
   id: string;
@@ -22,6 +27,10 @@ export interface IslandSummary {
   /** the whole built world rides the summary so no island ever renders bare */
   buildings?: Building[];
   boats?: Pick<Boat, "id" | "pos" | "state" | "craft">[];
+  /** player-invented creations: designs (pixel-art), units ashore, bands at sea */
+  creationSpecs?: CreationSpecView[];
+  creations?: CreationUnitView[];
+  creationBands?: CreationBandView[];
   time: number;
 }
 

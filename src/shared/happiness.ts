@@ -1,6 +1,7 @@
 import { ageIndex } from "./ages";
 import type { Balance } from "./balance";
 import { buildingSpec } from "./buildings";
+import { homeActivity, PERFORM_JOY } from "./creations";
 import type { Age, Island } from "./types";
 
 /**
@@ -135,6 +136,13 @@ export function computeHappiness(island: Island, balance: Balance): HappinessRep
     if (!spec?.joy) continue;
     if (spec.wonder) wonders += spec.joy;
     else leisure += spec.joy;
+  }
+  // performing creations join the leisure pool — a home island can look its
+  // own designs up; colony garrisons keep their spec on the ruler's island
+  // and simply don't radiate here
+  for (const u of island.creations ?? []) {
+    const design = (island.creationSpecs ?? []).find((s) => s.id === u.specId);
+    if (design && homeActivity(design.verbs) === "perform") leisure += PERFORM_JOY;
   }
   leisure = Math.min(LEISURE_CAP, leisure);
   wonders = Math.min(WONDER_CAP, wonders);

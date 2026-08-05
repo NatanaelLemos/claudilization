@@ -59,14 +59,34 @@ export function syncStateReply(
     JSON.stringify(state, null, 2) +
     "\n```\n" +
     `Now call \`sync\` again with an \`orders\` array (closed vocabulary: ` +
-    `assign_gathering, build, build_boat, build_plane, voyage, advance_age; ` +
-    `voyage intents: trade, help, colonize, attack). ` +
+    `assign_gathering, build, build_boat, build_plane, voyage, advance_age, ` +
+    `create, dispatch, disband; voyage intents: trade, help, colonize, attack). ` +
     `Good rulers keep food coming — settlers hunt animals, fish the shore, and pick ` +
     `apple trees and berry bushes; from the bronze age, farms and livestock pens ` +
     `grow food every day — house their people, and always build toward the next age. ` +
     `The settlers also act on their own judgment between orders: they gather, and raise ` +
     `the buildings the town plainly needs — your orders steer them beyond that. ` +
     `Empty islands may be colonized by boat (bronze) or plane (modern, airfield). ` +
-    `Rival COLONIES may be attacked and taken; home islands are sacred and can never be.`
+    `Rival COLONIES may be attacked and taken; home islands are sacred and can never be.\n\n` +
+    `CREATE lets this island invent anything — ninjas, dragons, golems, siege engines — ` +
+    `as pure data: a pixel-art sprite plus stats and behaviors from a fixed verb set. ` +
+    `Design one when the player asks or your strategy calls for it:\n` +
+    '```json\n' +
+    '{"kind":"create","creation":{"name":"Moon Ninjas","description":"silent blades of the night",' +
+    '"sprite":{"size":8,"palette":["#1a1a2e","#e94560"],' +
+    '"pixels":["..00....",".0110...","..00....",".0000...","0.00.0..","..00....",".0..0...","0....0.."]},' +
+    '"stats":{"power":7,"speed":5,"resilience":3},"verbs":["raid","patrol"],"count":4}}\n' +
+    "```\n" +
+    `Sprite: size 8-16, up to 8 "#rrggbb" colors, rows of "." (transparent) or palette digits. ` +
+    `Stats 1-10 each, power+speed+resilience <= 15. Verbs (up to 3, first non-raid one is the ` +
+    `home activity): guard (defends double), patrol (defends, walks rounds), perform (radiates joy), ` +
+    `gather (needs "gathers": a resource id; harvests tirelessly), raid (may be dispatched to attack). ` +
+    `Each unit costs food 4x(power+speed+resilience) and wood 2x; at most 8 designs, 24 units, ` +
+    `6 units per order, 5 creates per island day. ` +
+    `DISPATCH sends a design's units across the sea: {"kind":"dispatch","creation":"Moon Ninjas",` +
+    `"dest":"island-7","count":3} — a rival colony is a raid (the design needs the raid verb; ` +
+    `strictly more total power than the defense conquers it, otherwise the band is lost), ` +
+    `your own colony is a garrison. Home islands are sacred — creations can never attack them. ` +
+    `DISBAND {"kind":"disband","creation":"Moon Ninjas"} releases a design's home units.`
   );
 }

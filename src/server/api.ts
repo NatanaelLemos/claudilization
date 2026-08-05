@@ -7,6 +7,7 @@ import { extname, join, resolve, sep } from "node:path";
 import { advanceRequirements, AGE_RESOURCES, ageIndex, nextAge } from "../shared/ages";
 import type { Balance } from "../shared/balance";
 import { BUILDINGS } from "../shared/buildings";
+import { CREATION_LIMITS, CREATION_VERBS } from "../shared/creations";
 import { dayPhase, dayWindows, isNight, secondsIntoDay } from "../shared/daylight";
 import { computeHappiness } from "../shared/happiness";
 import { parseOrders } from "../shared/orders";
@@ -229,6 +230,45 @@ function brainState(world: World, secret: string, balance: Balance) {
         joy: b.joy,
         wonder: b.wonder,
       })),
+      // the player's invented creations: designs, where their units stand,
+      // and the hard limits the design gate enforces
+      creations: {
+        designs: (island.creationSpecs ?? []).map((s) => ({
+          id: s.id,
+          name: s.name,
+          stats: s.stats,
+          verbs: s.verbs,
+          gathers: s.gathers,
+          unitsHome: (island.creations ?? []).filter((u) => u.specId === s.id).length,
+          unitsAtSea: (island.creationBands ?? [])
+            .filter((b) => b.specId === s.id)
+            .reduce((n, b) => n + b.units.length, 0),
+          unitsGarrisoned: world
+            .islands()
+            .filter((o) => o.id !== island.id && o.ownerId === island.id)
+            .reduce(
+              (n, o) =>
+                n + (o.creations ?? []).filter((u) => u.specId === s.id).length,
+              0,
+            ),
+        })),
+        bands: (island.creationBands ?? []).map((b) => ({
+          dest: b.dest,
+          intent: b.intent,
+          state: b.state,
+          units: b.units.length,
+        })),
+        limits: {
+          verbs: CREATION_VERBS,
+          maxDesigns: CREATION_LIMITS.maxSpecsPerIsland,
+          maxUnits: CREATION_LIMITS.maxUnitsPerIsland,
+          maxCountPerOrder: CREATION_LIMITS.maxCountPerOrder,
+          maxCreatesPerDay: CREATION_LIMITS.maxCreatesPerDay,
+          statMax: CREATION_LIMITS.statMax,
+          statBudget: CREATION_LIMITS.statBudget,
+          costPerUnit: "food 4x(power+speed+resilience), wood 2x(power+speed+resilience)",
+        },
+      },
     },
     colonies,
     nearbyIslands: nearby,

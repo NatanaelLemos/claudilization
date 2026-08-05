@@ -9,6 +9,12 @@ import { DEFAULT_BALANCE } from "../shared/balance";
 import { CIVS } from "../shared/civs";
 import type { Boat, CivSpec, GameEvent, Island } from "../shared/types";
 import { updateBoats } from "./boatsView";
+import {
+  registerCreationSpecs,
+  tickCreations,
+  updateCreationBands,
+  updateCreations,
+} from "./creationsView";
 import { createIslandGroup, setIslandMood } from "./islandMesh";
 import { Net, type IslandSummary } from "./net";
 import { createStage } from "./scene";
@@ -40,6 +46,8 @@ interface IslandView {
   buildings: THREE.Group;
   settlers: THREE.Group;
   boats: THREE.Group;
+  creations: THREE.Group;
+  bands: THREE.Group;
   buildingIds: string;
   /** last full pulse — the inspector reads buildings and tenants from it */
   island?: Island;
@@ -57,10 +65,12 @@ function ensureView(summary: IslandSummary): IslandView {
     stage.scene.add(group);
     const buildings = new THREE.Group();
     const settlers = new THREE.Group();
-    group.add(buildings, settlers);
+    const creations = new THREE.Group();
+    group.add(buildings, settlers, creations);
     const boats = new THREE.Group();
-    stage.scene.add(boats); // boats sail in world space
-    view = { summary, group, buildings, settlers, boats, buildingIds: "" };
+    const bands = new THREE.Group();
+    stage.scene.add(boats, bands); // boats and bands travel in world space
+    view = { summary, group, buildings, settlers, boats, creations, bands, buildingIds: "" };
     views.set(summary.id, view);
     if (summary.ruins) setIslandMood(group, true, false);
   }
@@ -129,9 +139,14 @@ net.onWorldClock = (worldSeconds, daySeconds, daylightShare) =>
 
 net.onWorld = (summaries) => {
   const detailed = subscribedIds();
+  // every design in the world registers first, so colony garrisons and bands
+  // can resolve sprites owned by another island in the same frame
+  for (const s of summaries) registerCreationSpecs(s.creationSpecs);
   for (const s of summaries) {
     const view = ensureView(s);
     if (s.ruins) setIslandMood(view.group, true, false);
+    const heightAt = view.group.userData.heightAt as (x: number, y: number) => number;
+    const half = view.group.userData.half as number;
     // unfocused islands live off the summary: their villages and ships stay
     // on the map across refreshes instead of waiting for a subscription
     if (!detailed.has(s.id)) {
@@ -141,7 +156,9 @@ net.onWorld = (summaries) => {
         { id: s.id, boats: s.boats ?? [] } as unknown as Island,
         CIVS[s.civ],
       );
+      updateCreations(view.creations, s.creationSpecs, s.creations, heightAt, half);
     }
+    updateCreationBands(view.bands, s.creationBands);
   }
   if (!focusedId && summaries.length) {
     // spectators never see dead air: land on the most recently active island
@@ -170,6 +187,8 @@ net.onIsland = (island: Island) => {
   if (island.id === focusedId) refreshBuildingPanel(island);
   updateSettlers(view.settlers, island, civ, heightAt, half);
   updateBoats(view.boats, island, civ);
+  updateCreations(view.creations, island.creationSpecs, island.creations, heightAt, half);
+  updateCreationBands(view.bands, island.creationBands);
   if (chase && chase.islandId === island.id) {
     const boat = island.boats.find((b) => b.id === chase!.boatId);
     const underway = boat && boat.state === chase.state && boat.state !== "docked";
@@ -207,6 +226,7 @@ net.onHello = (reply) => {
 
 initChat(Boolean(key), (text) => net.chat(text));
 stage.onFrame(tickSettlers);
+stage.onFrame(tickCreations);
 
 // the compass: world north is -Z for every viewer — the dial turns with the
 // camera so N always points at the same true north no matter who is looking
