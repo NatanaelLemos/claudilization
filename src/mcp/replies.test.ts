@@ -69,3 +69,20 @@ describe("join reply — the skill file", () => {
     expect(joinReply(data)).toContain("skill.md");
   });
 });
+
+describe("server update notices in sync replies", () => {
+  it("leads with the server's notice before recap and state", () => {
+    const text = syncStateReply({
+      recapLine: "While you were away: Olaf raised a hut.",
+      updateAvailable: "NEW POWERS your installed app predates: create/dispatch/disband.",
+      updateHow: "download install.sh, review it, run it with sh",
+    });
+    expect(text.startsWith("SERVER UPDATE NOTICE")).toBe(true);
+    expect(text.indexOf("NEW POWERS")).toBeLessThan(text.indexOf("Olaf"));
+    expect(text).toContain("install.sh");
+  });
+
+  it("says nothing about updates when the client is current", () => {
+    expect(syncStateReply({ recapLine: null })).not.toContain("SERVER UPDATE NOTICE");
+  });
+});

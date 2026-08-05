@@ -4,6 +4,7 @@ import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { PROTOCOL_VERSION } from "../shared/protocol";
 import { createApi } from "./api";
 import { FileStore, Persistence } from "./persistence";
 import { Hub } from "./ws";
@@ -226,6 +227,75 @@ describe("the SSE transport end to end", () => {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ session: "nope" }),
+    });
+    expect(res.status).toBe(400);
+  });
+});
+
+describe("the update channel", () => {
+  it("tells a silent (pre-versioning) client about new powers, notice first", async () => {
+    const joined = world.join({ civ: "roman", name: "Stale Isle" });
+    const res = await fetch(`${origin}${BASE}/api/state?secret=${joined.secret}`);
+    expect(res.status).toBe(200);
+    const text = await res.text();
+    // the notice must LEAD the payload: pre-versioning clients dump this JSON
+    // verbatim into the sync reply, and the top is what gets read
+    expect(text.startsWith('{"updateAvailable"')).toBe(true);
+    const body = JSON.parse(text) as Record<string, unknown>;
+    expect(String(body.updateAvailable)).toContain("create");
+    expect(String(body.updateHow)).toContain("/install.sh");
+    expect(String(body.updateHow)).toContain("~/.claudilization/app");
+    expect(String(body.updateHow).toLowerCase()).toContain("not re-join");
+    expect(body.protocol).toBe(PROTOCOL_VERSION);
+  });
+
+  it("stays quiet for a client speaking the current protocol", async () => {
+    const joined = world.join({ civ: "greek", name: "Fresh Isle" });
+    const res = await fetch(
+      `${origin}${BASE}/api/state?secret=${joined.secret}&client=${PROTOCOL_VERSION}`,
+    );
+    const body = (await res.json()) as Record<string, unknown>;
+    expect(body.updateAvailable).toBeUndefined();
+    expect(body.updateHow).toBeUndefined();
+    expect(body.protocol).toBe(PROTOCOL_VERSION);
+  });
+
+  it("answers the version probe without auth", async () => {
+    const res = await fetch(`${origin}${BASE}/api/version`);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ name: "claudilization", protocol: PROTOCOL_VERSION });
+  });
+});
+
+describe("orders judged one by one", () => {
+  it("refuses an unknown kind with a reason while carrying out the rest", async () => {
+    const joined = world.join({ civ: "norse", name: "Order Isle" });
+    const res = await fetch(`${origin}${BASE}/api/orders`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        secret: joined.secret,
+        orders: [{ kind: "advance_age" }, { kind: "summon_kraken", size: 9 }],
+      }),
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      outcomes: { order: unknown; ok: boolean; reason?: string }[];
+    };
+    expect(body.outcomes).toHaveLength(2);
+    // the known order reached the world (carried or lawfully refused there)
+    expect(body.outcomes[0]!.order).toEqual({ kind: "advance_age" });
+    // the alien order was refused at the gate, batch intact
+    expect(body.outcomes[1]!.ok).toBe(false);
+    expect(body.outcomes[1]!.reason).toContain("unknown order kind");
+  });
+
+  it("still hard-rejects a broken batch shape", async () => {
+    const joined = world.join({ civ: "aztec", name: "Shape Isle" });
+    const res = await fetch(`${origin}${BASE}/api/orders`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ secret: joined.secret, orders: "orders" }),
     });
     expect(res.status).toBe(400);
   });

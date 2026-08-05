@@ -1,7 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { parseOrders } from "../shared/orders";
+import { parseOrdersForward } from "../shared/orders";
+import { PROTOCOL_VERSION } from "../shared/protocol";
 import { CIV_IDS } from "../shared/types";
 import { loadIdentity, saveIdentity } from "./identity";
 import { ensurePaired, loadOrCreateKeys, signedHeaders } from "./keys";
@@ -99,7 +100,9 @@ server.tool(
     if (orders && orders.length > 0) {
       let parsed;
       try {
-        parsed = parseOrders(orders);
+        // strict for known kinds; unknown kinds are forwarded so a newer
+        // server vocabulary works without waiting for an app update
+        parsed = parseOrdersForward(orders);
       } catch (err) {
         return {
           content: [{ type: "text", text: `Orders rejected: ${String(err)}` }],
@@ -143,7 +146,7 @@ server.tool(
 
     await ensurePaired(identity);
     const res = await fetch(
-      `${base}/api/state?secret=${encodeURIComponent(identity.secret)}`,
+      `${base}/api/state?secret=${encodeURIComponent(identity.secret)}&client=${PROTOCOL_VERSION}`,
     );
     if (!res.ok) {
       const err = (await res.json().catch(() => ({}))) as { error?: string };

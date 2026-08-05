@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseOrders } from "./orders";
+import { parseOrders, parseOrdersForward, screenOrders } from "./orders";
 
 describe("parseOrders — the closed order vocabulary", () => {
   it("accepts every legal order kind", () => {
@@ -75,5 +75,61 @@ describe("parseOrders — the closed order vocabulary", () => {
   it("caps a single submission at 10 orders", () => {
     const many = Array.from({ length: 11 }, () => ({ kind: "advance_age" }));
     expect(() => parseOrders(many)).toThrow();
+  });
+});
+
+describe("parseOrdersForward — the installed client's forward-compatible gate", () => {
+  it("stays strict for kinds this build knows", () => {
+    expect(() =>
+      parseOrdersForward([{ kind: "assign_gathering", resource: "wood", count: -1 }]),
+    ).toThrow();
+    expect(() => parseOrdersForward([{ kind: "build" }])).toThrow();
+    expect(() => parseOrdersForward(["free text"])).toThrow();
+  });
+
+  it("forwards an unknown kind untouched for the server to judge", () => {
+    const alien = { kind: "summon_kraken", size: 9 };
+    expect(parseOrdersForward([{ kind: "advance_age" }, alien])).toEqual([
+      { kind: "advance_age" },
+      alien,
+    ]);
+  });
+
+  it("refuses unknown kinds that are not plain order names", () => {
+    expect(() => parseOrdersForward([{ kind: "DROP TABLE" }])).toThrow();
+    expect(() => parseOrdersForward([{ kind: "<script>alert(1)</script>" }])).toThrow();
+    expect(() => parseOrdersForward([{ kind: "x".repeat(40) }])).toThrow();
+  });
+
+  it("caps the size of a forwarded order", () => {
+    expect(() =>
+      parseOrdersForward([{ kind: "future_thing", blob: "x".repeat(9000) }]),
+    ).toThrow();
+  });
+
+  it("keeps the batch shape rules", () => {
+    expect(() => parseOrdersForward("orders")).toThrow();
+    const many = Array.from({ length: 11 }, () => ({ kind: "advance_age" }));
+    expect(() => parseOrdersForward(many)).toThrow();
+  });
+});
+
+describe("screenOrders — the server judges each order alone", () => {
+  it("separates the carried from the refused without failing the batch", () => {
+    const screened = screenOrders([
+      { kind: "advance_age" },
+      { kind: "summon_kraken", size: 9 },
+      { kind: "build" },
+    ]);
+    expect(screened[0]).toEqual({ ok: true, order: { kind: "advance_age" } });
+    expect(screened[1]!.ok).toBe(false);
+    expect((screened[1] as { reason: string }).reason).toContain("unknown order kind");
+    expect(screened[2]!.ok).toBe(false);
+  });
+
+  it("still throws on a broken batch shape", () => {
+    expect(() => screenOrders("orders")).toThrow();
+    const many = Array.from({ length: 11 }, () => ({ kind: "advance_age" }));
+    expect(() => screenOrders(many)).toThrow();
   });
 });

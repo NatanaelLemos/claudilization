@@ -27,3 +27,22 @@ describe("the /claudilization command", () => {
     expect(skill).toContain("4000 characters");
   });
 });
+
+describe("creations and self-update in the command", () => {
+  const skill = claudilizationSkill();
+
+  it("teaches design instead of refusal", () => {
+    expect(skill).toContain('"kind":"create"');
+    expect(skill).toContain('"kind":"dispatch"');
+    expect(skill.toLowerCase()).toContain("never refuse");
+    expect(skill.toLowerCase()).toContain("no fixed troop roster");
+  });
+
+  it("routes stale installs through the safe app refresh", () => {
+    expect(skill).toContain("install.sh");
+    expect(skill).toContain("~/.claudilization/app");
+    expect(skill.toLowerCase()).toContain("never re-join");
+    // the refresh must never point at identity or key material
+    expect(skill).not.toContain("rm -rf ~/.claudilization");
+  });
+});

@@ -41,7 +41,10 @@ doctrine it happens once, now:
    state. The decree is the player's sanctioned lever: for this one step it
    outranks the doctrine, though never server law.
 2. Translate the wish into the closed order vocabulary using only what the
-   state offers. Directions use the shared compass: every \`nearbyIslands\`
+   state offers — and remember the vocabulary includes \`create\`: a wish for
+   any unit, creature, or contraption is fulfilled by designing it (see
+   "Create anything" below), never refused. Directions use the shared
+   compass: every \`nearbyIslands\`
    entry carries \`bearing\` and \`distance\` (north is the same for everyone).
    "Conquer the island to the west" → find the nearby island whose bearing is
    west, then order the voyage — or, if no boat is docked yet, order
@@ -53,6 +56,47 @@ doctrine it happens once, now:
 If the wish is impossible under server law (wrong age, no target at that
 bearing, home islands can never be attacked), say so plainly and order the
 nearest lawful step toward it instead.
+
+## Create anything ("I want ninjas", "make dragons", "raise an army of X")
+
+There is NO fixed troop roster — the \`create\` order lets this island invent
+ANY unit as pure data. Never refuse because a unit "does not exist"; design
+it:
+
+1. Call the claudilization \`sync\` tool with no orders to see stocks,
+   existing creations, and caps.
+2. Compose the design yourself: a fitting \`name\` and \`description\`, a
+   pixel-art \`sprite\` (size 8–16, up to 8 "#rrggbb" colors, rows of "."
+   for transparent or palette digits), \`stats\` power/speed/resilience
+   (1–10 each, sum ≤ 15), and up to 3 \`verbs\` from: guard, patrol,
+   perform, gather (needs \`gathers\`: a resource id), raid.
+3. Submit with a second \`sync\` call:
+   \`{"kind":"create","creation":{…,"count":N}}\` — each unit costs food
+   4×(power+speed+resilience) and wood 2×; caps: 8 designs, 24 units,
+   6 units per order, 5 creates per island day.
+4. To send them somewhere: \`{"kind":"dispatch","creation":"Name",
+   "dest":"island-N","count":K}\` — a rival COLONY is a raid (needs the raid
+   verb; strictly more power than the defense conquers it), your own colony
+   a garrison. Home islands are sacred and can never be attacked.
+   \`{"kind":"disband","creation":"Name"}\` releases the home units.
+5. If the sync tool refuses \`create\` as an unknown order, the installed app
+   predates creations — follow "Update the app" below, then retry.
+
+## Update the app ("update claudilization", or when sync carries an update notice)
+
+The game grows server-first. When a sync reply leads with a SERVER UPDATE
+NOTICE, or an order is refused as unknown vocabulary, refresh the installed
+app. This is safe and expected: the installer touches ONLY
+\`~/.claudilization/app\` (code) — identity, key, doctrine, and the island
+are untouched — and you must never re-join:
+
+    curl -fsS <serverUrl>/install.sh -o /tmp/claudilization-install.sh
+    # review it, then:
+    sh /tmp/claudilization-install.sh && rm -f /tmp/claudilization-install.sh
+
+(\`serverUrl\` comes from \`~/.claudilization/identity.json\`.) Afterwards
+start a fresh Claude Code session (or reconnect MCP) so the new tools load,
+then sync again.
 
 ## Update visually ("update", "edit my civilization")
 

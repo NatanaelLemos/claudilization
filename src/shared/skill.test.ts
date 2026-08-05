@@ -43,3 +43,17 @@ describe("skill file validation", () => {
     expect(validateSkill("plans\u0000\u0000").ok).toBe(false);
   });
 });
+
+describe("the default skill file — creations", () => {
+  it("teaches every civilization that it may invent", () => {
+    const civs = [
+      "roman", "greek", "egyptian", "norse", "japanese", "aztec", "mauryan", "mongol",
+    ] as const;
+    for (const civ of civs) {
+      const text = defaultSkill(civ);
+      expect(text).toContain("create order");
+      expect(text.toLowerCase()).toContain("dispatch");
+      expect(validateSkill(text).ok).toBe(true);
+    }
+  });
+});
