@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { AdaptiveRenderQuality, renderQualityProfile } from "./renderQuality";
+import {
+  AdaptiveRenderQuality,
+  renderQualityProfile,
+  ShadowRefreshBudget,
+} from "./renderQuality";
 
 describe("adaptive render quality", () => {
   it("caps expensive buffers while preserving native DPR on ordinary screens", () => {
@@ -31,3 +35,20 @@ describe("adaptive render quality", () => {
   });
 });
 
+describe("shadow refresh budget", () => {
+  it("updates at 4 Hz while moving and 1 Hz while stationary", () => {
+    const budget = new ShadowRefreshBudget();
+    expect(budget.shouldRefresh(0, true)).toBe(true);
+    expect(budget.shouldRefresh(249, true)).toBe(false);
+    expect(budget.shouldRefresh(250, true)).toBe(true);
+    expect(budget.shouldRefresh(1_249, false)).toBe(false);
+    expect(budget.shouldRefresh(1_250, false)).toBe(true);
+  });
+
+  it("can be invalidated for a quality or scene change", () => {
+    const budget = new ShadowRefreshBudget();
+    expect(budget.shouldRefresh(10, false)).toBe(true);
+    budget.invalidate();
+    expect(budget.shouldRefresh(11, false)).toBe(true);
+  });
+});

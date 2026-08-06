@@ -65,3 +65,19 @@ export class AdaptiveRenderQuality {
   }
 }
 
+/** Shadows are expensive scene re-renders; movement gets 4 Hz, rest gets 1 Hz. */
+export class ShadowRefreshBudget {
+  private lastRefreshMs = -Infinity;
+
+  shouldRefresh(nowMs: number, moving: boolean): boolean {
+    if (!Number.isFinite(nowMs)) return false;
+    const intervalMs = moving ? 250 : 1_000;
+    if (nowMs - this.lastRefreshMs < intervalMs) return false;
+    this.lastRefreshMs = nowMs;
+    return true;
+  }
+
+  invalidate(): void {
+    this.lastRefreshMs = -Infinity;
+  }
+}

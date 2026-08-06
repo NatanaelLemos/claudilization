@@ -81,9 +81,27 @@ interface ViewState {
   heightAt: (x: number, y: number) => number;
   half: number;
   time: number;
+  accumulator: number;
+  population: number;
+  active: boolean;
 }
 
 const views = new Map<THREE.Group, ViewState>();
+
+export const MAX_VISIBLE_SETTLERS = 1_024;
+const DENSE_POPULATION = 256;
+
+export function crowdUpdateHz(population: number): 15 | 30 {
+  return population > DENSE_POPULATION ? 15 : 30;
+}
+
+/** Stable representatives keep huge civilizations bounded without flicker. */
+export function sampledSettlers<T extends { id: string }>(settlers: T[], cap = MAX_VISIBLE_SETTLERS): T[] {
+  if (settlers.length <= cap) return settlers;
+  return [...settlers]
+    .sort((a, b) => hashString(a.id) - hashString(b.id) || a.id.localeCompare(b.id))
+    .slice(0, cap);
+}
 
 function buildParts(holder: THREE.Group, count: number): Parts {
   const make = (geo: THREE.BufferGeometry, n: number) => {
@@ -141,12 +159,26 @@ export function updateSettlers(
   civ: CivSpec,
   heightAt: (x: number, y: number) => number,
   half: number,
+  active = true,
 ): void {
   let view = views.get(holder);
   if (!view) {
-    view = { parts: null, settlers: new Map(), order: [], heightAt, half, time: 0 };
+    view = {
+      parts: null,
+      settlers: new Map(),
+      order: [],
+      heightAt,
+      half,
+      time: 0,
+      accumulator: 0,
+      population: 0,
+      active,
+    };
     views.set(holder, view);
   }
+
+  view.active = active;
+  view.population = island.settlers.length;
 
   if (island.settlers.length === 0) {
     disposeParts(holder, view);
@@ -155,14 +187,15 @@ export function updateSettlers(
     return;
   }
 
-  if (!view.parts || view.parts.torso.count !== island.settlers.length) {
+  const visibleSettlers = sampledSettlers(island.settlers);
+  if (!view.parts || view.parts.torso.count !== visibleSettlers.length) {
     disposeParts(holder, view);
-    view.parts = buildParts(holder, island.settlers.length);
+    view.parts = buildParts(holder, visibleSettlers.length);
   }
 
   const alive = new Set<string>();
   view.order = [];
-  for (const s of island.settlers) {
+  for (const s of visibleSettlers) {
     alive.add(s.id);
     view.order.push(s.id);
     const off = spreadOffset(s.id);
@@ -193,6 +226,13 @@ export function updateSettlers(
   paintSettlers(view, civ);
 }
 
+export function setSettlerViewActive(holder: THREE.Group, active: boolean): void {
+  const view = views.get(holder);
+  if (!view) return;
+  view.active = active;
+  view.accumulator = 0;
+}
+
 const rootM = new THREE.Matrix4();
 const localM = new THREE.Matrix4();
 const partM = new THREE.Matrix4();
@@ -218,8 +258,13 @@ function poseLimb(
 export function tickSettlers(dt: number): void {
   for (const view of views.values()) {
     const parts = view.parts;
-    if (!parts) continue;
-    view.time += dt;
+    if (!parts || !view.active) continue;
+    view.accumulator += dt;
+    const interval = 1 / crowdUpdateHz(view.population);
+    if (view.accumulator < interval) continue;
+    const tickDt = Math.min(0.25, view.accumulator);
+    view.accumulator %= interval;
+    view.time += tickDt;
     const t = view.time;
     view.order.forEach((id, i) => {
       const s = view.settlers.get(id);
@@ -229,14 +274,14 @@ export function tickSettlers(dt: number): void {
       const dist = Math.hypot(dx, dz);
       const walking = dist > 0.05;
       if (walking) {
-        const step = Math.min(1, (WALK_SPEED * dt) / dist);
+        const step = Math.min(1, (WALK_SPEED * tickDt) / dist);
         s.x += dx * step;
         s.z += dz * step;
         let turn = Math.atan2(dx, dz) - s.yaw;
         turn = ((((turn + Math.PI) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)) - Math.PI;
-        s.yaw += turn * Math.min(1, dt * 10);
+        s.yaw += turn * Math.min(1, tickDt * 10);
       }
-      s.blend += ((walking ? 1 : 0) - s.blend) * Math.min(1, dt * 8);
+      s.blend += ((walking ? 1 : 0) - s.blend) * Math.min(1, tickDt * 8);
       const b = s.blend;
 
       // mid-stride the limbs counter-swing; at rest both arms keep a steady

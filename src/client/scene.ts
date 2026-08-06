@@ -7,6 +7,7 @@ import { EMBER, skyRig, type Rgb } from "./skyRig";
 import {
   AdaptiveRenderQuality,
   renderQualityProfile,
+  ShadowRefreshBudget,
   type RenderQuality,
 } from "./renderQuality";
 
@@ -67,6 +68,7 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
   renderer.toneMappingExposure = 1.2;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.autoUpdate = false;
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color("#16455c");
@@ -211,6 +213,9 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
   const SUN_OFFSET = new THREE.Vector3(120, 170, 80);
   const drawingBufferSize = new THREE.Vector2();
   const qualityController = new AdaptiveRenderQuality();
+  const shadowBudget = new ShadowRefreshBudget();
+  const previousShadowCameraPosition = new THREE.Vector3().copy(camera.position);
+  const previousShadowCameraQuaternion = new THREE.Quaternion().copy(camera.quaternion);
 
   function applyQuality(quality: RenderQuality): void {
     const profile = renderQualityProfile(quality, window.devicePixelRatio);
@@ -220,7 +225,7 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
       sun.shadow.map?.dispose();
       sun.shadow.map = null;
     }
-    renderer.shadowMap.needsUpdate = true;
+    shadowBudget.invalidate();
   }
 
   function resize() {
@@ -234,11 +239,16 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
   window.addEventListener("resize", resize);
   resize();
 
-  renderer.setAnimationLoop(() => {
+  renderer.setAnimationLoop((nowMs) => {
     const dt = frameClock.getDelta();
     const nextQuality = qualityController.sample(dt * 1_000);
     if (nextQuality) applyQuality(nextQuality);
     controls.update(dt);
+    const cameraMoved =
+      camera.position.distanceToSquared(previousShadowCameraPosition) > 1e-4 ||
+      1 - Math.abs(camera.quaternion.dot(previousShadowCameraQuaternion)) > 1e-7;
+    previousShadowCameraPosition.copy(camera.position);
+    previousShadowCameraQuaternion.copy(camera.quaternion);
     // the look target lives on the sea — no gesture may lift it off the plane
     controls.getTarget(flatTarget);
     if (Math.abs(flatTarget.y) > 1e-4) {
@@ -253,6 +263,10 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
     sun.position.copy(lookTarget).add(SUN_OFFSET);
     stars.position.copy(lookTarget);
     for (const fn of frameFns) fn(dt);
+    renderer.shadowMap.needsUpdate = shadowBudget.shouldRefresh(
+      nowMs,
+      controls.active || cameraMoved,
+    );
     renderer.render(scene, camera);
   });
 

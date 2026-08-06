@@ -30,6 +30,10 @@ function lam(color: string, emissive?: string, intensity = 1): THREE.MeshLambert
   return m;
 }
 
+function lamColor(color: THREE.Color): THREE.MeshLambertMaterial {
+  return lam(`#${color.getHexString()}`);
+}
+
 const WOOD = "#7a5a33";
 const WOOD_DARK = "#54402a";
 const STONE = "#9a978f";
@@ -2688,6 +2692,22 @@ export function buildingRenderSignature(buildings: Building[], modelAge: Age): s
     .join(",")}`;
 }
 
+/** Geometry is identical inside this key; building ids only vary placement. */
+export function buildingInstanceKey(building: Building, islandAge: Age): string {
+  return `${building.type}|${building.stage}|${resolveModelAge(building, islandAge)}`;
+}
+
+/** Preserve the hand-authored, deterministic street variation for instances. */
+export function buildingVisualTransform(
+  building: Building,
+  target: THREE.Object3D,
+): THREE.Object3D {
+  const irand = mulberry32(hashString(building.id));
+  target.scale.setScalar(1.9 + irand() * 0.25);
+  target.rotation.y = (irand() - 0.5) * 0.4;
+  return target;
+}
+
 export function createBuildingMesh(
   building: Building,
   civ: CivSpec,
@@ -2698,9 +2718,7 @@ export function createBuildingMesh(
   group.userData.modelAge = modelAge;
   // buildings must dwarf the settlers (~1.65 tall), so the whole composition
   // is authored at unit scale and roughly doubled here
-  const irand = mulberry32(hashString(building.id));
-  group.scale.setScalar(1.9 + irand() * 0.25);
-  group.rotation.y = (irand() - 0.5) * 0.4;
+  buildingVisualTransform(building, group);
 
   const spec = buildingModelSpec(building.type, modelAge);
   const rand = mulberry32(hashString(building.type));
@@ -2725,8 +2743,8 @@ export function createBuildingMesh(
     rand,
     // later ages build markedly grander, not just a shade
     grand: 1 + era * 0.09,
-    wall: new THREE.MeshLambertMaterial({ color: wallColor, flatShading: true }),
-    trim: new THREE.MeshLambertMaterial({ color: trimColor, flatShading: true }),
+    wall: lamColor(wallColor),
+    trim: lamColor(trimColor),
   };
 
   const w = 1.1 + (hashString(building.type) % 2) * 0.4;

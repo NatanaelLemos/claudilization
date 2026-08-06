@@ -28,6 +28,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:scenario": "playwright test",
+    "benchmark:dense": "tsx scripts/dense-building-benchmark.ts",
     "typecheck": "tsc --noEmit",
     "verify": "npm test && npm run typecheck",
     "verify:release": "npm test && npm run typecheck && npm run build && npm run test:scenario"

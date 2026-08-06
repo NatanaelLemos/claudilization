@@ -11,6 +11,7 @@ export function compactStaticMeshes(group: THREE.Group): THREE.Group {
   const inverseRoot = group.matrixWorld.clone().invert();
   const buckets = new Map<string, THREE.Mesh[]>();
   const candidates: THREE.Mesh[] = [];
+  const removedGeometries = new Set<THREE.BufferGeometry>();
 
   group.traverse((object) => {
     if (object === group || !(object as THREE.Mesh).isMesh) return;
@@ -54,9 +55,22 @@ export function compactStaticMeshes(group: THREE.Group): THREE.Group {
     compacted.receiveShadow = first.receiveShadow;
     compacted.renderOrder = first.renderOrder;
     group.add(compacted);
-    for (const mesh of meshes) mesh.parent?.remove(mesh);
+    for (const mesh of meshes) {
+      removedGeometries.add(mesh.geometry);
+      mesh.parent?.remove(mesh);
+    }
+  }
+
+  // Authoring primitives replaced by merged buffers must not accumulate each
+  // time an island's building batch is rebuilt. Keep any geometry still used
+  // by an unmerged mesh, and release only the truly replaced sources.
+  const liveGeometries = new Set<THREE.BufferGeometry>();
+  group.traverse((object) => {
+    if ((object as THREE.Mesh).isMesh) liveGeometries.add((object as THREE.Mesh).geometry);
+  });
+  for (const geometry of removedGeometries) {
+    if (!liveGeometries.has(geometry)) geometry.dispose();
   }
 
   return group;
 }
-

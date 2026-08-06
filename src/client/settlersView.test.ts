@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { spreadOffset } from "./settlersView";
+import {
+  crowdUpdateHz,
+  MAX_VISIBLE_SETTLERS,
+  sampledSettlers,
+  spreadOffset,
+} from "./settlersView";
 
 describe("settler spread", () => {
   it("is deterministic, bounded, and distinct per settler — no more stacked dots", () => {
@@ -15,5 +20,21 @@ describe("settler spread", () => {
       expect(Math.hypot(o.x, o.z)).toBeGreaterThan(0.3);
       expect(Math.hypot(o.x, o.z)).toBeLessThan(2.5);
     }
+  });
+});
+
+describe("dense crowd budget", () => {
+  it("uses a stable, capped sample above 1,024 population", () => {
+    const population = Array.from({ length: 1_500 }, (_, i) => ({ id: `settler-${i}` }));
+    const first = sampledSettlers(population);
+    const second = sampledSettlers([...population].reverse());
+    expect(first).toHaveLength(MAX_VISIBLE_SETTLERS);
+    expect(first.map((settler) => settler.id)).toEqual(second.map((settler) => settler.id));
+  });
+
+  it("updates ordinary crowds at 30 Hz and dense crowds at 15 Hz", () => {
+    expect(crowdUpdateHz(256)).toBe(30);
+    expect(crowdUpdateHz(257)).toBe(15);
+    expect(crowdUpdateHz(5_000)).toBe(15);
   });
 });

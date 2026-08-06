@@ -105,7 +105,11 @@ export function initPicking(
     if (atSea) return atSea;
     const buildings = getBuildings();
     if (!buildings) return undefined;
-    return pickOf(raycaster.intersectObjects(buildings.children, true)[0]?.object ?? null);
+    const proxies: THREE.Object3D[] = [];
+    buildings.traverse((child) => {
+      if (child.userData.buildingPickProxy) proxies.push(child);
+    });
+    return pickOf(raycaster.intersectObjects(proxies, false)[0] ?? null);
   }
 
   canvas.addEventListener("pointerdown", (e) => {

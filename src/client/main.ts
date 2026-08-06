@@ -20,10 +20,15 @@ import {
 import { createIslandGroup, setIslandMood } from "./islandMesh";
 import { Net, type IslandSummary } from "./net";
 import { createStage } from "./scene";
-import { tickSettlers, updateSettlers } from "./settlersView";
+import { setSettlerViewActive, tickSettlers, updateSettlers } from "./settlersView";
 import { initPicking } from "./picking";
 import { startRenderBenchmark } from "./renderBenchmark";
-import { buildingRenderSignature, createBuildingMesh } from "./structures";
+import { buildingRenderSignature } from "./structures";
+import {
+  applyBuildingShadowDistance,
+  buildBuildingBatch,
+  disposeBuildingBatch,
+} from "./buildingBatch";
 import { hideBuildingPanel, refreshBuildingPanel, showBuildingPanel } from "./ui/buildingPanel";
 import { addChatMessage, initChat } from "./ui/chat";
 import { initJoinFlow } from "./ui/joinFlow";
@@ -171,15 +176,10 @@ function rebuildBuildings(
   const signature = `${civ.accent}|${buildingRenderSignature(buildings, age)}`;
   if (signature === view.buildingIds) return;
   view.buildingIds = signature;
-  view.buildings.clear();
+  disposeBuildingBatch(view.buildings);
   const heightAt = view.group.userData.heightAt as (x: number, y: number) => number;
   const half = view.group.userData.half as number;
-  for (const b of buildings) {
-    const mesh = createBuildingMesh(b, civ, age);
-    mesh.userData.buildingId = b.id;
-    mesh.position.set(b.pos.x - half, Math.max(0.05, heightAt(b.pos.x, b.pos.y)), b.pos.y - half);
-    view.buildings.add(mesh);
-  }
+  view.buildings.add(buildBuildingBatch({ buildings, civ, age, heightAt, half }));
 }
 
 /** Summary-driven meshes for an unfocused island — needs its terrain built. */
@@ -205,7 +205,7 @@ function applyIslandDetail(view: IslandView, island: Island): void {
   const heightAt = view.group.userData.heightAt as (x: number, y: number) => number;
   const half = view.group.userData.half as number;
   rebuildBuildings(view, island.buildings, civ, island.age);
-  updateSettlers(view.settlers, island, civ, heightAt, half);
+  updateSettlers(view.settlers, island, civ, heightAt, half, island.id === focusedId);
   updateBoats(view.boats, island, civ);
   updateCreations(view.creations, island.creationSpecs, island.creations, heightAt, half);
   updateCreationBands(view.bands, island.creationBands);
@@ -225,6 +225,7 @@ function tintTitle(color?: string): void {
 /** Point the corner name (and the detail stream) at an island — no camera motion. */
 function watchIsland(id: string): void {
   focusedId = id;
+  for (const [viewId, view] of views) setSettlerViewActive(view.settlers, viewId === id);
   hideBuildingPanel();
   const view = views.get(id);
   if (!view) return;
@@ -355,6 +356,23 @@ initChat(Boolean(key), (text) => net.chat(text));
 stage.onFrame(tickSettlers);
 stage.onFrame(tickCreations);
 stage.onFrame(tickBoats);
+
+// Re-evaluate the shadow caster budget twice a second while the camera roams.
+const shadowTarget = new THREE.Vector3();
+let shadowBudgetIn = 0;
+stage.onFrame((dt) => {
+  shadowBudgetIn -= dt;
+  if (shadowBudgetIn > 0) return;
+  shadowBudgetIn = 0.5;
+  stage.controls.getTarget(shadowTarget);
+  for (const view of views.values()) {
+    const distance = Math.hypot(
+      view.summary.position.x - shadowTarget.x,
+      view.summary.position.y - shadowTarget.z,
+    );
+    applyBuildingShadowDistance(view.buildings, distance);
+  }
+});
 
 // the compass: world north is -Z for every viewer — the dial turns with the
 // camera so N always points at the same true north no matter who is looking

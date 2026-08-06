@@ -175,6 +175,7 @@ Git. Postgres contract tests are skipped unless an isolated
 
 ## Build log
 
+- 2026-08-06 — Global catastrophes and the full crowded-island renderer pass shipped: 600 repeated townhouses now batch from 6,600 to 11 main submissions and 4,200 to 7 shadow submissions; live at https://claudilization.com.
 - 2026-08-06 — Global 30-minute catastrophes implemented and verified locally: earthquake, volcano, tsunami, and Godzilla; authoritative persistence/countdown plus 433 unit and 26 browser scenarios passing; not deployed.
 - 2026-08-06 — Rendering performance pass shipped: static mesh compaction, batched/instanced resources, distant-terrain LOD, adaptive DPR/shadows, throttled hover picking, and a repeatable benchmark harness; live at https://claudilization.com.
 - 2026-08-05 — World-wide attack alerts shipped: every voyage or creation raid rings one deduplicated `<island> is being attacked by <attacker>` card for all viewers, with a “See it” camera-focus action; live at https://claudilization.com (feature commit 051af5a, Fly v25).
