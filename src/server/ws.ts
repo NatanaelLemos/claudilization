@@ -137,6 +137,7 @@ export class Hub {
       time: this.world.time,
       daySeconds: this.balance.daySeconds,
       daylightShare: this.balance.daylightShare,
+      catastrophe: this.world.catastrophe,
       islands: this.world.islands().map((i) => summary(i, this.world)),
     });
     socket.on("message", (raw: unknown) => {
@@ -221,6 +222,7 @@ export class Hub {
         time: this.world.time,
         daySeconds: this.balance.daySeconds,
         daylightShare: this.balance.daylightShare,
+        catastrophe: this.world.catastrophe,
         islands: summaries,
       });
       for (const id of client.subscribed) {

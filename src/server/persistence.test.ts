@@ -33,7 +33,7 @@ describe("persistence — no progress is ever lost", () => {
   it("restores an identical world from the command log alone", async () => {
     const p = await open();
     const w = World.create({ seed: 55 });
-    await p.record({ type: "create", at: 0, seed: 55 } as never);
+    await p.record({ type: "create", at: 0, seed: 55, catastropheEpoch: 0 });
     await run(w, p, { type: "join", at: 0, civ: "roman", secret: "s1" });
     await run(w, p, { type: "pulse", at: 0, secret: "s1", tokens: 9000 });
     w.tick(30);
@@ -54,7 +54,7 @@ describe("persistence — no progress is ever lost", () => {
   it("a snapshot plus the log tail restores the same world as the full log", async () => {
     const p = await open();
     const w = World.create({ seed: 55 });
-    await p.record({ type: "create", at: 0, seed: 55 } as never);
+    await p.record({ type: "create", at: 0, seed: 55, catastropheEpoch: 0 });
     await run(w, p, { type: "join", at: 0, civ: "aztec", secret: "s1" });
     w.tick(20);
     await p.maybeSnapshot(w);
@@ -69,7 +69,13 @@ describe("persistence — no progress is ever lost", () => {
   it("a rebalance in the log tail carries the new law through restore", async () => {
     const p = await open();
     const w = World.create({ seed: 55, balance: { daySeconds: 120 } });
-    await p.record({ type: "create", at: 0, seed: 55, balance: { daySeconds: 120 } });
+    await p.record({
+      type: "create",
+      at: 0,
+      seed: 55,
+      balance: { daySeconds: 120 },
+      catastropheEpoch: 0,
+    });
     await run(w, p, { type: "join", at: 0, civ: "roman", secret: "s1" });
     w.tick(20);
     await p.maybeSnapshot(w); // snapshot still carries the fast clock
@@ -80,6 +86,27 @@ describe("persistence — no progress is ever lost", () => {
     expect(restored.law.daySeconds).toBe(3600);
     restored.tick(40 - restored.time > 0 ? 40 - restored.time : 0);
     expect(restored.serialize()).toBe(w.serialize());
+  });
+
+  it("replays a legacy activation epoch without inventing catastrophes before it", async () => {
+    const p = await open();
+    await p.record({
+      type: "create",
+      at: 0,
+      seed: 55,
+      balance: {
+        catastropheIntervalSeconds: 20,
+        catastropheWarningSeconds: 5,
+        catastropheDurationSeconds: 2,
+      },
+    });
+    await p.record({ type: "catastrophes", at: 100, epoch: 100 });
+    const restored = (await (await open()).restore())!;
+    expect(restored.time).toBe(100);
+    expect(restored.catastropheNeedsActivation).toBe(false);
+    expect(restored.catastrophe.nextAt).toBe(120);
+    expect(restored.tick(19).filter((event) => event.type === "catastrophe-start")).toHaveLength(0);
+    expect(restored.tick(1).filter((event) => event.type === "catastrophe-start")).toHaveLength(1);
   });
 
   it("restore returns null on an empty directory", async () => {

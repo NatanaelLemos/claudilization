@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CreationInputSchema } from "./creations";
+import { CATASTROPHE_IDS } from "./catastrophes";
 import { ORDER_KINDS, parseOrders } from "./orders";
 import { CREATION_EXAMPLE, gameRules } from "./rules";
 
@@ -14,6 +15,13 @@ describe("the rulebook teaches only truth", () => {
     const rules = gameRules();
     expect(rules.orderKinds).toEqual([...ORDER_KINDS]);
     expect(Object.keys(rules.orderShapes).sort()).toEqual([...ORDER_KINDS].sort());
+  });
+
+  it("publishes every catastrophe and the exact 30-minute cadence as data", () => {
+    const rules = gameRules();
+    expect(rules.catastrophes.cadenceSeconds).toBe(1800);
+    expect(rules.catastrophes.warningSeconds).toBe(300);
+    expect(Object.keys(rules.catastrophes.types)).toEqual([...CATASTROPHE_IDS]);
   });
 
   it("is inert data: no URLs, no scripts, no imperatives at the agent", () => {

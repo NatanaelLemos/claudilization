@@ -174,6 +174,7 @@ function brainState(world: World, secret: string, balance: Balance) {
       ),
     }));
   return {
+    catastrophe: world.catastrophe,
     island: {
       id: island.id,
       name: island.name,
@@ -478,6 +479,7 @@ export function createApi(
         const windows = dayWindows(balance.daySeconds, balance.daylightShare);
         return sendJson(res, 200, {
           time: world.time,
+          catastrophe: world.catastrophe,
           // the one sun, stated plainly: anyone can check the sky against the
           // wall clock without opening a browser or reading a shader
           clock: {

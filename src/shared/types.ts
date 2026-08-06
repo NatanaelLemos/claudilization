@@ -1,3 +1,5 @@
+import type { CatastropheId } from "./catastrophes";
+
 export const CIV_IDS = [
   "roman",
   "greek",
@@ -292,6 +294,9 @@ export interface GameEvent {
   settler?: string;
   /** `under-attack` events name the aggressor so any viewer can jump to the fight */
   attackerId?: string;
+  /** global catastrophe lifecycle/result events carry their catalog identity */
+  catastropheId?: CatastropheId;
+  catastropheSequence?: number;
 }
 
 export type Order =

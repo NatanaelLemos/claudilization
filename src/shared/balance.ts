@@ -48,6 +48,12 @@ export interface Balance {
   raidCrew: number;
   /** world-seconds before the same attacker→defender pair rings the bell again */
   attackAlertCooldownSeconds: number;
+  /** authoritative real/world seconds between global catastrophes */
+  catastropheIntervalSeconds: number;
+  /** countdown threshold announced to every connected viewer */
+  catastropheWarningSeconds: number;
+  /** how long the synchronized aftermath state remains active */
+  catastropheDurationSeconds: number;
 }
 
 export const DEFAULT_BALANCE: Balance = {
@@ -85,4 +91,9 @@ export const DEFAULT_BALANCE: Balance = {
   // a flotilla launched together rings once; a renewed assault two minutes
   // later is news again
   attackAlertCooldownSeconds: 120,
+  // one global event every 30 real minutes, with a five-minute warning. The
+  // effects land once at the start; the aftermath is presentation/sync state.
+  catastropheIntervalSeconds: 30 * 60,
+  catastropheWarningSeconds: 5 * 60,
+  catastropheDurationSeconds: 45,
 };

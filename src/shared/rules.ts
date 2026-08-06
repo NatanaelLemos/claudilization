@@ -9,6 +9,8 @@
  * at the agent reading it — state is inert, and the tests pin that.
  */
 import { CREATION_LIMITS, RESOURCE_IDS } from "./creations";
+import { DEFAULT_BALANCE } from "./balance";
+import { CATASTROPHE_IDS, catastropheDefinition } from "./catastrophes";
 import { ORDER_KINDS } from "./orders";
 import { PROTOCOL_VERSION } from "./protocol";
 
@@ -124,6 +126,35 @@ export function gameRules() {
         homeIslands: "sacred — no creation can ever attack a home island",
       },
       example: CREATION_EXAMPLE,
+    },
+    catastrophes: {
+      cadenceSeconds: DEFAULT_BALANCE.catastropheIntervalSeconds,
+      warningSeconds: DEFAULT_BALANCE.catastropheWarningSeconds,
+      aftermathSeconds: DEFAULT_BALANCE.catastropheDurationSeconds,
+      scope: "one deterministic global event affects every inhabited civilization",
+      types: Object.fromEntries(
+        CATASTROPHE_IDS.map((id) => {
+          const event = catastropheDefinition(id);
+          return [
+            id,
+            {
+              label: event.label,
+              resourceLossFraction: event.resourceLossFraction,
+              workPointLossFraction: event.workPointLossFraction,
+              nodeDepletionFraction: event.nodeDepletionFraction ?? 0,
+              buildingDamageFraction: event.buildingDamageFraction ?? 0,
+              buildingScope: event.buildingScope ?? null,
+              dockedBoatLossFraction: event.dockedBoatLossFraction ?? 0,
+              creationLossFraction: event.creationLossFraction ?? 0,
+            },
+          ];
+        }),
+      ),
+      invariants: {
+        floors: "stocks, work, and node reserves never fall below zero",
+        protected: "wonders, settlers, ownership, home protection, ages, and daylight never change",
+        lateJoin: "a civilization joining during aftermath participates at the next event",
+      },
     },
   };
 }

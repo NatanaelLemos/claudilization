@@ -232,7 +232,13 @@ describe("creations in the world", () => {
     try {
       const p = await Persistence.open(new FileStore(dir));
       const w = World.create({ seed: 55, balance: FAST });
-      await p.record({ type: "create", at: 0, seed: 55, balance: FAST });
+      await p.record({
+        type: "create",
+        at: 0,
+        seed: 55,
+        balance: FAST,
+        catastropheEpoch: 0,
+      });
       await p.record({ type: "join", at: 0, civ: "japanese", secret: "s1" });
       w.join({ civ: "japanese", secret: "s1" });
       await p.record({

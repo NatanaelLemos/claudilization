@@ -271,10 +271,64 @@ body {
   color: var(--ink);
 }
 
+/* the world's catastrophe clock — canonical server time, visible to everyone */
+#catastrophe-status {
+  position: absolute;
+  top: 1.1rem;
+  left: 50%;
+  z-index: 7;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: baseline;
+  gap: 0.65rem;
+  max-width: min(48rem, 88vw);
+  padding: 0.42rem 0.9rem;
+  background: rgba(12, 20, 26, 0.88);
+  border: 1px solid var(--panel-line);
+  border-radius: 999px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+#catastrophe-status strong {
+  font-family: "Fraunces", serif;
+  font-size: 0.92rem;
+}
+
+#catastrophe-status span {
+  color: var(--ink-dim);
+}
+
+#catastrophe-status.warning,
+#catastrophe-status.active {
+  border-color: rgba(232, 132, 81, 0.7);
+  background: rgba(42, 21, 18, 0.92);
+}
+
+#catastrophe-status.active {
+  border-color: rgba(241, 86, 63, 0.9);
+  box-shadow: 0 8px 30px rgba(113, 24, 18, 0.45);
+}
+
+body[data-catastrophe-active="earthquake"] { --catastrophe-flash: rgba(225, 177, 105, 0.48); }
+body[data-catastrophe-active="volcano"] { --catastrophe-flash: rgba(255, 72, 28, 0.55); }
+body[data-catastrophe-active="tsunami"] { --catastrophe-flash: rgba(74, 180, 224, 0.52); }
+body[data-catastrophe-active="godzilla"] { --catastrophe-flash: rgba(122, 220, 105, 0.52); }
+
+body[data-catastrophe-active] #world {
+  animation: catastrophe-flash 2.2s ease-out;
+}
+
+@keyframes catastrophe-flash {
+  0%, 22% { box-shadow: inset 0 0 9rem 2rem var(--catastrophe-flash); }
+  100% { box-shadow: inset 0 0 0 0 transparent; }
+}
+
 /* world-moment banner — the one loud element */
 #banner {
   position: absolute;
-  top: 1.25rem;
+  top: 4.1rem;
   left: 50%;
   transform: translateX(-50%);
   max-width: min(46rem, 86vw);
@@ -299,7 +353,7 @@ body {
 /* the tocsin — an island under attack; anyone may click through to watch */
 #alerts {
   position: absolute;
-  top: 4.4rem;
+  top: 7.25rem;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -956,11 +1010,21 @@ body {
     font-size: 0.8rem;
     gap: 0.45rem;
   }
+  #catastrophe-status {
+    align-items: center;
+    flex-direction: column;
+    gap: 0.08rem;
+    text-align: center;
+    white-space: normal;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   #banner,
   .attack-alert {
+    animation: none;
+  }
+  body[data-catastrophe-active] #world {
     animation: none;
   }
 }

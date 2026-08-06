@@ -59,6 +59,7 @@ async function main(): Promise<void> {
       seed: SEED,
       balance: OVERRIDES,
       anchorMs,
+      catastropheEpoch: at,
     });
   }
   // a world restored from a save older than the wall clock keeps the time it
@@ -66,6 +67,13 @@ async function main(): Promise<void> {
   if (world.anchor === undefined) world.anchorTo(Date.now() - world.time * 1000);
   // whatever the restart cost, the world wakes at the true hour
   world.advanceToWallClock(Date.now());
+  if (world.catastropheNeedsActivation) {
+    // A legacy world begins its first 30-minute interval now, not at ancient
+    // world birth. Persist the feature epoch before any client can connect.
+    const epoch = world.time;
+    world.activateCatastrophes(epoch);
+    await persistence.record({ type: "catastrophes", at: epoch, epoch });
+  }
 
   // the world's own law, not a re-merge of env — a restored world keeps the
   // balance it was created under, and every layer above must agree with it

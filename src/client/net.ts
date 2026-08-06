@@ -1,4 +1,5 @@
 import { DEFAULT_BALANCE } from "../shared/balance";
+import type { CatastropheStatus } from "../shared/catastrophes";
 import type { Boat, Building, GameEvent, Island } from "../shared/types";
 import type { Recap } from "../server/recap";
 import { apiUrl, isMounted, socketUrl } from "./base";
@@ -222,11 +223,14 @@ export class Net {
   /** the world's own clock, as of the last world frame — the one and only
    * source of the time of day; island detail never carries the sun */
   worldTime?: number;
+  /** persisted global catastrophe schedule from the latest world frame */
+  catastrophe?: CatastropheStatus;
 
   onWorld?: (islands: IslandSummary[]) => void;
   /** Fired only by world frames — the sky's single source. Island detail must
    * never move the sun, or peeking at a neighbour would change the hour. */
   onWorldClock?: (worldSeconds: number, daySeconds: number, daylightShare: number) => void;
+  onCatastrophe?: (status: CatastropheStatus, worldSeconds: number) => void;
   onIsland?: (island: Island) => void;
   onEvents?: (events: GameEvent[]) => void;
   onChat?: (from: string, text: string) => void;
@@ -289,6 +293,10 @@ export class Net {
             this.daySeconds ?? DEFAULT_BALANCE.daySeconds,
             this.daylightShare ?? DEFAULT_BALANCE.daylightShare,
           );
+        }
+        if (msg.catastrophe && typeof msg.catastrophe === "object") {
+          this.catastrophe = msg.catastrophe as unknown as CatastropheStatus;
+          if (time !== undefined) this.onCatastrophe?.(this.catastrophe, time);
         }
         this.onWorld?.(islands);
         break;

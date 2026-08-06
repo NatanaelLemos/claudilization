@@ -23,6 +23,8 @@ export type WorldCommand =
       balance?: Partial<Balance>;
       /** the real instant this world's clock reads zero — the wall-clock anchor */
       anchorMs?: number;
+      /** absent on logs born before the catastrophe law existed */
+      catastropheEpoch?: number;
     }
   | {
       type: "join";
@@ -37,7 +39,8 @@ export type WorldCommand =
   | { type: "rename"; at: number; secret: string; name: string }
   | { type: "pair"; at: number; secret: string; publicKey: string }
   | { type: "grant"; at: number; islandId: string; grant: unknown }
-  | { type: "rebalance"; at: number; balance: Partial<Balance> };
+  | { type: "rebalance"; at: number; balance: Partial<Balance> }
+  | { type: "catastrophes"; at: number; epoch: number };
 
 export interface Snapshot {
   at: number;
@@ -255,6 +258,8 @@ export class Persistence {
             balance: cmd.balance,
             anchorMs: cmd.anchorMs,
             at: cmd.at,
+            catastrophes: cmd.catastropheEpoch !== undefined,
+            catastropheEpoch: cmd.catastropheEpoch,
           });
         }
         continue;
@@ -287,6 +292,9 @@ export class Persistence {
           break;
         case "rebalance":
           world.rebalance(cmd.balance);
+          break;
+        case "catastrophes":
+          world.activateCatastrophes(cmd.epoch);
           break;
       }
     }

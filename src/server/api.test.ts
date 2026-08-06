@@ -26,7 +26,7 @@ beforeAll(async () => {
 
   const persistence = await Persistence.open(new FileStore(join(root, "world")));
   world = World.create({ seed: 7 });
-  await persistence.record({ type: "create", at: 0, seed: 7 });
+  await persistence.record({ type: "create", at: 0, seed: 7, catastropheEpoch: 0 });
   const lastSeen = new Map<string, number>();
   const hub = new Hub(world, world.law, lastSeen);
   const server = createApi(world, persistence, hub, world.law, lastSeen, dist, BASE);

@@ -34,6 +34,7 @@ import { updateStocks } from "./ui/stocks";
 import { addFeedEvents } from "./ui/feed";
 import { attackAlertModel, showAttackAlert } from "./ui/alerts";
 import { showBanner } from "./ui/banner";
+import { pulseCatastrophe, updateCatastropheStatus } from "./ui/catastrophe";
 import { showRecap } from "./ui/recap";
 
 const key = new URLSearchParams(location.search).get("key") ?? undefined;
@@ -246,6 +247,7 @@ function focusIsland(id: string): void {
 // cannot touch the hour
 net.onWorldClock = (worldSeconds, daySeconds, daylightShare) =>
   stage.setWorldClock(worldSeconds, daySeconds, daylightShare);
+net.onCatastrophe = updateCatastropheStatus;
 
 // ambient life — trade sails, strollers, gulls, shoreline skirmishes — is a
 // pure function of the same world clock, so nothing a viewer does reseeds it
@@ -324,6 +326,9 @@ net.onIsland = (island: Island) => {
 net.onEvents = (events: GameEvent[]) => {
   addFeedEvents(events);
   for (const e of events) {
+    if (e.type === "catastrophe-start" && e.catastropheId) {
+      pulseCatastrophe(e.catastropheId);
+    }
     // an island under attack gets the tocsin card — names in banner colors and
     // a button any viewer can click to fly to the fight
     const alert = attackAlertModel(e, (id) => {

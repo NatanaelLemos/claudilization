@@ -2,6 +2,15 @@ import { AGE_RESOURCES, advanceRequirements, ageIndex, nextAge } from "../shared
 import type { Balance } from "../shared/balance";
 import { DEFAULT_BALANCE } from "../shared/balance";
 import { BUILDINGS, buildingSpec } from "../shared/buildings";
+import {
+  catastropheDefinition,
+  selectCatastrophe,
+  type ActiveCatastrophe,
+  type CatastropheDefinition,
+  type CatastropheId,
+  type CatastropheImpact,
+  type CatastropheStatus,
+} from "../shared/catastrophes";
 import { CIVS } from "../shared/civs";
 import { ensureCivColors, pickCivColor } from "../shared/civColor";
 import {
@@ -51,6 +60,10 @@ export interface WorldOptions {
   anchorMs?: number;
   /** world seconds already on the clock at creation (a wall-clock birth) */
   at?: number;
+  /** false only while replaying a world whose log predates catastrophes */
+  catastrophes?: boolean;
+  /** persisted feature/world epoch from which the first interval begins */
+  catastropheEpoch?: number;
 }
 
 /**
@@ -118,6 +131,16 @@ interface SerializedWorld {
   pulses: [string, Pulse[]][];
   voyagePairs: string[];
   feeds: [string, GameEvent[]][];
+  /** absent on worlds saved before global catastrophes shipped */
+  catastrophe?: CatastropheRuntimeState;
+}
+
+interface CatastropheRuntimeState {
+  nextAt: number;
+  sequence: number;
+  lastType?: CatastropheId;
+  warningFor?: number;
+  active?: ActiveCatastrophe;
 }
 
 /**
@@ -178,17 +201,27 @@ export class World {
   /** attacker→defender pair → world time the bell last rang. In-memory by
    * design: a restart at worst rings one extra bell. */
   private attackAlerts = new Map<string, number>();
+  private catastropheState: CatastropheRuntimeState;
+  /** Legacy snapshots/logs stay inert until main records one activation epoch. */
+  private catastropheActivationPending = false;
 
   private constructor(seed: number, overrides: Partial<Balance>) {
     this.seed = seed;
     this.overrides = overrides;
     this.balance = { ...DEFAULT_BALANCE, ...overrides };
+    this.catastropheState = {
+      nextAt: this.balance.catastropheIntervalSeconds,
+      sequence: 0,
+    };
   }
 
   static create(opts?: WorldOptions): World {
     const w = new World(opts?.seed ?? 1, opts?.balance ?? {});
     w.t = Math.max(0, Math.floor(opts?.at ?? 0));
     w.dayIndex = dayIndex(w.t, w.balance.daySeconds);
+    w.catastropheActivationPending = opts?.catastrophes === false;
+    w.catastropheState.nextAt =
+      (opts?.catastropheEpoch ?? w.t) + w.balance.catastropheIntervalSeconds;
     if (opts?.anchorMs !== undefined) w.anchorMs = opts.anchorMs;
     return w;
   }
@@ -239,6 +272,39 @@ export class World {
    */
   get law(): Balance {
     return this.balance;
+  }
+
+  /** Canonical schedule/aftermath state sent to every viewer on every frame. */
+  get catastrophe(): CatastropheStatus {
+    return {
+      nextAt: this.catastropheState.nextAt,
+      intervalSeconds: this.balance.catastropheIntervalSeconds,
+      warningSeconds: this.balance.catastropheWarningSeconds,
+      active: this.catastropheState.active
+        ? {
+            ...this.catastropheState.active,
+            impact: { ...this.catastropheState.active.impact },
+          }
+        : undefined,
+    };
+  }
+
+  get catastropheNeedsActivation(): boolean {
+    return this.catastropheActivationPending;
+  }
+
+  /**
+   * Turn the law on exactly once for a legacy world. Main durably logs this
+   * epoch before accepting traffic, so command-log-only restore never applies
+   * disasters to history from before the feature existed.
+   */
+  activateCatastrophes(epoch = this.t): void {
+    if (!this.catastropheActivationPending) return;
+    this.catastropheActivationPending = false;
+    this.catastropheState = {
+      nextAt: epoch + this.balance.catastropheIntervalSeconds,
+      sequence: 0,
+    };
   }
 
   /**
@@ -1165,6 +1231,269 @@ export class World {
 
   // ── simulation ───────────────────────────────────────────────────────────
 
+  private updateCatastrophes(batch: GameEvent[]): void {
+    const state = this.catastropheState;
+    const active = state.active;
+    if (active && this.t >= active.endsAt) {
+      const definition = catastropheDefinition(active.id);
+      const ended: GameEvent = {
+        at: this.t,
+        type: "catastrophe-end",
+        world: true,
+        catastropheId: active.id,
+        catastropheSequence: active.sequence,
+        text: definition.endText,
+      };
+      state.active = undefined;
+      this.emit(ended);
+      batch.push(ended);
+    }
+
+    const warningAt = state.nextAt - this.balance.catastropheWarningSeconds;
+    if (
+      !state.active &&
+      this.t >= warningAt &&
+      this.t < state.nextAt &&
+      state.warningFor !== state.nextAt
+    ) {
+      state.warningFor = state.nextAt;
+      const warningMinutes = Math.max(1, Math.ceil((state.nextAt - this.t) / 60));
+      const warning: GameEvent = {
+        at: this.t,
+        type: "catastrophe-warning",
+        world: true,
+        text: `A global catastrophe will strike in ${warningMinutes} minute${
+          warningMinutes === 1 ? "" : "s"
+        }. Secure what you can.`,
+      };
+      this.emit(warning);
+      batch.push(warning);
+    }
+
+    if (state.active || this.t < state.nextAt) return;
+
+    const scheduledAt = state.nextAt;
+    const sequence = state.sequence + 1;
+    const definition = selectCatastrophe(
+      this.seed,
+      sequence,
+      scheduledAt,
+      state.lastType,
+    );
+    const { impact, islandEvents } = this.applyCatastrophe(
+      definition,
+      scheduledAt,
+      sequence,
+    );
+    state.sequence = sequence;
+    state.lastType = definition.id;
+    state.warningFor = undefined;
+    state.active = {
+      id: definition.id,
+      sequence,
+      scheduledAt,
+      startedAt: this.t,
+      endsAt: this.t + this.balance.catastropheDurationSeconds,
+      impact,
+    };
+
+    // Preserve the original cadence through short restarts. Across a long
+    // outage, skip missed slots and schedule the first future boundary: one
+    // wake-up event, never an avalanche of catch-up disasters.
+    const interval = Math.max(1, Math.floor(this.balance.catastropheIntervalSeconds));
+    do state.nextAt += interval;
+    while (state.nextAt <= this.t);
+
+    const result = impact.inhabitedIslands
+      ? `${impact.inhabitedIslands} inhabited islands lost ${Math.round(
+          impact.resourcesLost,
+        )} materials; ${impact.buildingsDamaged} structures were damaged.`
+      : "No civilization was awake, but the map still bore the blow.";
+    const started: GameEvent = {
+      at: this.t,
+      type: "catastrophe-start",
+      world: true,
+      catastropheId: definition.id,
+      catastropheSequence: sequence,
+      text: `${definition.startText} ${result}`,
+    };
+    this.emit(started);
+    batch.push(started);
+    for (const event of islandEvents) {
+      this.emit(event);
+      batch.push(event);
+    }
+  }
+
+  private applyCatastrophe(
+    definition: CatastropheDefinition,
+    scheduledAt: number,
+    sequence: number,
+  ): { impact: CatastropheImpact; islandEvents: GameEvent[] } {
+    const impact: CatastropheImpact = {
+      inhabitedIslands: 0,
+      mapIslands: this.islandsMap.size,
+      resourcesLost: 0,
+      workPointsLost: 0,
+      reservesLost: 0,
+      buildingsDamaged: 0,
+      boatsDestroyed: 0,
+      creationsLost: 0,
+    };
+    const islandEvents: GameEvent[] = [];
+
+    for (const island of this.islandsMap.values()) {
+      const inhabited = island.kind !== "wild";
+      const before = { ...impact };
+      if (inhabited) {
+        impact.inhabitedIslands++;
+        for (const [resource, amount] of Object.entries(island.stocks)) {
+          if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) continue;
+          const lost = Math.min(amount, amount * definition.resourceLossFraction);
+          island.stocks[resource as ResourceId] = Math.max(0, amount - lost);
+          impact.resourcesLost += lost;
+        }
+        if (island.workPoints > 0) {
+          const lost = Math.min(
+            island.workPoints,
+            island.workPoints * definition.workPointLossFraction,
+          );
+          island.workPoints = Math.max(0, island.workPoints - lost);
+          impact.workPointsLost += lost;
+        }
+      }
+
+      if (definition.nodeDepletionFraction) {
+        for (const node of island.nodes) {
+          if (!Number.isFinite(node.remaining) || node.remaining <= 0) continue;
+          const lost = Math.min(
+            node.remaining,
+            node.remaining * definition.nodeDepletionFraction,
+          );
+          node.remaining = Math.max(0, node.remaining - lost);
+          impact.reservesLost += lost;
+        }
+      }
+
+      if (inhabited && definition.buildingDamageFraction) {
+        for (const building of this.catastropheBuildings(island, definition, sequence)) {
+          const spec = buildingSpec(building.type);
+          if (!spec || spec.wonder) continue;
+          building.stage = "construction";
+          building.progress = Math.min(
+            building.progress,
+            spec.buildSeconds * (definition.repairProgressFraction ?? 0.4),
+          );
+          impact.buildingsDamaged++;
+        }
+      }
+
+      if (inhabited && definition.dockedBoatLossFraction) {
+        const exposed = island.boats
+          .filter((boat) => boat.state === "docked" && boat.craft !== "plane")
+          .sort(
+            (a, b) =>
+              roll(this.seed, scheduledAt, definition.id, island.id, a.id) -
+              roll(this.seed, scheduledAt, definition.id, island.id, b.id),
+          );
+        const count = Math.min(
+          exposed.length,
+          Math.ceil(exposed.length * definition.dockedBoatLossFraction),
+        );
+        const destroyed = new Set(exposed.slice(0, count).map((boat) => boat.id));
+        if (destroyed.size) {
+          island.boats = island.boats.filter((boat) => !destroyed.has(boat.id));
+          impact.boatsDestroyed += destroyed.size;
+        }
+      }
+
+      if (inhabited && definition.creationLossFraction && island.creations?.length) {
+        const exposed = [...island.creations].sort(
+          (a, b) =>
+            roll(this.seed, scheduledAt, definition.id, island.id, a.id) -
+            roll(this.seed, scheduledAt, definition.id, island.id, b.id),
+        );
+        // Small rosters survive; larger hoards pay an actual unit cost.
+        const count = Math.floor(exposed.length * definition.creationLossFraction);
+        const destroyed = new Set(exposed.slice(0, count).map((unit) => unit.id));
+        if (destroyed.size) {
+          island.creations = island.creations.filter((unit) => !destroyed.has(unit.id));
+          impact.creationsLost += destroyed.size;
+        }
+      }
+
+      if (!inhabited) continue;
+      const resourceLoss = impact.resourcesLost - before.resourcesLost;
+      const workLoss = impact.workPointsLost - before.workPointsLost;
+      const buildingLoss = impact.buildingsDamaged - before.buildingsDamaged;
+      const boatLoss = impact.boatsDestroyed - before.boatsDestroyed;
+      const creationLoss = impact.creationsLost - before.creationsLost;
+      const pieces = [`${Math.max(0, Math.round(resourceLoss))} materials lost`];
+      if (workLoss > 0) pieces.push(`${Math.round(workLoss)} work lost`);
+      if (buildingLoss) pieces.push(`${buildingLoss} structures damaged`);
+      if (boatLoss) pieces.push(`${boatLoss} vessels destroyed`);
+      if (creationLoss) pieces.push(`${creationLoss} creations lost`);
+      islandEvents.push({
+        at: this.t,
+        type: "catastrophe-impact",
+        islandId: island.id,
+        catastropheId: definition.id,
+        catastropheSequence: sequence,
+        text: `${definition.label} strikes ${island.name}: ${pieces.join(", ")}.`,
+      });
+    }
+
+    return { impact, islandEvents };
+  }
+
+  private catastropheBuildings(
+    island: Island,
+    definition: CatastropheDefinition,
+    sequence: number,
+  ): Building[] {
+    let candidates = island.buildings.filter((building) => {
+      const spec = buildingSpec(building.type);
+      return building.stage === "complete" && Boolean(spec) && !spec?.wonder;
+    });
+    if (!candidates.length) return [];
+
+    if (definition.buildingScope === "coastal") {
+      candidates = candidates.filter((building) => World.COASTAL.has(building.type));
+    } else if (definition.buildingScope === "productive") {
+      candidates = candidates.filter((building) => {
+        const spec = buildingSpec(building.type);
+        return Boolean(spec?.foodPerDay || spec?.converts);
+      });
+    } else if (definition.buildingScope === "path") {
+      const size = island.size ?? this.balance.islandSize;
+      const center = (size - 1) / 2;
+      const angle = roll(this.seed, "godzilla-angle", sequence, island.id) * Math.PI;
+      const offset = (roll(this.seed, "godzilla-offset", sequence, island.id) - 0.5) * size * 0.3;
+      const cx = center + Math.cos(angle + Math.PI / 2) * offset;
+      const cy = center + Math.sin(angle + Math.PI / 2) * offset;
+      candidates.sort((a, b) => {
+        const distance = (building: Building) =>
+          Math.abs(
+            (building.pos.x - cx) * Math.sin(angle) -
+              (building.pos.y - cy) * Math.cos(angle),
+          );
+        return distance(a) - distance(b);
+      });
+    } else {
+      candidates.sort(
+        (a, b) =>
+          roll(this.seed, "catastrophe-building", sequence, island.id, a.id) -
+          roll(this.seed, "catastrophe-building", sequence, island.id, b.id),
+      );
+    }
+
+    const count = Math.min(
+      candidates.length,
+      Math.ceil(candidates.length * (definition.buildingDamageFraction ?? 0)),
+    );
+    return candidates.slice(0, count);
+  }
+
   tick(dtSeconds: number): GameEvent[] {
     const batch: GameEvent[] = [];
     this.tickCarry += dtSeconds;
@@ -1177,6 +1506,7 @@ export class World {
 
   private step(batch: GameEvent[]): void {
     this.t += 1;
+    if (!this.catastropheActivationPending) this.updateCatastrophes(batch);
     if (this.deferred.length) {
       for (const e of this.deferred) {
         this.emit(e);
@@ -2337,6 +2667,7 @@ export class World {
       pulses: [...this.pulses.entries()],
       voyagePairs: [...this.voyagePairs.values()],
       feeds: [...this.feeds.entries()],
+      catastrophe: this.catastropheActivationPending ? undefined : this.catastropheState,
     };
     return JSON.stringify(s);
   }
@@ -2361,6 +2692,17 @@ export class World {
     w.pulses = new Map(s.pulses);
     w.voyagePairs = new Set(s.voyagePairs);
     w.feeds = new Map(s.feeds);
+    // Existing worlds begin their first catastrophe interval at upgrade time;
+    // they are never punished immediately merely because the feature shipped.
+    if (s.catastrophe) {
+      w.catastropheState = s.catastrophe;
+    } else {
+      w.catastropheActivationPending = true;
+      w.catastropheState = {
+        nextAt: s.t + w.balance.catastropheIntervalSeconds,
+        sequence: 0,
+      };
+    }
     // saves from smaller days grow to the current island size, and saves
     // from before the coast rule may hold docks stranded inland
     for (const island of w.islandsMap.values()) {
