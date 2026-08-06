@@ -3,6 +3,7 @@ import { ageIndex } from "../shared/ages";
 import { buildingSpec } from "../shared/buildings";
 import { hashString, mulberry32 } from "../shared/rng";
 import type { Age, Building, BuildingSpec, CivSpec } from "../shared/types";
+import { compactStaticMeshes } from "./meshCompaction";
 
 /**
  * Civ-parameterized primitive composition — no external assets, ever.
@@ -2749,7 +2750,7 @@ export function createBuildingMesh(
     ] as const) {
       part(ctx, stake, lam(WOOD_DARK), (sx * (w + 0.3)) / 2, 0.15, (sz * (w + 0.3)) / 2);
     }
-    return group;
+    return compactStaticMeshes(group);
   }
 
   if (building.stage === "construction") {
@@ -2773,7 +2774,7 @@ export function createBuildingMesh(
     // materials staged outside
     box(ctx, 0.35, 0.2, 0.25, lam(WOOD), w * 0.9, 0.1, 0.3);
     part(ctx, new THREE.IcosahedronGeometry(0.16), lam(STONE), w * 0.85, 0.12, -0.35);
-    return group;
+    return compactStaticMeshes(group);
   }
 
   // complete — a soft contact blob grounds the building even where the
@@ -2787,5 +2788,5 @@ export function createBuildingMesh(
   group.add(blob);
   const builder = spec.wonder ? bWonder : (SPECIALS[building.type] ?? archetype(spec));
   builder(ctx);
-  return group;
+  return compactStaticMeshes(group);
 }

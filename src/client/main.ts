@@ -22,6 +22,7 @@ import { Net, type IslandSummary } from "./net";
 import { createStage } from "./scene";
 import { tickSettlers, updateSettlers } from "./settlersView";
 import { initPicking } from "./picking";
+import { startRenderBenchmark } from "./renderBenchmark";
 import { buildingRenderSignature, createBuildingMesh } from "./structures";
 import { hideBuildingPanel, refreshBuildingPanel, showBuildingPanel } from "./ui/buildingPanel";
 import { addChatMessage, initChat } from "./ui/chat";
@@ -106,7 +107,7 @@ function ensureView(summary: IslandSummary): IslandView {
 /** Build one island's terrain now and move its content groups onto the land. */
 function buildTerrain(view: IslandView): void {
   const s = view.summary;
-  const ground = createIslandGroup(s.seed, s.size ?? DEFAULT_BALANCE.islandSize);
+  const ground = createIslandGroup(s.seed, s.size ?? DEFAULT_BALANCE.islandSize, s.id);
   ground.position.copy(view.group.position);
   ground.add(view.buildings, view.settlers, view.creations);
   stage.scene.remove(view.group);
@@ -553,8 +554,16 @@ initPicking(
   built: [...views.values()].filter((v) => v.terrainReady).length,
   pending: terrainQueue.size,
 });
+(window as unknown as { __perf?: () => unknown }).__perf = () =>
+  stage.performanceSnapshot();
 (window as unknown as { __lookAt?: (x: number, z: number) => void }).__lookAt = (x, z) =>
   stage.flyTo(x, z);
+
+startRenderBenchmark({
+  scene: stage.scene,
+  terrainReady: () => terrainQueue.size === 0,
+  snapshot: () => stage.performanceSnapshot(),
+});
 
 // spectators get the Play button and the rulebook editor; players live here —
 // and the owner's edit link (playerUrl + &edit=1) opens the visual updater

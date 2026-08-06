@@ -1,11 +1,15 @@
 import * as THREE from "three";
 import { hashString, mulberry32 } from "../shared/rng";
 import { generateIsland } from "../shared/terrain";
+import type { TileKind } from "../shared/types";
+import { compactStaticMeshes } from "./meshCompaction";
+import { setBatchedAssetPicks, setInstanceAssetPicks, type AssetPick } from "./picking";
 
 const AMP = 7;
 const SEA = 0.2;
+const TERRAIN_LOD_DISTANCE = 240;
 
-const KIND_COLORS: Record<string, THREE.Color> = {
+const KIND_COLORS: Record<TileKind, THREE.Color> = {
   water: new THREE.Color("#11475d"),
   sand: new THREE.Color("#e6d3a3"),
   grass: new THREE.Color("#7fa15a"),
@@ -13,7 +17,7 @@ const KIND_COLORS: Record<string, THREE.Color> = {
 };
 
 /** Terrain + nature for one island, regenerated deterministically from its seed. */
-export function createIslandGroup(seed: number, size: number): THREE.Group {
+export function createIslandGroup(seed: number, size: number, islandId = "unknown-island"): THREE.Group {
   const terrain = generateIsland(seed, size);
   const group = new THREE.Group();
   const half = size / 2;
@@ -44,9 +48,45 @@ export function createIslandGroup(seed: number, size: number): THREE.Group {
     geo,
     new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }),
   );
-  ground.name = "ground";
+  ground.name = "ground-high";
   ground.receiveShadow = true;
-  group.add(ground);
+
+  // At map distance a 166×166 grid spends ~54k triangles on sub-pixel detail.
+  // Sample the exact same terrain and vertex colours into a coarse mesh; the
+  // watched island remains full resolution and LOD switches only beyond it.
+  const lowSegments = terrainLodSegments(size);
+  const lowGeo = new THREE.PlaneGeometry(size, size, lowSegments, lowSegments);
+  lowGeo.rotateX(-Math.PI / 2);
+  const lowPos = lowGeo.attributes.position as THREE.BufferAttribute;
+  const lowColors = new Float32Array(lowPos.count * 3);
+  for (let i = 0; i < lowPos.count; i++) {
+    const lx = i % (lowSegments + 1);
+    const ly = Math.floor(i / (lowSegments + 1));
+    const gx = Math.round((lx / lowSegments) * (size - 1));
+    const gy = Math.round((ly / lowSegments) * (size - 1));
+    const source = gy * size + gx;
+    const tile = terrain.tiles[source]!;
+    lowPos.setY(i, (tile.height - SEA) * AMP);
+    lowColors[i * 3] = colors[source * 3]!;
+    lowColors[i * 3 + 1] = colors[source * 3 + 1]!;
+    lowColors[i * 3 + 2] = colors[source * 3 + 2]!;
+  }
+  lowGeo.setAttribute("color", new THREE.BufferAttribute(lowColors, 3));
+  lowGeo.computeVertexNormals();
+  const lowGround = new THREE.Mesh(
+    lowGeo,
+    new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }),
+  );
+  lowGround.name = "ground-low";
+  lowGround.receiveShadow = true;
+  const groundLod = new THREE.LOD();
+  groundLod.name = "ground";
+  groundLod.addLevel(ground, 0);
+  groundLod.addLevel(lowGround, TERRAIN_LOD_DISTANCE);
+  group.add(groundLod);
+  const resources = new THREE.Group();
+  resources.name = "resources";
+  group.add(resources);
 
   const heightAt = (x: number, y: number) => {
     const tile = terrain.tiles[Math.round(y) * size + Math.round(x)];
@@ -55,9 +95,15 @@ export function createIslandGroup(seed: number, size: number): THREE.Group {
 
   // nature: instanced trees and rocks, plus wild food — grazing animals,
   // fishing shoals, apple trees, and berry bushes — at the terrain's nodes
-  const byResource = { wood: [] as THREE.Vector3[], stone: [] as THREE.Vector3[] };
-  const foodNodes: { source: string; pos: THREE.Vector3; tile: { x: number; y: number } }[] = [];
-  const mineralNodes: { resource: string; pos: THREE.Vector3 }[] = [];
+  interface NodeVisual {
+    nodeId: string;
+    resource: string;
+    source?: string;
+    pos: THREE.Vector3;
+  }
+  const byResource = { wood: [] as NodeVisual[], stone: [] as NodeVisual[] };
+  const foodNodes: (NodeVisual & { source: string; tile: { x: number; y: number } })[] = [];
+  const mineralNodes: NodeVisual[] = [];
   for (const node of terrain.nodes) {
     const p = new THREE.Vector3(
       node.pos.x - half,
@@ -65,17 +111,24 @@ export function createIslandGroup(seed: number, size: number): THREE.Group {
       node.pos.y - half,
     );
     if (node.resource === "food") {
-      foodNodes.push({ source: node.source ?? "berry-bushes", pos: p, tile: node.pos });
+      foodNodes.push({
+        nodeId: node.id,
+        resource: node.resource,
+        source: node.source ?? "berry-bushes",
+        pos: p,
+        tile: node.pos,
+      });
       continue;
     }
     const list = byResource[node.resource as keyof typeof byResource];
-    if (list) list.push(p);
-    else mineralNodes.push({ resource: node.resource, pos: p });
+    const visual = { nodeId: node.id, resource: node.resource, pos: p };
+    if (list) list.push(visual);
+    else mineralNodes.push(visual);
   }
 
   // sized against the settlers (~1.65 tall): trees tower, rocks reach the
   // knee-to-waist, bushes sit about hip height
-  const nature: [THREE.BufferGeometry, THREE.Material, THREE.Vector3[], number][] = [
+  const nature: [THREE.BufferGeometry, THREE.Material, NodeVisual[], number][] = [
     [
       new THREE.ConeGeometry(1.05, 3.8, 6),
       new THREE.MeshLambertMaterial({ color: "#3f6b35" }),
@@ -95,13 +148,29 @@ export function createIslandGroup(seed: number, size: number): THREE.Group {
     const instanced = new THREE.InstancedMesh(geometry, material, points.length);
     instanced.castShadow = true;
     const m = new THREE.Matrix4();
-    points.forEach((p, i) => {
+    points.forEach((node, i) => {
+      const p = node.pos;
       const s = 0.85 + jitter() * 0.4;
       m.makeScale(s, s, s);
       m.setPosition(p.x, p.y + lift * s, p.z);
       instanced.setMatrixAt(i, m);
     });
-    group.add(instanced);
+    instanced.instanceMatrix.needsUpdate = true;
+    instanced.computeBoundingBox();
+    instanced.computeBoundingSphere();
+    setInstanceAssetPicks(
+      instanced,
+      points.map((node) => ({
+        kind: "resource",
+        islandId,
+        nodeId: node.nodeId,
+        resource: node.resource,
+        source: node.source,
+        label: node.resource === "wood" ? "Trees" : "Stone Outcrop",
+        meta: "natural resource",
+      })),
+    );
+    resources.add(instanced);
   }
 
   const mats = {
@@ -112,11 +181,20 @@ export function createIslandGroup(seed: number, size: number): THREE.Group {
     berry: new THREE.MeshLambertMaterial({ color: "#7b4a94" }),
     hide: new THREE.MeshLambertMaterial({ color: "#8a6a48" }),
     fin: new THREE.MeshLambertMaterial({ color: "#a8c3d1" }),
+    ripple: new THREE.MeshLambertMaterial({
+      color: "#bfe3ef",
+      transparent: true,
+      opacity: 0.5,
+    }),
   };
+  const foodBatches = new Map<
+    THREE.Material,
+    { geometry: THREE.BufferGeometry; matrix: THREE.Matrix4; pick: AssetPick }[]
+  >();
   const kindAt = (x: number, y: number) =>
     terrain.tiles[Math.round(y) * size + Math.round(x)]?.kind;
   for (const node of foodNodes) {
-    const piece = createFoodSource(node.source, jitter, mats);
+    const piece = compactStaticMeshes(createFoodSource(node.source, jitter, mats));
     const s = 0.85 + jitter() * 0.4;
     piece.scale.multiplyScalar(s);
     piece.rotation.y = jitter() * Math.PI * 2;
@@ -133,23 +211,78 @@ export function createIslandGroup(seed: number, size: number): THREE.Group {
     } else {
       piece.position.copy(node.pos);
     }
-    piece.traverse((obj) => {
-      if ((obj as THREE.Mesh).isMesh) obj.castShadow = true;
-    });
-    group.add(piece);
+    const pick: AssetPick = {
+      kind: "resource",
+      islandId,
+      nodeId: node.nodeId,
+      resource: node.resource,
+      source: node.source,
+      label: node.source,
+      meta: "food source",
+    };
+    piece.updateMatrix();
+    for (const child of piece.children) {
+      if (!(child as THREE.Mesh).isMesh) continue;
+      const mesh = child as THREE.Mesh;
+      if (Array.isArray(mesh.material)) continue;
+      const items = foodBatches.get(mesh.material) ?? [];
+      items.push({ geometry: mesh.geometry, matrix: piece.matrix.clone(), pick });
+      foodBatches.set(mesh.material, items);
+    }
+  }
+  for (const [material, items] of foodBatches) {
+    const vertexCapacity = items.reduce(
+      (sum, item) => sum + item.geometry.getAttribute("position").count,
+      0,
+    );
+    const indexCapacity = items.reduce(
+      (sum, item) => sum + (item.geometry.index?.count ?? 0),
+      0,
+    );
+    const batch = new THREE.BatchedMesh(items.length, vertexCapacity, indexCapacity, material);
+    const picks: AssetPick[] = [];
+    for (const item of items) {
+      const geometryId = batch.addGeometry(item.geometry);
+      const instanceId = batch.addInstance(geometryId);
+      batch.setMatrixAt(instanceId, item.matrix);
+      picks[instanceId] = item.pick;
+    }
+    batch.castShadow = true;
+    batch.computeBoundingBox();
+    batch.computeBoundingSphere();
+    setBatchedAssetPicks(batch, picks);
+    resources.add(batch);
   }
 
   // mineral lodes: a grey outcrop shot through with the ore's own color —
   // the exotic finds of the late ages glow faintly where they break ground
   const rockMat = new THREE.MeshLambertMaterial({ color: "#75757c" });
+  const mineralBaseGeo = new THREE.IcosahedronGeometry(0.55);
+  const mineralChunkGeo = new THREE.IcosahedronGeometry(0.36);
+  const baseMatrices: THREE.Matrix4[] = [];
+  const basePicks: Parameters<typeof setInstanceAssetPicks>[1] = [];
+  const chunks = new Map<
+    string,
+    { matrices: THREE.Matrix4[]; picks: Parameters<typeof setInstanceAssetPicks>[1] }
+  >();
+  const mineralPosition = new THREE.Vector3();
+  const mineralScale = new THREE.Vector3();
+  const mineralRotation = new THREE.Quaternion();
+  const mineralEuler = new THREE.Euler();
   for (const node of mineralNodes) {
     const meta = MINERALS[node.resource];
     if (!meta) continue;
     const s = 0.8 + jitter() * 0.4;
-    const base = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55), rockMat);
-    base.position.set(node.pos.x, node.pos.y + 0.3 * s, node.pos.z);
-    base.scale.setScalar(s);
-    base.rotation.y = jitter() * Math.PI * 2;
+    const rotationY = jitter() * Math.PI * 2;
+    mineralRotation.setFromEuler(mineralEuler.set(0, rotationY, 0));
+    mineralScale.setScalar(s);
+    baseMatrices.push(
+      new THREE.Matrix4().compose(
+        mineralPosition.set(node.pos.x, node.pos.y + 0.3 * s, node.pos.z),
+        mineralRotation,
+        mineralScale,
+      ),
+    );
     let oreMat = mineralMats.get(node.resource);
     if (!oreMat) {
       oreMat = new THREE.MeshLambertMaterial({ color: meta.color, flatShading: true });
@@ -159,21 +292,65 @@ export function createIslandGroup(seed: number, size: number): THREE.Group {
       }
       mineralMats.set(node.resource, oreMat);
     }
-    const chunk = new THREE.Mesh(new THREE.IcosahedronGeometry(0.36), oreMat);
-    chunk.position.set(
-      node.pos.x + 0.3 * s,
-      node.pos.y + 0.5 * s,
-      node.pos.z + 0.12 * s,
+    const pick = {
+      kind: "resource" as const,
+      islandId,
+      nodeId: node.nodeId,
+      resource: node.resource,
+      label: `${node.resource} deposit`,
+      meta: "natural resource",
+    };
+    basePicks.push(pick);
+    let resourceChunks = chunks.get(node.resource);
+    if (!resourceChunks) {
+      resourceChunks = { matrices: [], picks: [] };
+      chunks.set(node.resource, resourceChunks);
+    }
+    mineralRotation.setFromEuler(mineralEuler.set(0, jitter() * Math.PI * 2, 0));
+    resourceChunks.matrices.push(
+      new THREE.Matrix4().compose(
+        mineralPosition.set(
+          node.pos.x + 0.3 * s,
+          node.pos.y + 0.5 * s,
+          node.pos.z + 0.12 * s,
+        ),
+        mineralRotation,
+        mineralScale,
+      ),
     );
-    chunk.scale.setScalar(s);
-    chunk.rotation.y = jitter() * Math.PI * 2;
-    base.castShadow = chunk.castShadow = true;
-    group.add(base, chunk);
+    resourceChunks.picks.push(pick);
+  }
+  if (baseMatrices.length) {
+    const bases = new THREE.InstancedMesh(mineralBaseGeo, rockMat, baseMatrices.length);
+    baseMatrices.forEach((matrix, index) => bases.setMatrixAt(index, matrix));
+    bases.castShadow = true;
+    bases.instanceMatrix.needsUpdate = true;
+    bases.computeBoundingBox();
+    bases.computeBoundingSphere();
+    setInstanceAssetPicks(bases, basePicks);
+    resources.add(bases);
+  }
+  for (const [resource, batch] of chunks) {
+    const material = mineralMats.get(resource);
+    if (!material || !batch.matrices.length) continue;
+    const mesh = new THREE.InstancedMesh(mineralChunkGeo, material, batch.matrices.length);
+    batch.matrices.forEach((matrix, index) => mesh.setMatrixAt(index, matrix));
+    mesh.castShadow = true;
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingBox();
+    mesh.computeBoundingSphere();
+    setInstanceAssetPicks(mesh, batch.picks);
+    resources.add(mesh);
   }
 
   group.userData.heightAt = heightAt;
   group.userData.half = half;
+  group.userData.assetRoots = [resources];
   return group;
+}
+
+export function terrainLodSegments(size: number): number {
+  return Math.max(16, Math.ceil((Math.max(2, size) - 1) / 4));
 }
 
 /** each ore breaks ground in its own color; late-age finds get a glow */
@@ -202,6 +379,7 @@ interface FoodMats {
   berry: THREE.Material;
   hide: THREE.Material;
   fin: THREE.Material;
+  ripple: THREE.Material;
 }
 
 function foodPart(
@@ -243,7 +421,7 @@ function createFoodSource(source: string, jitter: () => number, mats: FoodMats):
       const ripple = foodPart(
         g,
         new THREE.TorusGeometry(0.55, 0.02, 4, 16),
-        new THREE.MeshLambertMaterial({ color: "#bfe3ef", transparent: true, opacity: 0.5 }),
+        mats.ripple,
         0,
         0.03,
         0,

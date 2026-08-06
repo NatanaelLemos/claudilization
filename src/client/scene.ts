@@ -4,6 +4,11 @@ import { DEFAULT_BALANCE } from "../shared/balance";
 import { mulberry32 } from "../shared/rng";
 import { skyClock, type SkyClock } from "./skyClock";
 import { EMBER, skyRig, type Rgb } from "./skyRig";
+import {
+  AdaptiveRenderQuality,
+  renderQualityProfile,
+  type RenderQuality,
+} from "./renderQuality";
 
 CameraControls.install({ THREE });
 
@@ -24,6 +29,26 @@ export interface Stage {
   /** the world's clock as this viewer projects it — ambient life is a pure
    * function of this value, so nothing a viewer does can reseed it */
   worldTime(): number;
+  /** On-demand renderer diagnostics for benchmarks; never runs in the frame loop. */
+  performanceSnapshot(): StagePerformanceSnapshot;
+}
+
+export interface StagePerformanceSnapshot {
+  objects: number;
+  visibleObjects: number;
+  meshes: number;
+  instancedMeshes: number;
+  sprites: number;
+  lights: number;
+  drawCalls: number;
+  triangles: number;
+  geometries: number;
+  textures: number;
+  programs: number;
+  pixelRatio: number;
+  drawingBuffer: { width: number; height: number };
+  shadows: { enabled: boolean; mapSize: number };
+  quality: RenderQuality;
 }
 
 /** dawn and dusk each burn a while; the share is server law — the same
@@ -38,7 +63,6 @@ function toColor(target: THREE.Color, c: Rgb): THREE.Color {
 
 export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyClock()): Stage {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.2;
   renderer.shadowMap.enabled = true;
@@ -185,10 +209,24 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
   const frameClock = new THREE.Clock();
   const lookTarget = new THREE.Vector3();
   const SUN_OFFSET = new THREE.Vector3(120, 170, 80);
+  const drawingBufferSize = new THREE.Vector2();
+  const qualityController = new AdaptiveRenderQuality();
+
+  function applyQuality(quality: RenderQuality): void {
+    const profile = renderQualityProfile(quality, window.devicePixelRatio);
+    renderer.setPixelRatio(profile.pixelRatio);
+    if (sun.shadow.mapSize.x !== profile.shadowMapSize) {
+      sun.shadow.mapSize.set(profile.shadowMapSize, profile.shadowMapSize);
+      sun.shadow.map?.dispose();
+      sun.shadow.map = null;
+    }
+    renderer.shadowMap.needsUpdate = true;
+  }
 
   function resize() {
     const w = canvas.clientWidth || window.innerWidth;
     const h = canvas.clientHeight || window.innerHeight;
+    applyQuality(qualityController.current());
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
@@ -198,6 +236,8 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
 
   renderer.setAnimationLoop(() => {
     const dt = frameClock.getDelta();
+    const nextQuality = qualityController.sample(dt * 1_000);
+    if (nextQuality) applyQuality(nextQuality);
     controls.update(dt);
     // the look target lives on the sea — no gesture may lift it off the plane
     controls.getTarget(flatTarget);
@@ -240,6 +280,40 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
     },
     worldTime() {
       return clock.worldTime();
+    },
+    performanceSnapshot() {
+      let objects = 0;
+      let visibleObjects = 0;
+      let meshes = 0;
+      let instancedMeshes = 0;
+      let sprites = 0;
+      let lights = 0;
+      scene.traverse((object) => {
+        objects += 1;
+        if (object.visible) visibleObjects += 1;
+        if ((object as THREE.Mesh).isMesh) meshes += 1;
+        if ((object as THREE.InstancedMesh).isInstancedMesh) instancedMeshes += 1;
+        if ((object as THREE.Sprite).isSprite) sprites += 1;
+        if ((object as THREE.Light).isLight) lights += 1;
+      });
+      renderer.getDrawingBufferSize(drawingBufferSize);
+      return {
+        objects,
+        visibleObjects,
+        meshes,
+        instancedMeshes,
+        sprites,
+        lights,
+        drawCalls: renderer.info.render.calls,
+        triangles: renderer.info.render.triangles,
+        geometries: renderer.info.memory.geometries,
+        textures: renderer.info.memory.textures,
+        programs: renderer.info.programs?.length ?? 0,
+        pixelRatio: renderer.getPixelRatio(),
+        drawingBuffer: { width: drawingBufferSize.x, height: drawingBufferSize.y },
+        shadows: { enabled: renderer.shadowMap.enabled, mapSize: sun.shadow.mapSize.x },
+        quality: qualityController.current(),
+      };
     },
   };
 }
