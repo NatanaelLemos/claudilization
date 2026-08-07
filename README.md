@@ -175,6 +175,7 @@ Git. Postgres contract tests are skipped unless an isolated
 
 ## Build log
 
+- 2026-08-07 — Live civilization population pill shipped in the top-left HUD; Fly v30 at https://claudilization.com.
 - 2026-08-07 — Hourly catastrophes with synchronized earthquake shake, sweeping tsunami, and procedural kaiju rampage shipped in Fly v29; live at https://claudilization.com.
 - 2026-08-06 — Global catastrophes and the full crowded-island renderer pass shipped: 600 repeated townhouses now batch from 6,600 to 11 main submissions and 4,200 to 7 shadow submissions; live at https://claudilization.com.
 - 2026-08-06 — Global 30-minute catastrophes implemented and verified locally: earthquake, volcano, tsunami, and Godzilla; authoritative persistence/countdown plus 433 unit and 26 browser scenarios passing; not deployed.
