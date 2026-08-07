@@ -20,6 +20,7 @@ import {
 import { createIslandGroup, setIslandMood } from "./islandMesh";
 import { Net, type IslandSummary } from "./net";
 import { createStage } from "./scene";
+import { initCatastropheEffects } from "./catastropheEffects";
 import { setSettlerViewActive, tickSettlers, updateSettlers } from "./settlersView";
 import { initPicking } from "./picking";
 import { startRenderBenchmark } from "./renderBenchmark";
@@ -48,6 +49,7 @@ const titleEl = document.getElementById("island-title")!;
 const ageEl = document.getElementById("island-age")!;
 
 const stage = createStage(canvas);
+const catastropheEffects = initCatastropheEffects(stage);
 const net = new Net();
 
 interface IslandView {
@@ -248,7 +250,10 @@ function focusIsland(id: string): void {
 // cannot touch the hour
 net.onWorldClock = (worldSeconds, daySeconds, daylightShare) =>
   stage.setWorldClock(worldSeconds, daySeconds, daylightShare);
-net.onCatastrophe = updateCatastropheStatus;
+net.onCatastrophe = (status, worldSeconds) => {
+  updateCatastropheStatus(status, worldSeconds);
+  catastropheEffects.update(status);
+};
 
 // ambient life — trade sails, strollers, gulls, shoreline skirmishes — is a
 // pure function of the same world clock, so nothing a viewer does reseeds it
@@ -579,6 +584,8 @@ initPicking(
 });
 (window as unknown as { __perf?: () => unknown }).__perf = () =>
   stage.performanceSnapshot();
+(window as unknown as { __catastropheEffect?: () => unknown }).__catastropheEffect = () =>
+  catastropheEffects.snapshot();
 (window as unknown as { __lookAt?: (x: number, z: number) => void }).__lookAt = (x, z) =>
   stage.flyTo(x, z);
 

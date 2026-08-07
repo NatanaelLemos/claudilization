@@ -52,6 +52,25 @@ original cost, so autonomous repair remains possible.
   event; a post-event snapshot records its advanced sequence and cannot apply
   it twice.
 
-The client presentation is a persistent server-time countdown plus existing
-world banners/feed events and a short CSS color pulse. It adds no three.js
-objects, particles, terrain rebuilds, or render-loop work.
+## 2026-08-07 physical-effects update
+
+- Cadence is now exactly 3,600 seconds. New snapshots stamp the cadence; an
+  unstamped 30-minute snapshot rebases once to one hour after upgrade, then
+  preserves that boundary across later restarts.
+- Earthquakes apply a strong, rapidly settling render-only camera shake. The
+  camera transform is restored after every draw so controls cannot drift, and
+  `prefers-reduced-motion` suppresses shake entirely.
+- Tsunamis mount one procedural four-renderable wave (wall, crest, wash, and
+  spray) that rises from the water, crosses the watched island, and recedes.
+- Godzilla uses original procedural low-poly geometry: a giant kaiju enters
+  from the sea, follows a synchronized rampage path with stomps and debris,
+  then submerges. No third-party art or texture is used.
+- Every animation derives progress from authoritative `startedAt`/`endsAt`
+  world time, including late joins. One permanent frame callback owns the
+  lifecycle; transient geometry/materials and camera offsets are disposed at
+  event end or replacement.
+
+Verification: 445 unit tests, 26 browser scenarios, TypeScript, production
+build, Knip analysis, the 600-building performance benchmark, and production
+dependency audit passed. The project has no ESLint dependency/configuration,
+so no repository-defined ESLint target exists.

@@ -137,6 +137,8 @@ interface SerializedWorld {
 
 interface CatastropheRuntimeState {
   nextAt: number;
+  /** Snapshot cadence stamp. Absent only on the original 30-minute release. */
+  intervalSeconds?: number;
   sequence: number;
   lastType?: CatastropheId;
   warningFor?: number;
@@ -211,6 +213,7 @@ export class World {
     this.balance = { ...DEFAULT_BALANCE, ...overrides };
     this.catastropheState = {
       nextAt: this.balance.catastropheIntervalSeconds,
+      intervalSeconds: this.balance.catastropheIntervalSeconds,
       sequence: 0,
     };
   }
@@ -303,6 +306,7 @@ export class World {
     this.catastropheActivationPending = false;
     this.catastropheState = {
       nextAt: epoch + this.balance.catastropheIntervalSeconds,
+      intervalSeconds: this.balance.catastropheIntervalSeconds,
       sequence: 0,
     };
   }
@@ -2696,10 +2700,19 @@ export class World {
     // they are never punished immediately merely because the feature shipped.
     if (s.catastrophe) {
       w.catastropheState = s.catastrophe;
+      // The first catastrophe release did not stamp its 30-minute cadence in
+      // snapshots. Rebase that state once so upgrading makes the next event
+      // a full hour away, then persist the stamp to keep later restarts exact.
+      if (s.catastrophe.intervalSeconds === undefined) {
+        w.catastropheState.nextAt = s.t + w.balance.catastropheIntervalSeconds;
+        w.catastropheState.warningFor = undefined;
+      }
+      w.catastropheState.intervalSeconds = w.balance.catastropheIntervalSeconds;
     } else {
       w.catastropheActivationPending = true;
       w.catastropheState = {
         nextAt: s.t + w.balance.catastropheIntervalSeconds,
+        intervalSeconds: w.balance.catastropheIntervalSeconds,
         sequence: 0,
       };
     }

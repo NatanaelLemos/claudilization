@@ -17,9 +17,9 @@ describe("the rulebook teaches only truth", () => {
     expect(Object.keys(rules.orderShapes).sort()).toEqual([...ORDER_KINDS].sort());
   });
 
-  it("publishes every catastrophe and the exact 30-minute cadence as data", () => {
+  it("publishes every catastrophe and the exact hourly cadence as data", () => {
     const rules = gameRules();
-    expect(rules.catastrophes.cadenceSeconds).toBe(1800);
+    expect(rules.catastrophes.cadenceSeconds).toBe(3600);
     expect(rules.catastrophes.warningSeconds).toBe(300);
     expect(Object.keys(rules.catastrophes.types)).toEqual([...CATASTROPHE_IDS]);
   });

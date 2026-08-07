@@ -19,6 +19,8 @@ export interface Stage {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
   controls: CameraControls;
+  /** Accessibility preference shared with transient world effects. */
+  reducedMotion: boolean;
   flyTo(x: number, z: number): void;
   onFrame(fn: (dt: number) => void): void;
   /** anchor the sky to the world's clock; it free-runs between world frames */
@@ -30,6 +32,8 @@ export interface Stage {
   /** the world's clock as this viewer projects it — ambient life is a pure
    * function of this value, so nothing a viewer does can reseed it */
   worldTime(): number;
+  /** A render-only camera offset. It is restored before controls update again. */
+  setCameraShake(x: number, y: number, z: number, roll?: number): void;
   /** On-demand renderer diagnostics for benchmarks; never runs in the frame loop. */
   performanceSnapshot(): StagePerformanceSnapshot;
 }
@@ -216,6 +220,10 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
   const shadowBudget = new ShadowRefreshBudget();
   const previousShadowCameraPosition = new THREE.Vector3().copy(camera.position);
   const previousShadowCameraQuaternion = new THREE.Quaternion().copy(camera.quaternion);
+  const renderCameraPosition = new THREE.Vector3();
+  const renderCameraQuaternion = new THREE.Quaternion();
+  const shakeOffset = new THREE.Vector3();
+  let shakeRoll = 0;
 
   function applyQuality(quality: RenderQuality): void {
     const profile = renderQualityProfile(quality, window.devicePixelRatio);
@@ -267,13 +275,23 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
       nowMs,
       controls.active || cameraMoved,
     );
+    // Catastrophe shake is applied only for the draw. CameraControls never
+    // observes it, so there is no drift and cleanup always lands exactly on
+    // the user's prior view.
+    renderCameraPosition.copy(camera.position);
+    renderCameraQuaternion.copy(camera.quaternion);
+    camera.position.add(shakeOffset);
+    if (shakeRoll) camera.rotateZ(shakeRoll);
     renderer.render(scene, camera);
+    camera.position.copy(renderCameraPosition);
+    camera.quaternion.copy(renderCameraQuaternion);
   });
 
   return {
     scene,
     camera,
     controls,
+    reducedMotion: REDUCED_MOTION,
     flyTo(x, z) {
       // approach from due south — every landing faces true north (-Z)
       void controls.setLookAt(x, 65, z + 110, x, 0, z, !REDUCED_MOTION);
@@ -294,6 +312,10 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
     },
     worldTime() {
       return clock.worldTime();
+    },
+    setCameraShake(x, y, z, roll = 0) {
+      shakeOffset.set(x, y, z);
+      shakeRoll = roll;
     },
     performanceSnapshot() {
       let objects = 0;

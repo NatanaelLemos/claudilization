@@ -37,8 +37,8 @@ function prepared(id: CatastropheId) {
 const starts = (events: GameEvent[]) => events.filter((event) => event.type === "catastrophe-start");
 
 describe("global catastrophe scheduling", () => {
-  it("uses an exact 30-minute production cadence and a five-minute warning", () => {
-    expect(DEFAULT_BALANCE.catastropheIntervalSeconds).toBe(30 * 60);
+  it("uses an exact hourly production cadence and a five-minute warning", () => {
+    expect(DEFAULT_BALANCE.catastropheIntervalSeconds).toBe(60 * 60);
     expect(DEFAULT_BALANCE.catastropheWarningSeconds).toBe(5 * 60);
   });
 
@@ -93,6 +93,28 @@ describe("global catastrophe scheduling", () => {
     restored.tick(1);
     expect(restored.islands()[0]!.stocks.food).toBe(foodAfter);
     expect(restored.catastrophe.active?.sequence).toBe(1);
+  });
+
+  it("rebases an unstamped 30-minute snapshot once, then preserves the hourly boundary", () => {
+    const old = World.create({ seed: 7, at: 100, balance: FAST });
+    const legacy = JSON.parse(old.serialize()) as {
+      catastrophe: { nextAt: number; intervalSeconds?: number };
+    };
+    delete legacy.catastrophe.intervalSeconds;
+    legacy.catastrophe.nextAt = 120;
+
+    const upgraded = World.deserialize(JSON.stringify(legacy));
+    expect(upgraded.catastrophe.nextAt).toBe(120);
+
+    const production = World.create({ seed: 7, at: 100 });
+    const productionLegacy = JSON.parse(production.serialize()) as {
+      catastrophe: { nextAt: number; intervalSeconds?: number };
+    };
+    delete productionLegacy.catastrophe.intervalSeconds;
+    productionLegacy.catastrophe.nextAt = 1900;
+    const rebased = World.deserialize(JSON.stringify(productionLegacy));
+    expect(rebased.catastrophe.nextAt).toBe(3700);
+    expect(World.deserialize(rebased.serialize()).catastrophe.nextAt).toBe(3700);
   });
 
   it("holds a pre-feature save inert until one explicit upgrade epoch", () => {

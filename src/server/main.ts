@@ -68,7 +68,7 @@ async function main(): Promise<void> {
   // whatever the restart cost, the world wakes at the true hour
   world.advanceToWallClock(Date.now());
   if (world.catastropheNeedsActivation) {
-    // A legacy world begins its first 30-minute interval now, not at ancient
+    // A legacy world begins its first hourly interval now, not at ancient
     // world birth. Persist the feature epoch before any client can connect.
     const epoch = world.time;
     world.activateCatastrophes(epoch);

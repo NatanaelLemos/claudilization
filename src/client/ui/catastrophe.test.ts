@@ -5,16 +5,16 @@ import { catastropheView } from "./catastrophe";
 
 const scheduled = (nextAt: number): CatastropheStatus => ({
   nextAt,
-  intervalSeconds: 1800,
+  intervalSeconds: 3600,
   warningSeconds: 300,
 });
 
 describe("the global catastrophe clock", () => {
   it("shows the canonical countdown without guessing from a client timer", () => {
-    expect(catastropheView(scheduled(2800), 1000)).toEqual({
+    expect(catastropheView(scheduled(4600), 1000)).toEqual({
       phase: "scheduled",
-      title: "Global catastrophe in 30:00",
-      detail: "One world event every 30 minutes",
+      title: "Global catastrophe in 60:00",
+      detail: "One world event every 60 minutes",
     });
   });
 

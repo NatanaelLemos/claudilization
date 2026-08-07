@@ -91,9 +91,9 @@ export const DEFAULT_BALANCE: Balance = {
   // a flotilla launched together rings once; a renewed assault two minutes
   // later is news again
   attackAlertCooldownSeconds: 120,
-  // one global event every 30 real minutes, with a five-minute warning. The
+  // one global event every real hour, with a five-minute warning. The
   // effects land once at the start; the aftermath is presentation/sync state.
-  catastropheIntervalSeconds: 30 * 60,
+  catastropheIntervalSeconds: 60 * 60,
   catastropheWarningSeconds: 5 * 60,
   catastropheDurationSeconds: 45,
 };
