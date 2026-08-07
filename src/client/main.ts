@@ -35,6 +35,7 @@ import { addChatMessage, initChat } from "./ui/chat";
 import { initJoinFlow } from "./ui/joinFlow";
 import { initUpdateFlow } from "./ui/updateFlow";
 import { updateMood } from "./ui/mood";
+import { updatePopulation } from "./ui/population";
 import { updateAgeProgress } from "./ui/ageProgress";
 import { updateStocks } from "./ui/stocks";
 import { addFeedEvents } from "./ui/feed";
@@ -323,6 +324,7 @@ net.onIsland = (island: Island) => {
   }
   if (island.id === myIslandId) {
     updateStocks(island);
+    updatePopulation(island);
     updateMood(island);
     updateAgeProgress(island);
   }

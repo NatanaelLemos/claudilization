@@ -20,6 +20,7 @@ test("joining via the MCP tool founds a named island and hands back the personal
     await expect(page.getByTestId("island-title")).toHaveText(islandName, {
       timeout: 15_000,
     });
+    await expect(page.getByTestId("population")).toHaveText("👥 10 people");
     await expect(page.locator("#world")).toBeVisible();
   } finally {
     await mcp.close();

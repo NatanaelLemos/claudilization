@@ -103,16 +103,28 @@ body {
   opacity: 0.55;
 }
 
+#civ-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+  max-width: min(24rem, 70vw);
+}
+
+#population,
 #mood {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  margin-top: 0.45rem;
   background: var(--panel);
   border: 1px solid var(--panel-line);
   border-radius: 999px;
   padding: 0.28rem 0.75rem;
   font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+#mood {
   cursor: help;
 }
 
