@@ -175,6 +175,7 @@ Git. Postgres contract tests are skipped unless an isolated
 
 ## Build log
 
+- 2026-08-10 — Structure-aware building spacing, demand-gated construction, and procedural animated clay water shipped; live at https://claudilization.com.
 - 2026-08-10 — Miniature clay-diorama art direction shipped across terrain, structures, settlers, vegetation, craft, catastrophes, lighting, and responsive HUD in Fly v31; live at https://claudilization.com.
 - 2026-08-07 — Live civilization population pill shipped in the top-left HUD; Fly v30 at https://claudilization.com.
 - 2026-08-07 — Hourly catastrophes with synchronized earthquake shake, sweeping tsunami, and procedural kaiju rampage shipped in Fly v29; live at https://claudilization.com.
