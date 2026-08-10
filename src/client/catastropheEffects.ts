@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import type { ActiveCatastrophe, CatastropheStatus } from "../shared/catastrophes";
+import { CLAY_PALETTE, clayMaterial } from "./artDirection";
 import type { Stage } from "./scene";
 
 type EffectStage = Pick<
@@ -49,18 +50,21 @@ function disposeTree(root: THREE.Object3D): void {
 function waveEffect(): THREE.Group {
   const root = new THREE.Group();
   root.name = "catastrophe-tsunami";
-  const water = new THREE.MeshPhongMaterial({
-    color: "#168fba",
+  root.userData.artFamily = "clay-catastrophe";
+  const water = clayMaterial({
+    color: "#2c8198",
     emissive: "#073b50",
+    emissiveIntensity: 0.34,
     transparent: true,
     opacity: 0.82,
-    shininess: 105,
     side: THREE.DoubleSide,
     depthWrite: false,
   });
-  const foam = new THREE.MeshLambertMaterial({
-    color: "#dffbff",
-    emissive: "#75d8e9",
+  water.roughness = 0.52;
+  const foam = clayMaterial({
+    color: CLAY_PALETTE.foam,
+    emissive: "#72c1cd",
+    emissiveIntensity: 0.32,
     transparent: true,
     opacity: 0.9,
     depthWrite: false,
@@ -110,16 +114,16 @@ function waveEffect(): THREE.Group {
 function kaijuEffect(): THREE.Group {
   const root = new THREE.Group();
   root.name = "catastrophe-godzilla";
-  const skin = new THREE.MeshLambertMaterial({ color: "#244f36", flatShading: true });
-  const belly = new THREE.MeshLambertMaterial({ color: "#71865a", flatShading: true });
-  const spine = new THREE.MeshLambertMaterial({
-    color: "#8bd4be",
+  root.userData.artFamily = "clay-catastrophe";
+  const skin = clayMaterial({ color: "#365f48" });
+  const belly = clayMaterial({ color: "#82916b" });
+  const spine = clayMaterial({
+    color: "#79b8a5",
     emissive: "#245f58",
     emissiveIntensity: 0.75,
-    flatShading: true,
   });
   const eye = new THREE.MeshBasicMaterial({ color: "#ffe15c" });
-  const debris = new THREE.MeshLambertMaterial({ color: "#807365", flatShading: true });
+  const debris = clayMaterial({ color: CLAY_PALETTE.stoneDark });
 
   const part = (
     name: string,
@@ -199,7 +203,7 @@ function kaijuEffect(): THREE.Group {
   const rubble = new THREE.Group();
   rubble.name = "rubble";
   for (let i = 0; i < 12; i++) {
-    const chunk = new THREE.Mesh(new THREE.BoxGeometry(2.4, 2.4, 2.4), debris);
+    const chunk = new THREE.Mesh(new THREE.DodecahedronGeometry(1.8, 0), debris);
     chunk.position.set((i % 4 - 1.5) * 8, 1, (Math.floor(i / 4) - 1) * 10);
     chunk.rotation.set(i * 0.7, i * 1.1, i * 0.4);
     chunk.castShadow = true;

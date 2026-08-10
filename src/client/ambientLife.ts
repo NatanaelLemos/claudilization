@@ -4,6 +4,7 @@ import { CIVS } from "../shared/civs";
 import { isNight } from "../shared/daylight";
 import { hashString, mulberry32 } from "../shared/rng";
 import type { Vec2 } from "../shared/types";
+import { ART_DIRECTION, CLAY_PALETTE, clayMaterial } from "./artDirection";
 import { boatMesh } from "./boatsView";
 import type { IslandSummary } from "./net";
 import type { Stage } from "./scene";
@@ -38,7 +39,7 @@ export const AMBIENT_CAPS = {
   /** concurrent shoreline skirmish vignettes */
   skirmishes: 4,
   /** world units from the camera target within which town ambience runs */
-  ambientRadius: 520,
+  ambientRadius: ART_DIRECTION.density.ambientRadius,
   /** world units beyond which ambient craft are hidden entirely */
   seaCullRadius: 950,
 } as const;
@@ -579,7 +580,7 @@ export function initAmbientLife(stage: Stage, deps: AmbientDeps): AmbientLife {
 
   const gullBody = new THREE.BoxGeometry(0.5, 0.1, 0.16);
   const gullWing = new THREE.BoxGeometry(0.16, 0.04, 0.72);
-  const gullMat = new THREE.MeshLambertMaterial({ color: "#e8ecf2", flatShading: true });
+  const gullMat = clayMaterial({ color: CLAY_PALETTE.chalk });
 
   function makeGull(): THREE.Group {
     const g = new THREE.Group();
@@ -631,11 +632,11 @@ export function initAmbientLife(stage: Stage, deps: AmbientDeps): AmbientLife {
     for (let i = 0; i < 6; i++) {
       const attacker = i < 3;
       const civ = CIVS[attacker ? sighting.attackerCiv : sighting.defenderCiv];
-      const mat = new THREE.MeshLambertMaterial({ color: civ.accent, flatShading: true });
+      const mat = clayMaterial({ color: civ.accent });
       const f = new THREE.Group();
       f.add(new THREE.Mesh(fighterBody, mat));
-      const skin = new THREE.MeshLambertMaterial({
-        color: PERSON.SKIN_TONES[Math.floor(rand() * PERSON.SKIN_TONES.length)],
+      const skin = clayMaterial({
+        color: PERSON.SKIN_TONES[Math.floor(rand() * PERSON.SKIN_TONES.length)]!,
       });
       f.add(new THREE.Mesh(fighterHead, skin));
       f.userData.side = attacker ? 1 : -1;
@@ -663,10 +664,11 @@ export function initAmbientLife(stage: Stage, deps: AmbientDeps): AmbientLife {
     for (let i = 0; i < 4; i++) {
       const puff = new THREE.Mesh(
         puffGeo,
-        new THREE.MeshLambertMaterial({
+        clayMaterial({
           color: "#c9c2b8",
           transparent: true,
           opacity: 0.4,
+          depthWrite: false,
         }),
       );
       holder.add(puff);
@@ -831,6 +833,9 @@ export function initAmbientLife(stage: Stage, deps: AmbientDeps): AmbientLife {
 
   stage.onFrame((dt) => {
     const wt = stage.worldTime();
+    // Preserve the authored scene while freezing repetitive ambient travel,
+    // flapping, and chopping for reduced-motion viewers.
+    const motionTime = stage.reducedMotion ? 0 : wt;
     const law = deps.law();
     recullIn -= dt;
     if (recullIn <= 0) {
@@ -841,14 +846,14 @@ export function initAmbientLife(stage: Stage, deps: AmbientDeps): AmbientLife {
 
     // craft at sea — hidden beyond the cull radius, posed purely from the clock
     for (const craft of crafts.values()) {
-      const pose = craftPose(craft, wt);
+      const pose = craftPose(craft, motionTime);
       const far =
         Math.hypot(pose.x - camTarget.x, pose.z - camTarget.z) > AMBIENT_CAPS.seaCullRadius;
       craft.group.visible = !far;
       if (far) continue;
-      craft.group.position.set(pose.x, Math.sin(wt * 1.5 + craft.seed) * 0.09, pose.z);
+      craft.group.position.set(pose.x, Math.sin(motionTime * 1.5 + craft.seed) * 0.09, pose.z);
       craft.group.rotation.y = pose.heading - Math.PI / 2;
-      craft.group.rotation.z = Math.sin(wt * 1.2 + craft.seed) * 0.04;
+      craft.group.rotation.z = Math.sin(motionTime * 1.2 + craft.seed) * 0.04;
     }
 
     // the town sleeps at night, exactly like its settlers do
@@ -857,12 +862,12 @@ export function initAmbientLife(stage: Stage, deps: AmbientDeps): AmbientLife {
       town.holder.visible = !night;
       if (night) continue;
       const anchorRef = deps.anchor(town.islandId);
-      if (anchorRef) tickTown(town, anchorRef, wt);
+      if (anchorRef) tickTown(town, anchorRef, motionTime);
     }
 
     for (const flock of flocks.values()) {
       flock.holder.visible = !night;
-      if (!night) tickFlock(flock, wt);
+      if (!night) tickFlock(flock, motionTime);
     }
 
     for (const [id, fx] of skirmishes) {
@@ -871,7 +876,7 @@ export function initAmbientLife(stage: Stage, deps: AmbientDeps): AmbientLife {
         skirmishes.delete(id);
         continue;
       }
-      tickSkirmish(fx, wt);
+      tickSkirmish(fx, stage.reducedMotion ? fx.lastSeen : wt);
     }
   });
 

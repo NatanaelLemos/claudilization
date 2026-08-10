@@ -2,6 +2,11 @@ import * as THREE from "three";
 import { hashString, mulberry32 } from "../shared/rng";
 import { generateIsland } from "../shared/terrain";
 import type { TileKind } from "../shared/types";
+import {
+  CLAY_PALETTE,
+  TERRAIN_CLAY_COLORS,
+  clayMaterial,
+} from "./artDirection";
 import { compactStaticMeshes } from "./meshCompaction";
 import { setBatchedAssetPicks, setInstanceAssetPicks, type AssetPick } from "./picking";
 
@@ -9,12 +14,9 @@ const AMP = 7;
 const SEA = 0.2;
 const TERRAIN_LOD_DISTANCE = 240;
 
-const KIND_COLORS: Record<TileKind, THREE.Color> = {
-  water: new THREE.Color("#11475d"),
-  sand: new THREE.Color("#e6d3a3"),
-  grass: new THREE.Color("#7fa15a"),
-  rock: new THREE.Color("#8d8d93"),
-};
+const KIND_COLORS: Record<TileKind, THREE.Color> = Object.fromEntries(
+  Object.entries(TERRAIN_CLAY_COLORS).map(([kind, color]) => [kind, new THREE.Color(color)]),
+) as Record<TileKind, THREE.Color>;
 
 /** Terrain + nature for one island, regenerated deterministically from its seed. */
 export function createIslandGroup(seed: number, size: number, islandId = "unknown-island"): THREE.Group {
@@ -46,9 +48,10 @@ export function createIslandGroup(seed: number, size: number, islandId = "unknow
   geo.computeVertexNormals();
   const ground = new THREE.Mesh(
     geo,
-    new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }),
+    clayMaterial({ color: "#ffffff", vertexColors: true }),
   );
   ground.name = "ground-high";
+  ground.userData.artFamily = "clay-terrain";
   ground.receiveShadow = true;
 
   // At map distance a 166×166 grid spends ~54k triangles on sub-pixel detail.
@@ -75,7 +78,7 @@ export function createIslandGroup(seed: number, size: number, islandId = "unknow
   lowGeo.computeVertexNormals();
   const lowGround = new THREE.Mesh(
     lowGeo,
-    new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }),
+    clayMaterial({ color: "#ffffff", vertexColors: true }),
   );
   lowGround.name = "ground-low";
   lowGround.receiveShadow = true;
@@ -128,25 +131,60 @@ export function createIslandGroup(seed: number, size: number, islandId = "unknow
 
   // sized against the settlers (~1.65 tall): trees tower, rocks reach the
   // knee-to-waist, bushes sit about hip height
+  const jitter = mulberry32(hashString(`${seed}|nature`));
+  // The wood family is a two-part toy tree (warm trunk + rounded crown), but
+  // remains two instanced submissions no matter how many nodes an island has.
+  if (byResource.wood.length) {
+    const trunks = new THREE.InstancedMesh(
+      new THREE.CylinderGeometry(0.18, 0.25, 2.5, 7),
+      clayMaterial({ color: CLAY_PALETTE.wood }),
+      byResource.wood.length,
+    );
+    const matrix = new THREE.Matrix4();
+    byResource.wood.forEach((node, index) => {
+      const s = 0.85 + jitter() * 0.4;
+      matrix.makeScale(s, s, s);
+      matrix.setPosition(node.pos.x, node.pos.y + 1.2 * s, node.pos.z);
+      trunks.setMatrixAt(index, matrix);
+    });
+    trunks.name = "clay-tree-trunks";
+    trunks.castShadow = true;
+    trunks.instanceMatrix.needsUpdate = true;
+    trunks.computeBoundingBox();
+    trunks.computeBoundingSphere();
+    setInstanceAssetPicks(
+      trunks,
+      byResource.wood.map((node) => ({
+        kind: "resource",
+        islandId,
+        nodeId: node.nodeId,
+        resource: node.resource,
+        label: "Trees",
+        meta: "natural resource",
+      })),
+    );
+    resources.add(trunks);
+  }
+
   const nature: [THREE.BufferGeometry, THREE.Material, NodeVisual[], number][] = [
     [
-      new THREE.ConeGeometry(1.05, 3.8, 6),
-      new THREE.MeshLambertMaterial({ color: "#3f6b35" }),
+      new THREE.DodecahedronGeometry(1.35, 0),
+      clayMaterial({ color: CLAY_PALETTE.leaf }),
       byResource.wood,
-      1.9,
+      3.05,
     ],
     [
       new THREE.IcosahedronGeometry(0.8),
-      new THREE.MeshLambertMaterial({ color: "#75757c" }),
+      clayMaterial({ color: CLAY_PALETTE.stone }),
       byResource.stone,
       0.45,
     ],
   ];
-  const jitter = mulberry32(hashString(`${seed}|nature`));
   for (const [geometry, material, points, lift] of nature) {
     if (!points.length) continue;
     const instanced = new THREE.InstancedMesh(geometry, material, points.length);
     instanced.castShadow = true;
+    instanced.name = points === byResource.wood ? "clay-tree-crowns" : "clay-rocks";
     const m = new THREE.Matrix4();
     points.forEach((node, i) => {
       const p = node.pos;
@@ -174,17 +212,18 @@ export function createIslandGroup(seed: number, size: number, islandId = "unknow
   }
 
   const mats = {
-    trunk: new THREE.MeshLambertMaterial({ color: "#6b4f2a" }),
-    canopy: new THREE.MeshLambertMaterial({ color: "#5d8a3e" }),
-    apple: new THREE.MeshLambertMaterial({ color: "#c0392b" }),
-    bush: new THREE.MeshLambertMaterial({ color: "#4c6e35" }),
-    berry: new THREE.MeshLambertMaterial({ color: "#7b4a94" }),
-    hide: new THREE.MeshLambertMaterial({ color: "#8a6a48" }),
-    fin: new THREE.MeshLambertMaterial({ color: "#a8c3d1" }),
-    ripple: new THREE.MeshLambertMaterial({
-      color: "#bfe3ef",
+    trunk: clayMaterial({ color: CLAY_PALETTE.wood }),
+    canopy: clayMaterial({ color: CLAY_PALETTE.leafLight }),
+    apple: clayMaterial({ color: CLAY_PALETTE.terracotta }),
+    bush: clayMaterial({ color: CLAY_PALETTE.leaf }),
+    berry: clayMaterial({ color: "#7d587e" }),
+    hide: clayMaterial({ color: "#987555" }),
+    fin: clayMaterial({ color: "#9abcc5" }),
+    ripple: clayMaterial({
+      color: CLAY_PALETTE.foam,
       transparent: true,
       opacity: 0.5,
+      depthWrite: false,
     }),
   };
   const foodBatches = new Map<
@@ -256,7 +295,7 @@ export function createIslandGroup(seed: number, size: number, islandId = "unknow
 
   // mineral lodes: a grey outcrop shot through with the ore's own color —
   // the exotic finds of the late ages glow faintly where they break ground
-  const rockMat = new THREE.MeshLambertMaterial({ color: "#75757c" });
+  const rockMat = clayMaterial({ color: CLAY_PALETTE.stoneDark });
   const mineralBaseGeo = new THREE.IcosahedronGeometry(0.55);
   const mineralChunkGeo = new THREE.IcosahedronGeometry(0.36);
   const baseMatrices: THREE.Matrix4[] = [];
@@ -285,11 +324,7 @@ export function createIslandGroup(seed: number, size: number, islandId = "unknow
     );
     let oreMat = mineralMats.get(node.resource);
     if (!oreMat) {
-      oreMat = new THREE.MeshLambertMaterial({ color: meta.color, flatShading: true });
-      if (meta.emissive) {
-        oreMat.emissive = new THREE.Color(meta.emissive);
-        oreMat.emissiveIntensity = 0.7;
-      }
+      oreMat = clayMaterial({ color: meta.color, emissive: meta.emissive });
       mineralMats.set(node.resource, oreMat);
     }
     const pick = {
@@ -369,7 +404,7 @@ const MINERALS: Record<string, { color: string; emissive?: string }> = {
   plutonium: { color: "#7fd44f", emissive: "#2f8f1f" },
   antimatter: { color: "#d16fff", emissive: "#7a28c4" },
 };
-const mineralMats = new Map<string, THREE.MeshLambertMaterial>();
+const mineralMats = new Map<string, THREE.MeshStandardMaterial>();
 
 interface FoodMats {
   trunk: THREE.Material;
@@ -484,7 +519,7 @@ function createFoodSource(source: string, jitter: () => number, mats: FoodMats):
 export function setIslandMood(group: THREE.Group, ruins: boolean, dormant: boolean): void {
   group.traverse((obj) => {
     const mesh = obj as THREE.Mesh;
-    const mat = mesh.material as THREE.MeshLambertMaterial | undefined;
+    const mat = mesh.material as (THREE.Material & { color: THREE.Color }) | undefined;
     if (!mat || !("color" in mat)) return;
     if (ruins) {
       mat.color.offsetHSL(0, -1, 0);

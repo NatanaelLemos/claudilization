@@ -2,6 +2,7 @@
 node_modules/
 dist/
 coverage/
+.worktrees/
 *.tsbuildinfo
 
 # Local configuration and credentials

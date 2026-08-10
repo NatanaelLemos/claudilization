@@ -1,10 +1,18 @@
 import * as THREE from "three";
 import { hashString, mulberry32 } from "../shared/rng";
-import type { CivSpec, Island } from "../shared/types";
+import type { CivSpec, Island, Settler } from "../shared/types";
+import {
+  ART_DIRECTION,
+  CLAY_PALETTE,
+  ROLE_ACCENTS,
+  clayMaterial,
+  settlerRole,
+  type SettlerRole,
+} from "./artDirection";
 
 const WALK_SPEED = 3; // island units per second
 
-// A settler is a little person assembled from five instanced parts. Geometry
+// A settler is a little clay person assembled from instanced parts. Geometry
 // origins are baked so the figure's root sits at its feet and limbs pivot at
 // the hip/shoulder, letting a single matrix per part both place and swing it.
 const HIP_Y = 0.6;
@@ -13,14 +21,25 @@ const LEG_X = 0.12;
 const ARM_X = 0.33;
 const ARM_TILT = 0.12; // constant outward lean so arms clear the tunic
 
-const legGeo = new THREE.BoxGeometry(0.17, 0.6, 0.17).translate(0, -0.3, 0);
-const armGeo = new THREE.BoxGeometry(0.13, 0.55, 0.13).translate(0, -0.275, 0);
-const torsoGeo = new THREE.CylinderGeometry(0.24, 0.36, 0.8, 6).translate(0, 0.9, 0);
-const headGeo = new THREE.BoxGeometry(0.32, 0.32, 0.3).translate(0, 1.44, 0);
-const hairGeo = new THREE.BoxGeometry(0.36, 0.13, 0.34).translate(0, 1.62, 0);
+const legGeo = new THREE.CylinderGeometry(0.085, 0.105, 0.58, 8).translate(0, -0.3, 0);
+const armGeo = new THREE.CylinderGeometry(0.07, 0.082, 0.54, 8).translate(0, -0.275, 0);
+const torsoGeo = new THREE.CylinderGeometry(0.25, 0.37, 0.82, 8).translate(0, 0.91, 0);
+const headGeo = new THREE.SphereGeometry(0.23 * ART_DIRECTION.sprites.headScale, 8, 6).translate(
+  0,
+  1.46,
+  0,
+);
+const hairGeo = new THREE.SphereGeometry(0.285, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2).translate(
+  0,
+  1.51,
+  0,
+);
+const roleGeo = new THREE.CylinderGeometry(0.31, 0.35, 0.1, 8);
+const toolGeo = new THREE.CylinderGeometry(0.032, 0.04, 0.6, 6).translate(0, -0.3, 0);
 
 // One shared white material — every part is tinted through instanceColor.
-const partMat = new THREE.MeshLambertMaterial({ flatShading: true });
+const partMat = clayMaterial({ color: "#ffffff" });
+const toolMat = clayMaterial({ color: CLAY_PALETTE.woodDark });
 
 const SKIN_TONES = ["#f0c9a6", "#e3b68c", "#c98f5f", "#a96f43", "#7f5232"];
 const HAIR_TONES = ["#241b12", "#4a3320", "#6e4a26", "#8a6a3c", "#3a3a3f", "#8f8578"];
@@ -62,6 +81,8 @@ interface Parts {
   hair: THREE.InstancedMesh;
   arms: THREE.InstancedMesh; // two instances per settler
   legs: THREE.InstancedMesh; // two instances per settler
+  roles: THREE.InstancedMesh; // hat/band silhouette, colored by authoritative role
+  tools: THREE.InstancedMesh; // tiny work prop; hidden by scale for idle villagers
 }
 
 interface SettlerAnim {
@@ -72,6 +93,7 @@ interface SettlerAnim {
   phase: number;
   yaw: number;
   blend: number; // 0 = at rest/working, 1 = mid-stride
+  role: SettlerRole;
 }
 
 interface ViewState {
@@ -117,6 +139,14 @@ function buildParts(holder: THREE.Group, count: number): Parts {
     hair: make(hairGeo, count),
     arms: make(armGeo, count * 2),
     legs: make(legGeo, count * 2),
+    roles: make(roleGeo, count),
+    tools: (() => {
+      const mesh = new THREE.InstancedMesh(toolGeo, toolMat, count);
+      mesh.frustumCulled = false;
+      mesh.name = "clay-character-tools";
+      holder.add(mesh);
+      return mesh;
+    })(),
   };
 }
 
@@ -131,10 +161,11 @@ function disposeParts(holder: THREE.Group, view: ViewState): void {
 const tint = new THREE.Color();
 const accent = new THREE.Color();
 
-function paintSettlers(view: ViewState, civ: CivSpec): void {
+function paintSettlers(view: ViewState, civ: CivSpec, settlers: Settler[]): void {
   const parts = view.parts!;
   accent.set(civ.accent);
-  view.order.forEach((id, i) => {
+  settlers.forEach((settler, i) => {
+    const id = settler.id;
     const rand = mulberry32(hashString(`${id}|look`));
     const pick = (tones: string[]) => tones[Math.floor(rand() * tones.length)]!;
     tint.set(pick(SKIN_TONES));
@@ -143,6 +174,7 @@ function paintSettlers(view: ViewState, civ: CivSpec): void {
     parts.arms.setColorAt(2 * i + 1, tint);
     parts.hair.setColorAt(i, tint.set(pick(HAIR_TONES)));
     parts.torso.setColorAt(i, tint.copy(accent).offsetHSL(0, 0, (rand() - 0.5) * 0.14));
+    parts.roles.setColorAt(i, tint.set(ROLE_ACCENTS[settlerRole(settler.task)]));
     tint.set(pick(LEG_TONES));
     parts.legs.setColorAt(2 * i, tint);
     parts.legs.setColorAt(2 * i + 1, tint);
@@ -205,6 +237,7 @@ export function updateSettlers(
     if (existing) {
       existing.targetX = targetX;
       existing.targetZ = targetZ;
+      existing.role = settlerRole(s.task);
     } else {
       // newcomers appear where they stand — no ghost walks across the island
       const rand = mulberry32(hashString(`${s.id}|phase`));
@@ -216,6 +249,7 @@ export function updateSettlers(
         phase: rand() * Math.PI * 2,
         yaw: rand() * Math.PI * 2,
         blend: 0,
+        role: settlerRole(s.task),
       });
     }
   }
@@ -223,7 +257,7 @@ export function updateSettlers(
     if (!alive.has(id)) view.settlers.delete(id);
   }
 
-  paintSettlers(view, civ);
+  paintSettlers(view, civ, visibleSettlers);
 }
 
 export function setSettlerViewActive(holder: THREE.Group, active: boolean): void {
@@ -239,6 +273,18 @@ const partM = new THREE.Matrix4();
 const quat = new THREE.Quaternion();
 const euler = new THREE.Euler();
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
+const identityQ = new THREE.Quaternion();
+const accessoryPosition = new THREE.Vector3();
+const accessoryScale = new THREE.Vector3();
+
+const ROLE_SHAPE: Record<SettlerRole, { width: number; height: number; tool: number }> = {
+  villager: { width: 0.72, height: 0.55, tool: 0.001 },
+  farmer: { width: 1.2, height: 0.42, tool: 1.15 },
+  forager: { width: 0.82, height: 0.9, tool: 0.72 },
+  mason: { width: 0.92, height: 0.72, tool: 0.92 },
+  builder: { width: 1.0, height: 0.62, tool: 1 },
+  sailor: { width: 0.78, height: 1.05, tool: 1.25 },
+};
 
 function poseLimb(
   mesh: THREE.InstancedMesh,
@@ -300,10 +346,24 @@ export function tickSettlers(dt: number): void {
       parts.torso.setMatrixAt(i, rootM);
       parts.head.setMatrixAt(i, rootM);
       parts.hair.setMatrixAt(i, rootM);
+      const roleShape = ROLE_SHAPE[s.role];
+      localM.compose(
+        accessoryPosition.set(0, 1.72, 0),
+        identityQ,
+        accessoryScale.set(roleShape.width, roleShape.height, roleShape.width),
+      );
+      parts.roles.setMatrixAt(i, partM.multiplyMatrices(rootM, localM));
       poseLimb(parts.legs, 2 * i, stride * 0.55 * b, 0, -LEG_X, HIP_Y);
       poseLimb(parts.legs, 2 * i + 1, -stride * 0.55 * b, 0, LEG_X, HIP_Y);
       poseLimb(parts.arms, 2 * i, -stride * 0.45 * b + chop, -ARM_TILT, -ARM_X, SHOULDER_Y);
       poseLimb(parts.arms, 2 * i + 1, stride * 0.45 * b + chop, ARM_TILT, ARM_X, SHOULDER_Y);
+      euler.set(stride * 0.25 * b + chop, 0, ARM_TILT);
+      localM.compose(
+        accessoryPosition.set(ARM_X + 0.08, SHOULDER_Y - 0.05, 0),
+        quat.setFromEuler(euler),
+        accessoryScale.set(roleShape.tool, roleShape.tool, roleShape.tool),
+      );
+      parts.tools.setMatrixAt(i, partM.multiplyMatrices(rootM, localM));
     });
     for (const mesh of Object.values(parts)) {
       mesh.instanceMatrix.needsUpdate = true;

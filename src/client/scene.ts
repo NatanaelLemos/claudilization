@@ -4,6 +4,7 @@ import { DEFAULT_BALANCE } from "../shared/balance";
 import { mulberry32 } from "../shared/rng";
 import { skyClock, type SkyClock } from "./skyClock";
 import { EMBER, skyRig, type Rgb } from "./skyRig";
+import { ART_DIRECTION, CLAY_PALETTE, clayMaterial } from "./artDirection";
 import {
   AdaptiveRenderQuality,
   renderQualityProfile,
@@ -69,22 +70,33 @@ function toColor(target: THREE.Color, c: Rgb): THREE.Color {
 export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyClock()): Stage {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.2;
+  renderer.toneMappingExposure = ART_DIRECTION.lighting.exposure;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.shadowMap.autoUpdate = false;
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color("#16455c");
-  scene.fog = new THREE.Fog("#16455c", 260, 1500);
+  scene.userData.artDirection = ART_DIRECTION.id;
+  canvas.dataset.artDirection = ART_DIRECTION.id;
+  document.documentElement.dataset.reducedMotion = String(REDUCED_MOTION);
+  scene.background = new THREE.Color(CLAY_PALETTE.ocean);
+  scene.fog = new THREE.Fog(
+    CLAY_PALETTE.ocean,
+    ART_DIRECTION.lighting.fogNear,
+    ART_DIRECTION.lighting.fogFar,
+  );
 
-  const camera = new THREE.PerspectiveCamera(50, 1, 0.5, 4000);
+  const camera = new THREE.PerspectiveCamera(ART_DIRECTION.camera.fov, 1, 0.5, 4000);
   // start due south of the world origin so the first view faces true north
-  camera.position.set(0, 90, 165);
+  camera.position.set(
+    ART_DIRECTION.camera.start.x,
+    ART_DIRECTION.camera.start.y,
+    ART_DIRECTION.camera.start.z,
+  );
 
   const controls = new CameraControls(camera, canvas);
   controls.maxPolarAngle = Math.PI * 0.46;
-  controls.minDistance = 25;
+  controls.minDistance = ART_DIRECTION.camera.minDistance;
   controls.maxDistance = 1200;
   // panning slides over the map only — a vertical drag walks the view
   // forward across the sea instead of lifting it off the ground plane
@@ -93,9 +105,16 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
 
   // golden-hour rig: cool sky above, warm earth bounce below, warm key sun —
   // the hemisphere split is what keeps flat-shaded faces from reading flat
-  const hemi = new THREE.HemisphereLight("#cde6f7", "#7a6647", 1.4);
+  const hemi = new THREE.HemisphereLight(
+    ART_DIRECTION.lighting.sky,
+    ART_DIRECTION.lighting.groundBounce,
+    1.35,
+  );
   scene.add(hemi);
-  const sun = new THREE.DirectionalLight("#ffdca8", 2.6);
+  const sun = new THREE.DirectionalLight(
+    ART_DIRECTION.lighting.key,
+    ART_DIRECTION.lighting.keyIntensity,
+  );
   sun.position.set(120, 170, 80);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
@@ -108,18 +127,19 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
   sun.shadow.camera.bottom = -SHADOW_SPAN;
   sun.shadow.bias = -0.0002;
   sun.shadow.normalBias = 0.12;
+  sun.shadow.radius = 4;
   scene.add(sun, sun.target);
   // by day a cool bounce off the sea; by night it turns moon
-  const fill = new THREE.DirectionalLight("#7fa9c9", 0.4);
+  const fill = new THREE.DirectionalLight(ART_DIRECTION.lighting.coolFill, 0.46);
   fill.position.set(-140, 90, -100);
   scene.add(fill);
 
   // the endless ocean
-  const oceanMat = new THREE.MeshPhongMaterial({
-    color: "#0f4258",
-    shininess: 90,
-    specular: "#3d7d95",
+  const oceanMat = clayMaterial({
+    color: CLAY_PALETTE.oceanDeep,
   });
+  oceanMat.roughness = 0.58;
+  oceanMat.metalness = 0.03;
   const ocean = new THREE.Mesh(new THREE.CircleGeometry(2600, 64), oceanMat);
   ocean.rotation.x = -Math.PI / 2;
   ocean.receiveShadow = true;
@@ -242,6 +262,7 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
     applyQuality(qualityController.current());
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
+    camera.fov = w <= 640 ? ART_DIRECTION.camera.fov + 5 : ART_DIRECTION.camera.fov;
     camera.updateProjectionMatrix();
   }
   window.addEventListener("resize", resize);
@@ -294,7 +315,16 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
     reducedMotion: REDUCED_MOTION,
     flyTo(x, z) {
       // approach from due south — every landing faces true north (-Z)
-      void controls.setLookAt(x, 65, z + 110, x, 0, z, !REDUCED_MOTION);
+      const mobile = window.innerWidth <= 640;
+      void controls.setLookAt(
+        x,
+        ART_DIRECTION.camera.landing.y + (mobile ? 12 : 0),
+        z + ART_DIRECTION.camera.landing.z + (mobile ? 18 : 0),
+        x,
+        0,
+        z,
+        !REDUCED_MOTION,
+      );
     },
     onFrame(fn) {
       frameFns.push(fn);

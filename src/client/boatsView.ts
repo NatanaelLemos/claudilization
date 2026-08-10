@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { hashString, mulberry32 } from "../shared/rng";
 import type { CivSpec, Island } from "../shared/types";
+import { CLAY_PALETTE, clayMaterial } from "./artDirection";
 
 /**
  * Boats sail (and planes fly) in world space — visible crossing the open
@@ -157,32 +158,48 @@ function wakeMesh(): THREE.Mesh {
 
 export function boatMesh(civ: CivSpec): THREE.Group {
   const group = new THREE.Group();
+  group.userData.artFamily = "clay-craft";
   const hull = new THREE.Mesh(
-    new THREE.BoxGeometry(2.4, 0.5, 1),
-    new THREE.MeshLambertMaterial({ color: civ.boat.hull }),
+    new THREE.CylinderGeometry(0.38, 0.68, 2.45, 8),
+    clayMaterial({ color: civ.boat.hull }),
   );
-  hull.position.y = 0.35;
+  hull.rotation.z = Math.PI / 2;
+  hull.scale.z = 0.72;
+  hull.position.y = 0.42;
   group.add(hull);
   const mast = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.05, 0.05, 1.6),
-    new THREE.MeshLambertMaterial({ color: "#4a3a2a" }),
+    new THREE.CylinderGeometry(0.055, 0.07, 1.7, 7),
+    clayMaterial({ color: CLAY_PALETTE.woodDark }),
   );
   mast.position.y = 1.2;
   group.add(mast);
   const sail = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.2, 1.1),
-    new THREE.MeshLambertMaterial({ color: civ.boat.sail, side: THREE.DoubleSide }),
+    new THREE.CircleGeometry(0.82, 8, -Math.PI / 2, Math.PI),
+    clayMaterial({ color: civ.boat.sail, side: THREE.DoubleSide }),
   );
-  sail.position.set(0.2, 1.2, 0);
-  group.add(sail);
+  sail.scale.set(0.85, 1.2, 1);
+  sail.position.set(0.15, 1.22, 0);
+  const cargo = new THREE.Mesh(
+    new THREE.BoxGeometry(0.42, 0.3, 0.42),
+    clayMaterial({ color: CLAY_PALETTE.wood }),
+  );
+  cargo.position.set(-0.72, 0.8, 0);
+  cargo.rotation.y = 0.18;
+  group.add(sail, cargo);
+  group.traverse((object) => {
+    if (!(object as THREE.Mesh).isMesh) return;
+    object.castShadow = true;
+    object.receiveShadow = true;
+  });
   return group;
 }
 
 export function planeMesh(civ: CivSpec): THREE.Group {
   const group = new THREE.Group();
-  const body = new THREE.MeshLambertMaterial({ color: civ.boat.sail });
-  const trim = new THREE.MeshLambertMaterial({ color: civ.boat.hull });
-  const fuselage = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.22, 3.0, 7), body);
+  group.userData.artFamily = "clay-craft";
+  const body = clayMaterial({ color: civ.boat.sail });
+  const trim = clayMaterial({ color: civ.boat.hull });
+  const fuselage = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.24, 3.0, 9), body);
   fuselage.rotation.z = Math.PI / 2;
   group.add(fuselage);
   const nose = new THREE.Mesh(new THREE.SphereGeometry(0.3, 7, 6), trim);
@@ -194,5 +211,8 @@ export function planeMesh(civ: CivSpec): THREE.Group {
   const tail = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.08), trim);
   tail.position.set(-1.4, 0.35, 0);
   group.add(tail);
+  group.traverse((object) => {
+    if ((object as THREE.Mesh).isMesh) object.castShadow = true;
+  });
   return group;
 }

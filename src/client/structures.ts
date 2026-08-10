@@ -3,42 +3,39 @@ import { ageIndex } from "../shared/ages";
 import { buildingSpec } from "../shared/buildings";
 import { hashString, mulberry32 } from "../shared/rng";
 import type { Age, Building, BuildingSpec, CivSpec } from "../shared/types";
+import { ART_DIRECTION, CLAY_PALETTE, clayMaterial } from "./artDirection";
 import { compactStaticMeshes } from "./meshCompaction";
 
 /**
  * Civ-parameterized primitive composition — no external assets, ever.
  * Every type maps to an archetype builder (house, hall, workshop, mine, …)
  * or a bespoke hero builder (windmill, cathedral, space elevator, …), all
- * flat-shaded primitives tinted by the civ's palette.
+ * soft-matte clay primitives with civilization color reserved for trim.
  */
 
 // ---------------------------------------------------------------- materials
 
-const MATS = new Map<string, THREE.MeshLambertMaterial>();
+const MATS = new Map<string, THREE.MeshStandardMaterial>();
 
-function lam(color: string, emissive?: string, intensity = 1): THREE.MeshLambertMaterial {
+function lam(color: string, emissive?: string, intensity = 1): THREE.MeshStandardMaterial {
   const key = `${color}|${emissive ?? ""}|${intensity}`;
   let m = MATS.get(key);
   if (!m) {
-    m = new THREE.MeshLambertMaterial({ color, flatShading: true });
-    if (emissive) {
-      m.emissive = new THREE.Color(emissive);
-      m.emissiveIntensity = intensity;
-    }
+    m = clayMaterial({ color, emissive, emissiveIntensity: intensity });
     MATS.set(key, m);
   }
   return m;
 }
 
-function lamColor(color: THREE.Color): THREE.MeshLambertMaterial {
+function lamColor(color: THREE.Color): THREE.MeshStandardMaterial {
   return lam(`#${color.getHexString()}`);
 }
 
-const WOOD = "#7a5a33";
-const WOOD_DARK = "#54402a";
-const STONE = "#9a978f";
-const STONE_DARK = "#6f6d68";
-const WINDOW_GLOW = ["#3a2c18", "#ffc46b", 1.5] as const;
+const WOOD = CLAY_PALETTE.wood;
+const WOOD_DARK = CLAY_PALETTE.woodDark;
+const STONE = CLAY_PALETTE.stone;
+const STONE_DARK = CLAY_PALETTE.stoneDark;
+const WINDOW_GLOW = ["#4b3525", "#ffc978", 1.15] as const;
 const EMBER = ["#4a1d08", "#ff7a2f", 1.8] as const;
 const TECH = ["#0f2f3a", "#6fe3ff", 1.6] as const;
 
@@ -61,8 +58,8 @@ interface Ctx {
   rand: () => number;
   /** later ages build a little grander */
   grand: number;
-  wall: THREE.MeshLambertMaterial;
-  trim: THREE.MeshLambertMaterial;
+  wall: THREE.MeshStandardMaterial;
+  trim: THREE.MeshStandardMaterial;
 }
 
 function part(
@@ -2734,6 +2731,11 @@ export function createBuildingMesh(
   if (era >= 6) wallColor.lerp(new THREE.Color("#cfcbc2"), 0.22 + (era - 6) * 0.11);
   wallColor.offsetHSL(0, 0, (rand() - 0.5) * 0.08);
   const trimColor = new THREE.Color(civ.architecture.trim);
+  // A civilization's banner hue remains unmistakable on roofs and props, but
+  // clay pigment is dusty rather than neon: large roof planes share the world
+  // neutral while flags, clothes, shields, and signatures keep the pure hue.
+  trimColor.lerp(new THREE.Color(CLAY_PALETTE.chalk), 0.48);
+  trimColor.offsetHSL(0, -0.1, 0);
   if (era === 0) trimColor.lerp(new THREE.Color("#8a7a4f"), 0.55);
   if (era >= 7) trimColor.lerp(new THREE.Color("#5d6874"), 0.28 + (era - 7) * 0.14);
   const ctx: Ctx = {
@@ -2799,7 +2801,12 @@ export function createBuildingMesh(
   // shadow map goes soft
   const blob = new THREE.Mesh(
     new THREE.CircleGeometry(1.15, 14),
-    new THREE.MeshBasicMaterial({ color: "#03141c", transparent: true, opacity: 0.2, depthWrite: false }),
+    new THREE.MeshBasicMaterial({
+      color: CLAY_PALETTE.ink,
+      transparent: true,
+      opacity: ART_DIRECTION.material.shadowOpacity,
+      depthWrite: false,
+    }),
   );
   blob.rotation.x = -Math.PI / 2;
   blob.position.y = 0.04;
