@@ -24,7 +24,7 @@ import {
   unitDefense,
 } from "../shared/creations";
 import { dayIndex, isNight, secondsIntoDay, worldSecondsAt } from "../shared/daylight";
-import { computeHappiness } from "../shared/happiness";
+import { BUILDING_NEED_PROVIDERS, computeHappiness } from "../shared/happiness";
 import { computeInspiration } from "../shared/inspiration";
 import { WONDER_CIV } from "../shared/wonders";
 import { hashString, mulberry32 } from "../shared/rng";
@@ -78,6 +78,7 @@ const MAX_CATCHUP_SECONDS = 300;
 
 const GATHER_RATE = 0.5; // resource units per gatherer-second
 const BUILD_CREW = 3;
+const BUILDING_CLEARANCE_FLOOR = 3;
 
 const SURGE_TEXTS = [
   (n: string) => `A surge of inspiration sweeps ${n} — the settlers work with fresh vigor.`,
@@ -674,6 +675,13 @@ export class World {
           if (island.buildings.some((b) => b.type === spec.type))
             return { order, ok: false, reason: "that wonder already stands" };
         }
+        const demand = this.buildingDemand(island, spec, true);
+        if (!demand)
+          return {
+            order,
+            ok: false,
+            reason: `${order.building} is not needed; existing and in-progress capacity is sufficient`,
+          };
         if (!this.afford(island, spec.cost))
           return { order, ok: false, reason: "not enough resources" };
         this.spend(island, spec.cost);
@@ -1108,6 +1116,123 @@ export class World {
     }
   }
 
+  /**
+   * The unmet capacity or service this structure would answer. Every stage is
+   * counted as incoming supply, which prevents a second order racing the first
+   * construction crew. Undefined means the island already has enough.
+   */
+  private buildingDemand(
+    island: Island,
+    spec: BuildingSpec,
+    allowFoundation = false,
+  ): string | undefined {
+    const planned = island.buildings;
+    const population = island.settlers.length;
+    const countType = planned.filter((building) => building.type === spec.type).length;
+
+    // Wonders are a civilization's singular long-term project, never repeat
+    // capacity. Their existing one-per-civilization gate remains authoritative.
+    if (spec.wonder) return countType === 0 ? "civilization monument" : undefined;
+
+    if ((spec.houses ?? 0) > 0) {
+      const beds = planned.reduce(
+        (sum, building) => sum + (buildingSpec(building.type)?.houses ?? 0),
+        0,
+      );
+      // A small headroom band avoids rebuilding the instant one child is born.
+      const target = Math.max(population, Math.ceil(population * 1.1));
+      if (beds < target) return `housing capacity ${beds}/${target}`;
+      return undefined;
+    }
+
+    if ((spec.foodPerDay ?? 0) > 0) {
+      const supply = planned.reduce(
+        (sum, building) => sum + (buildingSpec(building.type)?.foodPerDay ?? 0),
+        0,
+      );
+      // Production covers tomorrow plus a modest disruption margin. Wild food
+      // remains a reserve, not an excuse to queue farms forever.
+      const target = population * this.balance.foodPerSettlerPerDay * 1.2;
+      if (supply < target) return `food production ${supply}/${Math.ceil(target)} per day`;
+      return undefined;
+    }
+
+    if (spec.converts) {
+      const { from, to, perDay } = spec.converts;
+      const feedstock = island.stocks[from] ?? 0;
+      const output = island.stocks[to] ?? 0;
+      // Only answer a real backlog. One catalog line already produces its
+      // designed daily rate; a larger stockpile is work for more days, not a
+      // reason to pave the island with duplicate furnaces. The output reserve
+      // is hysteresis: production does not restart merely because one unit was
+      // spent.
+      const outputReserve = perDay * 5;
+      if (feedstock < perDay * 5 || output >= outputReserve) return undefined;
+      const neededPerDay = perDay;
+      const incomingPerDay = planned.reduce((sum, building) => {
+        const conversion = buildingSpec(building.type)?.converts;
+        return conversion?.from === from && conversion.to === to
+          ? sum + conversion.perDay
+          : sum;
+      }, 0);
+      if (incomingPerDay + 1e-6 < neededPerDay)
+        return `${to} refining capacity ${incomingPerDay}/${Math.ceil(neededPerDay)} per day`;
+      return undefined;
+    }
+
+    for (const [need, providers] of Object.entries(BUILDING_NEED_PROVIDERS)) {
+      if (!(providers as readonly string[]).includes(spec.type)) continue;
+      const report = computeHappiness(island, this.balance);
+      const active = report.needs.some((entry) => entry.id === need);
+      const supplied = planned.some((building) =>
+        (providers as readonly string[]).includes(building.type),
+      );
+      if (active && !supplied) return `${need} civic service`;
+      return undefined;
+    }
+
+    if ((spec.joy ?? 0) > 0) {
+      const joy = planned.reduce((sum, building) => {
+        const buildingJoy = buildingSpec(building.type)?.joy ?? 0;
+        return sum + (buildingSpec(building.type)?.wonder ? 0 : buildingJoy);
+      }, 0);
+      const target = Math.min(12, Math.floor(population / 5));
+      if (joy < target) return `leisure capacity ${joy}/${target}`;
+      return undefined;
+    }
+
+    // Singular transport/shore services are legitimate planned foundations,
+    // but autonomous settlers only raise a dock when depletion makes a voyage
+    // urgent. This keeps ordinary towns from collecting decorative industry.
+    if (spec.type === "dock") {
+      if (countType > 0) return undefined;
+      const openPrimal = island.nodes.filter(
+        (node) =>
+          (node.resource === "food" || node.resource === "wood" || node.resource === "stone") &&
+          node.remaining > 0,
+      ).length;
+      if (allowFoundation || openPrimal <= 3) return "first harbor capacity";
+      return undefined;
+    }
+    if (spec.type === "fishing-hut") {
+      const hasFish = island.nodes.some(
+        (node) => node.resource === "food" && node.source === "fish" && node.remaining > 0,
+      );
+      return allowFoundation && countType === 0 && hasFish ? "shore food service" : undefined;
+    }
+    if (spec.type === "airfield")
+      return allowFoundation && countType === 0 ? "first air transport capacity" : undefined;
+
+    return undefined;
+  }
+
+  /** Public read seam used by the state API to advertise only lawful builds. */
+  buildingNeed(islandId: string, type: string): string | undefined {
+    const island = this.islandsMap.get(islandId);
+    const spec = buildingSpec(type);
+    return island && spec ? this.buildingDemand(island, spec, true) : undefined;
+  }
+
   /** buildings that only make sense at the water's edge */
   private static readonly COASTAL = new Set(["dock", "fishing-hut"]);
 
@@ -1133,11 +1258,60 @@ export class World {
     );
   }
 
+  private buildingRadius(type: string): number {
+    const spec = buildingSpec(type);
+    if (spec?.wonder) return 7;
+    if (World.COASTAL.has(type)) return 4;
+    if ((spec?.houses ?? 0) >= 12) return 5.5;
+    if ((spec?.houses ?? 0) > 0 || spec?.converts) return 4.75;
+    return 4.25;
+  }
+
   private buildSite(island: Island, type: string): Vec2 {
     const terrain = this.islandTerrain(island);
     const half = (terrain.size - 1) / 2;
-    const clear = (tl: Tile, gap: number) =>
-      island.buildings.every((b) => Math.hypot(b.pos.x - tl.x, b.pos.y - tl.y) >= gap);
+    const desiredClearance = (existingType: string) =>
+      this.buildingRadius(type) + this.buildingRadius(existingType);
+    const clearanceRatio = (tl: Tile) => {
+      if (!island.buildings.length) return Number.POSITIVE_INFINITY;
+      return Math.min(
+        ...island.buildings.map(
+          (building) =>
+            Math.hypot(building.pos.x - tl.x, building.pos.y - tl.y) /
+            desiredClearance(building.type),
+        ),
+      );
+    };
+    const clear = (tl: Tile, ratio: number) =>
+      island.buildings.every((building) => {
+        const distance = Math.hypot(building.pos.x - tl.x, building.pos.y - tl.y);
+        return distance >= BUILDING_CLEARANCE_FLOOR &&
+          distance / desiredClearance(building.type) >= ratio;
+      });
+    const bestEffort = (tiles: Tile[]) =>
+      [...tiles].sort(
+        (a, b) =>
+          clearanceRatio(b) - clearanceRatio(a) ||
+          Math.hypot(a.x - half, a.y - half) - Math.hypot(b.x - half, b.y - half) ||
+          a.y - b.y ||
+          a.x - b.x,
+      )[0];
+    const choose = (tiles: Tile[], ratios: readonly number[]) => {
+      for (const ratio of ratios) {
+        const eligible = tiles.filter((tile) => clear(tile, ratio));
+        if (!eligible.length) continue;
+        // Keep a coherent town while maximizing breathing room inside the
+        // selected tier. Coordinates break ties for replay determinism.
+        return eligible.sort(
+          (a, b) =>
+            Math.hypot(a.x - half, a.y - half) - Math.hypot(b.x - half, b.y - half) ||
+            clearanceRatio(b) - clearanceRatio(a) ||
+            a.y - b.y ||
+            a.x - b.x,
+        )[0];
+      }
+      return undefined;
+    };
     if (World.COASTAL.has(type)) {
       // the pier rises on the beach nearest the town, never inland
       const bs = island.buildings;
@@ -1146,7 +1320,7 @@ export class World {
       const shore = this.shoreTiles(terrain).sort(
         (a, b) => Math.hypot(a.x - cx, a.y - cy) - Math.hypot(b.x - cx, b.y - cy),
       );
-      const spot = shore.find((tl) => clear(tl, 3)) ?? shore.find((tl) => clear(tl, 1)) ?? shore[0];
+      const spot = choose(shore, [1, 0.8, 0.6, 0.4]) ?? bestEffort(shore);
       if (spot) return { x: spot.x, y: spot.y };
     }
     const candidates = terrain.tiles
@@ -1155,10 +1329,11 @@ export class World {
         (a, b) =>
           Math.hypot(a.x - half, a.y - half) - Math.hypot(b.x - half, b.y - half),
       );
-    // buildings span several tiles on screen, so sites need breathing room;
-    // if the town gets so dense nothing qualifies, fall back to any free tile
-    const GAP = 5;
-    const free = candidates.find((tl) => clear(tl, GAP)) ?? candidates.find((tl) => clear(tl, 1));
+    // Full structure-aware spacing is the normal law. Small or legacy-dense
+    // islands relax by explicit tiers, but never collapse back to one tile.
+    const minimumRatio = BUILDING_CLEARANCE_FLOOR / (this.buildingRadius(type) * 2);
+    const free = choose(candidates, [1, 0.85, 0.7, 0.55, minimumRatio]) ??
+      bestEffort(candidates);
     return free ? { x: free.x, y: free.y } : { x: half, y: half };
   }
 
@@ -1704,8 +1879,8 @@ export class World {
 
   /**
    * The settlers' own building judgment, once per day: house everyone, keep
-   * food growing, open the harbor — and when the stores overflow, raise
-   * whatever the age allows. Never more sites than the crews can staff, and
+   * food growing, open an urgent harbor, and answer unmet civic/refining
+   * demand. Never more sites than the crews can staff, and
    * never a build that eats into two days of meals.
    */
   private autoPlan(island: Island, batch: GameEvent[]): void {
@@ -1743,78 +1918,32 @@ export class World {
     batch.push(e);
   }
 
-  /** What the island needs most: beds, bread, a harbor, the works, then glory. */
+  /** What the island needs most, measured against planned as well as live supply. */
   private judgeBuild(
     island: Island,
     buildable: (spec: BuildingSpec) => boolean,
   ): BuildingSpec | undefined {
     const catalog = BUILDINGS.filter((b) => b.type !== "boat" && b.type !== "plane");
-    const beds = island.buildings.reduce(
-      (sum, b) => sum + (buildingSpec(b.type)?.houses ?? 0),
-      0,
+    const needed = catalog.filter(
+      (spec) => buildable(spec) && Boolean(this.buildingDemand(island, spec)),
     );
-    const harvest = island.buildings.reduce(
-      (sum, b) => sum + (buildingSpec(b.type)?.foodPerDay ?? 0),
-      0,
-    );
-    const meals = island.settlers.length * this.balance.foodPerSettlerPerDay;
-    // more beds mean more mouths — only expand while the land can bear them:
-    // farms feeding everyone, or at least ten days of wild food still standing
-    const wildFood = island.nodes.reduce(
-      (sum, n) => sum + (n.resource === "food" ? n.remaining : 0),
-      0,
-    );
-    const canFeedMore = harvest >= meals || wildFood > meals * 10;
-    if (island.settlers.length > beds && canFeedMore) {
-      const homes = catalog.filter((b) => (b.houses ?? 0) > 0 && buildable(b));
-      if (homes.length)
-        return homes.reduce((a, b) => ((b.houses ?? 0) > (a.houses ?? 0) ? b : a));
-    }
-    if (harvest < meals / 2) {
-      const farms = catalog.filter((b) => (b.foodPerDay ?? 0) > 0 && buildable(b));
-      if (farms.length)
-        return farms.reduce((a, b) =>
-          (b.foodPerDay ?? 0) > (a.foodPerDay ?? 0) ? b : a,
-        );
-    }
-    if (
-      ageIndex(island.age) >= ageIndex("bronze") &&
-      !island.buildings.some((b) => b.type === "dock")
-    ) {
-      const dock = buildingSpec("dock")!;
-      if (buildable(dock)) return dock;
-    }
-    // the works: a refinery whose feedstock lies in heaps while its product
-    // sits at zero is a need, not a luxury — even one from a blitzed-past age
-    const works = catalog.find((b) => {
-      const conv = b.converts;
-      if (!conv) return false;
-      return (
-        ageIndex(b.age) <= ageIndex(island.age) &&
-        !island.buildings.some((x) => x.type === b.type) &&
-        (island.stocks[conv.from] ?? 0) >= conv.perDay * 10 &&
-        (island.stocks[conv.to] ?? 0) <= 0 &&
-        buildable(b)
-      );
-    });
-    if (works) return works;
-    // prosperity builds: anything this age or an earlier one allows — only
-    // with double the cost banked, and never a repeat
-    const dayIndex = Math.floor(this.t / this.balance.daySeconds);
-    const flush = catalog.filter(
-      (b) =>
-        ageIndex(b.age) <= ageIndex(island.age) &&
-        buildable(b) &&
-        !island.buildings.some((x) => x.type === b.type) &&
-        this.afford(
-          island,
-          Object.fromEntries(
-            Object.entries(b.cost).map(([r, amt]) => [r, (amt ?? 0) * 2]),
-          ) as Partial<Record<ResourceId, number>>,
-        ),
-    );
-    if (!flush.length) return undefined;
-    return flush[Math.floor(roll(island.seed, "judge", dayIndex) * flush.length)];
+    if (!needed.length) return undefined;
+
+    const priority = (spec: BuildingSpec): number => {
+      if ((spec.foodPerDay ?? 0) > 0) return 0;
+      if (spec.type === "dock") return 1;
+      if ((spec.houses ?? 0) > 0) return 2;
+      if (spec.converts) return 3;
+      if ((spec.joy ?? 0) > 0) return 5;
+      return 4;
+    };
+    return needed.sort(
+      (a, b) =>
+        priority(a) - priority(b) ||
+        ageIndex(b.age) - ageIndex(a.age) ||
+        a.buildSeconds - b.buildSeconds ||
+        a.type.localeCompare(b.type),
+    )[0];
   }
 
   private gather(island: Island): void {

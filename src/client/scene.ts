@@ -4,13 +4,14 @@ import { DEFAULT_BALANCE } from "../shared/balance";
 import { mulberry32 } from "../shared/rng";
 import { skyClock, type SkyClock } from "./skyClock";
 import { EMBER, skyRig, type Rgb } from "./skyRig";
-import { ART_DIRECTION, CLAY_PALETTE, clayMaterial } from "./artDirection";
+import { ART_DIRECTION, CLAY_PALETTE } from "./artDirection";
 import {
   AdaptiveRenderQuality,
   renderQualityProfile,
   ShadowRefreshBudget,
   type RenderQuality,
 } from "./renderQuality";
+import { createWaterSurface } from "./waterSurface";
 
 CameraControls.install({ THREE });
 
@@ -135,15 +136,14 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
   scene.add(fill);
 
   // the endless ocean
-  const oceanMat = clayMaterial({
-    color: CLAY_PALETTE.oceanDeep,
+  const water = createWaterSurface({
+    reducedMotion: REDUCED_MOTION,
+    mobile: window.innerWidth <= 640,
   });
-  oceanMat.roughness = 0.58;
-  oceanMat.metalness = 0.03;
-  const ocean = new THREE.Mesh(new THREE.CircleGeometry(2600, 64), oceanMat);
-  ocean.rotation.x = -Math.PI / 2;
-  ocean.receiveShadow = true;
-  scene.add(ocean);
+  const oceanMat = water.material;
+  scene.userData.waterShader = water.mesh.userData.waterShader;
+  canvas.dataset.water = water.mesh.userData.waterShader as string;
+  scene.add(water.mesh);
 
   // stars pinned to a far dome, revealed as the daylight drains away
   const starRng = mulberry32(20260730);
@@ -270,6 +270,7 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
 
   renderer.setAnimationLoop((nowMs) => {
     const dt = frameClock.getDelta();
+    water.tick(dt);
     const nextQuality = qualityController.sample(dt * 1_000);
     if (nextQuality) applyQuality(nextQuality);
     controls.update(dt);

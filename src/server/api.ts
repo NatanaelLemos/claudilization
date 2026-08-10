@@ -216,7 +216,11 @@ function brainState(world: World, secret: string, balance: Balance) {
         };
       })(),
       buildable: [
-        ...BUILDINGS.filter((b) => ageIndex(b.age) <= ageIndex(island.age)),
+        ...BUILDINGS.filter(
+          (b) =>
+            ageIndex(b.age) <= ageIndex(island.age) &&
+            Boolean(world.buildingNeed(island.id, b.type)),
+        ),
         // only this people's wonders — one monument per age, never a rival's
         ...WONDERS.filter(
           (b) =>

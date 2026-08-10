@@ -59,6 +59,21 @@ const TRANSCENDENCE = [
   "dyson-relay", "space-elevator",
 ];
 
+/**
+ * Buildings that satisfy the age-by-age civic needs. Exported so the
+ * construction planner and the happiness report judge the same services.
+ * Housing and food are capacity needs and are handled separately.
+ */
+export const BUILDING_NEED_PROVIDERS = {
+  warm: HEARTHS,
+  inspired: FAITH_AND_FORUM,
+  safe: SAFETY,
+  learned: LEARNING,
+  powered: POWER,
+  connected: MARVELS,
+  transcendent: TRANSCENDENCE,
+} as const;
+
 const LEISURE_CAP = 20;
 const WONDER_CAP = 40;
 const NEEDS_WEIGHT = 60;
