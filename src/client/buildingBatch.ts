@@ -9,8 +9,10 @@ import {
   buildingVisualTransform,
   createBuildingMesh,
   isRoofMaterial,
+  isWallMaterial,
   resolveModelAge,
   roofInstanceTint,
+  wallInstanceTint,
 } from "./structures";
 
 const pickGeometry = new THREE.BoxGeometry(1, 1, 1);
@@ -133,6 +135,7 @@ export function buildBuildingBatch({
 }: BuildingBatchOptions): THREE.Group {
   const holder = new THREE.Group();
   const roofHue = new THREE.Color(civ.architecture.trim).getHSL(hslScratch).h;
+  const wallHue = new THREE.Color(civ.architecture.primary).getHSL(hslScratch).h;
   const plan: TownPlan | undefined =
     terrain && islandSeed !== undefined ? townPlan(terrain, islandSeed) : undefined;
   const batches = new Map<string, Building[]>();
@@ -186,6 +189,12 @@ export function buildBuildingBatch({
       if (isRoofMaterial(mesh.material)) {
         batch.forEach((building, index) => {
           instanced.setColorAt(index, roofInstanceTint(building.id, roofHue, tintColor));
+        });
+        if (instanced.instanceColor) instanced.instanceColor.needsUpdate = true;
+      } else if (isWallMaterial(mesh.material)) {
+        // walls carry the town's other half of the mosaic, gentler than roofs
+        batch.forEach((building, index) => {
+          instanced.setColorAt(index, wallInstanceTint(building.id, wallHue, tintColor));
         });
         if (instanced.instanceColor) instanced.instanceColor.needsUpdate = true;
       }

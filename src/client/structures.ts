@@ -66,6 +66,27 @@ function roofLam(color: THREE.Color): THREE.MeshStandardMaterial {
   return m;
 }
 
+/** Wall planes get their own material identity for the same reason roofs do:
+ * Townscaper's towns read as a mosaic because the *walls* carry saturated,
+ * block-to-block variation. One wall colour per civilization makes a street
+ * of forty houses one extruded mass. */
+function wallLam(color: THREE.Color): THREE.MeshStandardMaterial {
+  const hex = `#${color.getHexString()}`;
+  const key = `wall|${hex}`;
+  let m = MATS.get(key);
+  if (!m) {
+    m = clayMaterial({ color: hex });
+    m.userData.wallSurface = true;
+    MATS.set(key, m);
+  }
+  return m;
+}
+
+export function isWallMaterial(material: THREE.Material | THREE.Material[]): boolean {
+  const list = Array.isArray(material) ? material : [material];
+  return list.some((m) => m.userData?.wallSurface === true);
+}
+
 export function isRoofMaterial(material: THREE.Material | THREE.Material[]): boolean {
   const list = Array.isArray(material) ? material : [material];
   return list.some((m) => m.userData?.roofSurface === true);
@@ -104,9 +125,46 @@ export function roofInstanceTint(
   baseHue: number,
   target = new THREE.Color(),
 ): THREE.Color {
-  const r = mulberry32(hashString(`roof:${buildingId}`));
-  const hue = (((baseHue + (r() - 0.5) * 0.24) % 1) + 1) % 1;
-  const sat = 0.14 + r() * 0.14;
+  return blockTint(`roof:${buildingId}`, baseHue, target, ROOF_TINT);
+}
+
+/**
+ * The wall counterpart. Walls are the tallest thing a settler stands beside,
+ * so their variation is gentler than the roofline's — a narrower hue arc and
+ * half the brightness swing — but it is the difference between a painted town
+ * and one extruded block of stucco.
+ */
+export function wallInstanceTint(
+  buildingId: string,
+  baseHue: number,
+  target = new THREE.Color(),
+): THREE.Color {
+  return blockTint(`wall:${buildingId}`, baseHue, target, WALL_TINT);
+}
+
+interface TintBand {
+  /** hue arc the block may wander across, in turns */
+  hue: number;
+  /** pigment strength band */
+  sat: [number, number];
+  /** brightness band around neutral */
+  gain: [number, number];
+  /** hard ceiling on any one channel of the multiplier */
+  ceiling: number;
+}
+
+const ROOF_TINT: TintBand = { hue: 0.24, sat: [0.14, 0.28], gain: [0.88, 1.14], ceiling: 1.45 };
+const WALL_TINT: TintBand = { hue: 0.13, sat: [0.07, 0.17], gain: [0.93, 1.08], ceiling: 1.22 };
+
+function blockTint(
+  seed: string,
+  baseHue: number,
+  target: THREE.Color,
+  band: TintBand,
+): THREE.Color {
+  const r = mulberry32(hashString(seed));
+  const hue = (((baseHue + (r() - 0.5) * band.hue) % 1) + 1) % 1;
+  const sat = band.sat[0] + r() * (band.sat[1] - band.sat[0]);
   // LinearSRGBColorSpace on purpose: this is a multiplier in the renderer's
   // working space, not a colour to look at. Letting three convert from sRGB
   // would put lightness 0.5 at ~0.21 linear and the normalisation below would
@@ -114,8 +172,14 @@ export function roofInstanceTint(
   // roofs turned into a field of blown-out mint.
   target.setHSL(hue, sat, 0.5, THREE.LinearSRGBColorSpace);
   const luma = target.r * 0.299 + target.g * 0.587 + target.b * 0.114;
-  const gain = (0.88 + r() * 0.26) / Math.max(0.0001, luma);
+  const gain = (band.gain[0] + r() * (band.gain[1] - band.gain[0])) / Math.max(0.0001, luma);
   target.multiplyScalar(gain);
+  // Brightness normalisation divides by luma, and a blue-leaning hue has a
+  // luma near 0.45 — so the dominant channel can land 30% over the intended
+  // gain. Rescale the whole triple rather than clipping one channel: the
+  // block gets a touch darker, never a shifted hue.
+  const peak = Math.max(target.r, target.g, target.b);
+  if (peak > band.ceiling) target.multiplyScalar(band.ceiling / peak);
   return target;
 }
 
@@ -2860,7 +2924,7 @@ export function createBuildingMesh(
     rand,
     // later ages build markedly grander, not just a shade
     grand: 1 + era * 0.09,
-    wall: lamColor(wallColor),
+    wall: wallLam(wallColor),
     trim: lamColor(trimColor),
     roofMat: roofLam(roofColor),
     parapet: roofLam(parapetColor),

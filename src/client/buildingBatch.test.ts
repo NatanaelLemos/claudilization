@@ -9,7 +9,13 @@ import {
   disposeBuildingBatch,
 } from "./buildingBatch";
 import { pickOf } from "./picking";
-import { createBuildingMesh, isRoofMaterial, roofInstanceTint } from "./structures";
+import {
+  createBuildingMesh,
+  isRoofMaterial,
+  isWallMaterial,
+  roofInstanceTint,
+  wallInstanceTint,
+} from "./structures";
 
 const buildings = Array.from({ length: 600 }, (_, index): Building => ({
   id: `townhouse-${index}`,
@@ -137,6 +143,50 @@ describe("instanced building batches", () => {
     }
     expect(shades.size).toBeGreaterThan(blocks.length * 0.9);
     disposeBuildingBatch(batch);
+  });
+
+  it("varies every block's walls under a tighter cap than the roofs", () => {
+    const batch = buildBuildingBatch({
+      buildings: buildings.slice(0, 40),
+      civ: CIVS.roman,
+      age: "renaissance",
+      heightAt: () => 0,
+      half: 0,
+    });
+    const walls = meshes(batch).filter((mesh) => isWallMaterial(mesh.material));
+    expect(walls.length).toBeGreaterThan(0);
+    const wall = walls[0] as THREE.InstancedMesh;
+    expect(wall.instanceColor).not.toBeNull();
+    // hex strings clamp at 1.0 and would hide real variation above it, so
+    // uniqueness is measured on the raw linear multiplier
+    const shades = new Set<string>();
+    const scratch = new THREE.Color();
+    for (let i = 0; i < wall.count; i++) {
+      wall.getColorAt(i, scratch);
+      shades.add(`${scratch.r.toFixed(3)}|${scratch.g.toFixed(3)}|${scratch.b.toFixed(3)}`);
+    }
+    expect(shades.size).toBeGreaterThan(wall.count * 0.9);
+    disposeBuildingBatch(batch);
+    // a wall is a settler's whole horizon: its swing stays under the roof's
+    for (const id of ["a", "b", "c", "d", "e", "f", "g", "h"]) {
+      const tint = wallInstanceTint(id, 0.08);
+      const roofTint = roofInstanceTint(id, 0.08);
+      const luma = tint.r * 0.299 + tint.g * 0.587 + tint.b * 0.114;
+      expect(luma).toBeGreaterThan(0.82);
+      expect(luma).toBeLessThan(1.12);
+      // the wall ceiling is hard, and tighter than the roofline's 1.45
+      expect(Math.max(tint.r, tint.g, tint.b)).toBeLessThanOrEqual(1.22);
+      // and the pigment stays quieter than a roof's: no neon stucco
+      const spread = (c: THREE.Color) =>
+        Math.max(c.r, c.g, c.b) - Math.min(c.r, c.g, c.b);
+      expect(spread(tint)).toBeLessThan(spread(roofTint) + 1e-6);
+      const repeat = wallInstanceTint(id, 0.08);
+      expect(repeat.r).toBeCloseTo(tint.r, 6);
+      expect(repeat.g).toBeCloseTo(tint.g, 6);
+      expect(repeat.b).toBeCloseTo(tint.b, 6);
+      // walls never wear the roof's shade on the same block
+      expect(tint.getHexString()).not.toBe(roofTint.getHexString());
+    }
   });
 
   it("keeps the roof tint deterministic and brightness-neutral", () => {
