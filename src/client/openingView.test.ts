@@ -46,7 +46,7 @@ describe("landing framing", () => {
     expect(framing.scale).toBe(FRAMING_SCALE_RANGE[0]);
   });
 
-  it("stands back for a sprawling city, and never past its clamp", () => {
+  it("never stands back past the authored landing, however large the city", () => {
     const city: Building[] = [];
     for (let i = 0; i < 200; i++) {
       const a = (i / 200) * Math.PI * 2;
@@ -55,8 +55,9 @@ describe("landing framing", () => {
     }
     const framing = townFraming(city, 83);
     expect(Math.abs(framing.offsetX)).toBeLessThan(3);
-    expect(framing.scale).toBeGreaterThan(1);
-    expect(framing.scale).toBeLessThanOrEqual(FRAMING_SCALE_RANGE[1]);
+    // a metropolis is shot exactly as authored — the framing only closes in
+    expect(framing.scale).toBe(1);
+    expect(FRAMING_SCALE_RANGE[1]).toBe(1);
   });
 
   it("leaves a bare or single-building island exactly as authored", () => {

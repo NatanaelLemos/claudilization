@@ -30,8 +30,12 @@ export interface TownFraming {
 
 /** The town radius the authored landing distance was composed around. */
 export const FRAMED_TOWN_RADIUS = 30;
-/** How close and how far the landing may ever be pulled. */
-export const FRAMING_SCALE_RANGE: readonly [number, number] = [0.6, 1.15];
+/** How close and how far the landing may ever be pulled. The ceiling is 1:
+ * the authored landing already holds a whole island, and letting a large city
+ * push the camera *back* made the town own less of the frame, not more —
+ * caught on the live frame the first time this shipped. Framing may only ever
+ * close in on the town. */
+export const FRAMING_SCALE_RANGE: readonly [number, number] = [0.6, 1];
 
 /**
  * The town is the subject, not the island. A five-hut landing was being shot
