@@ -1,9 +1,12 @@
+import * as THREE from "three";
 import { describe, expect, it } from "vitest";
+import type { CivSpec, Island, Settler } from "../shared/types";
 import {
   crowdUpdateHz,
   MAX_VISIBLE_SETTLERS,
   sampledSettlers,
   spreadOffset,
+  updateSettlers,
 } from "./settlersView";
 
 describe("settler spread", () => {
@@ -36,5 +39,31 @@ describe("dense crowd budget", () => {
     expect(crowdUpdateHz(256)).toBe(30);
     expect(crowdUpdateHz(257)).toBe(15);
     expect(crowdUpdateHz(5_000)).toBe(15);
+  });
+});
+
+describe("contact blobs", () => {
+  it("grounds every settler with a soft instanced disc and no shadow-map cost", () => {
+    const holder = new THREE.Group();
+    const settler: Settler = {
+      id: "s1",
+      name: "Test",
+      adult: true,
+      bornAt: 0,
+      task: { kind: "idle" } as Settler["task"],
+      pos: { x: 4, y: 4 },
+      hungerDays: 0,
+    };
+    const island = { settlers: [settler] } as unknown as Island;
+    const civ = { accent: "#aa5533" } as unknown as CivSpec;
+    updateSettlers(holder, island, civ, () => 1, 8);
+
+    const blobs = holder.getObjectByName("clay-character-blobs") as THREE.InstancedMesh;
+    expect(blobs).toBeTruthy();
+    expect(blobs.count).toBe(1);
+    expect(blobs.castShadow).toBe(false);
+    const mat = blobs.material as THREE.MeshBasicMaterial;
+    expect(mat.transparent).toBe(true);
+    expect(mat.depthWrite).toBe(false);
   });
 });

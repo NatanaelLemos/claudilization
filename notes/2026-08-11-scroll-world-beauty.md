@@ -41,6 +41,10 @@ the instanced-rendering performance wins.
    island (canopies, blooms, shrubs, soil, boulders, terrain ramp) draws
    from one small seeded pot set, drifting at most ~0.065 hue from the shared
    clay palette. Islands vary like neighbouring valleys, not different games.
+6. **Settler grounding** — figures cast no shadow maps (1,024 instances x 7
+   parts), so each settler now gets an instanced soft contact blob glued to
+   the ground under its feet, breathing smaller as the body bobs. One basic-
+   material draw per island, zero shadow cost.
 
 Markers: `data-beauty="scroll-diorama-v1"`, `data-post-support` /
 `data-post="tilt-shift-post-v1"|"off"` beside the existing
