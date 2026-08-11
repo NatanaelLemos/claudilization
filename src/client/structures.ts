@@ -154,7 +154,13 @@ interface TintBand {
 }
 
 const ROOF_TINT: TintBand = { hue: 0.24, sat: [0.14, 0.28], gain: [0.88, 1.14], ceiling: 1.45 };
-const WALL_TINT: TintBand = { hue: 0.13, sat: [0.07, 0.17], gain: [0.93, 1.08], ceiling: 1.22 };
+// Walls carry the mosaic. The first pass was so cautious the street read as
+// sun-bleached stucco: real variation, invisible from map height. The hue arc
+// is now wider than the roofline's — a family of terracotta roofs over walls
+// that genuinely disagree is the reference's whole composition — with the
+// pigment strong enough to name a colour and the brightness swing still
+// narrow, so no block ever punches out of the row.
+const WALL_TINT: TintBand = { hue: 0.34, sat: [0.13, 0.3], gain: [0.9, 1.1], ceiling: 1.34 };
 
 function blockTint(
   seed: string,

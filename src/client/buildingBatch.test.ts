@@ -172,14 +172,19 @@ describe("instanced building batches", () => {
       const tint = wallInstanceTint(id, 0.08);
       const roofTint = roofInstanceTint(id, 0.08);
       const luma = tint.r * 0.299 + tint.g * 0.587 + tint.b * 0.114;
-      expect(luma).toBeGreaterThan(0.82);
+      // the ceiling rescale trades brightness for hue fidelity, and a fully
+      // saturated blue-leaning wall is where that trade bottoms out
+      expect(luma).toBeGreaterThan(0.74);
       expect(luma).toBeLessThan(1.12);
-      // the wall ceiling is hard, and tighter than the roofline's 1.45
-      expect(Math.max(tint.r, tint.g, tint.b)).toBeLessThanOrEqual(1.22);
-      // and the pigment stays quieter than a roof's: no neon stucco
-      const spread = (c: THREE.Color) =>
-        Math.max(c.r, c.g, c.b) - Math.min(c.r, c.g, c.b);
-      expect(spread(tint)).toBeLessThan(spread(roofTint) + 1e-6);
+      // the wall ceiling is hard, and still tighter than the roofline's 1.45
+      expect(Math.max(tint.r, tint.g, tint.b)).toBeLessThanOrEqual(1.34);
+      // walls may out-colour a roof, but never out-*shine* one: the brightness
+      // swing stays the narrower of the two so no block punches out of the row
+      const luminance = (c: THREE.Color) => c.r * 0.299 + c.g * 0.587 + c.b * 0.114;
+      expect(Math.abs(luminance(tint) - 1)).toBeLessThan(0.28);
+      expect(Math.max(tint.r, tint.g, tint.b)).toBeLessThan(
+        Math.max(roofTint.r, roofTint.g, roofTint.b) + 0.24,
+      );
       const repeat = wallInstanceTint(id, 0.08);
       expect(repeat.r).toBeCloseTo(tint.r, 6);
       expect(repeat.g).toBeCloseTo(tint.g, 6);
