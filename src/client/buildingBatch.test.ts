@@ -105,6 +105,40 @@ describe("instanced building batches", () => {
     disposeBuildingBatch(batch);
   });
 
+  it("paints late-age parapets per block too — no single dark cap mass", () => {
+    const blocks = Array.from({ length: 12 }, (_, i) => ({
+      id: `row-${i}`,
+      type: "house",
+      stage: "complete" as const,
+      progress: 100,
+      pos: { x: 10 + i * 3, y: 12 },
+    }));
+    const batch = buildBuildingBatch({
+      buildings: blocks,
+      civ: CIVS.roman,
+      age: "industrial",
+      heightAt: () => 0,
+      half: 0,
+    });
+    // the industrial rowhouse has no pitched roof at all: its flat parapet is
+    // the roofline, so it must be a tinted roof surface or the whole street
+    // reads as one dark cap
+    const roofs = meshes(batch).filter((mesh) => isRoofMaterial(mesh.material));
+    expect(roofs.length).toBeGreaterThan(0);
+    const shades = new Set<string>();
+    const scratch = new THREE.Color();
+    for (const mesh of roofs) {
+      const inst = mesh as THREE.InstancedMesh;
+      expect(inst.instanceColor).not.toBeNull();
+      for (let i = 0; i < inst.count; i++) {
+        inst.getColorAt(i, scratch);
+        shades.add(scratch.getHexString());
+      }
+    }
+    expect(shades.size).toBeGreaterThan(blocks.length * 0.9);
+    disposeBuildingBatch(batch);
+  });
+
   it("keeps the roof tint deterministic and brightness-neutral", () => {
     const a = roofInstanceTint("townhouse-7", 0.02);
     const b = roofInstanceTint("townhouse-7", 0.02);

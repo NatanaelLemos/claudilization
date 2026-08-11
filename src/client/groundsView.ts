@@ -10,6 +10,7 @@ import {
 } from "../shared/townPlan";
 import type { Building, CivSpec, IslandTerrain } from "../shared/types";
 import { CLAY_PALETTE, clayMaterial, islandPalette } from "./artDirection";
+import { clayPigment, roofInstanceTint } from "./structures";
 
 export const GROUNDS_GROUP = "island-grounds";
 /** Paths and yards hide beyond this range — they are street-level detail. */
@@ -47,6 +48,7 @@ const postGeo = new THREE.CylinderGeometry(0.045, 0.055, 0.85, 5);
 const railGeo = new THREE.BoxGeometry(1.05, 0.06, 0.06);
 const rowGeo = new THREE.BoxGeometry(1.5, 0.14, 0.4);
 const canopyGeo = new THREE.BoxGeometry(1.35, 0.06, 0.95);
+const WHITE = new THREE.Color(1, 1, 1);
 const pennantGeo = new THREE.ConeGeometry(0.16, 0.5, 4);
 
 // materials cached per color so rebuilds and many islands share programs
@@ -91,6 +93,9 @@ interface PropPlacement {
   rotY: number;
   s: number;
   color: string;
+  /** per-block multiplier, applied through instanceColor — the bucket stays
+   * one draw call while no two blocks' awnings share a shade */
+  tint?: THREE.Color;
 }
 
 export type YardKind =
@@ -232,6 +237,13 @@ export function buildGroundsGroup({
 
   // ── yards ────────────────────────────────────────────────────────────────
   const trim = civ.architecture.trim;
+  // Awnings are the biggest sheet of banner colour outside the buildings
+  // themselves, and they used to wear the raw hue: on a vivid-banner island
+  // that painted whole market rows fluorescent while the roofs stayed clay.
+  // They now pass through the roofs' own pigment law and the roofs' own
+  // per-block tint, so a market street is a family of shades, not a sheet.
+  const canopyBase = `#${clayPigment(trim).getHexString()}`;
+  const canopyHue = new THREE.Color(trim).getHSL({ h: 0, s: 0, l: 0 }).h;
   complete.forEach((building, buildingIndex) => {
     const kind = yardKind(building.type);
     if (kind === "none") return;
@@ -305,7 +317,8 @@ export function buildGroundsGroup({
             z: py - half,
             rotY: rand() * Math.PI * 2,
             s: 0.9 + rand() * 0.25,
-            color: trim,
+            color: canopyBase,
+            tint: roofInstanceTint(`${building.id}|awning`, canopyHue, new THREE.Color()),
           });
           props.push({
             shape: "post",
@@ -409,11 +422,14 @@ export function buildGroundsGroup({
       mat(first.color),
       bucket.length,
     );
+    const tinted = bucket.some((prop) => prop.tint);
     bucket.forEach((prop, index) => {
       quat.setFromEuler(euler.set(0, prop.rotY, 0));
       matrix.compose(posV.set(prop.x, prop.y, prop.z), quat, scl.setScalar(prop.s));
       mesh.setMatrixAt(index, matrix);
+      if (tinted) mesh.setColorAt(index, prop.tint ?? WHITE);
     });
+    if (tinted && mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     mesh.castShadow = first.shape !== "stone" && first.shape !== "row";
     mesh.receiveShadow = true;
     mesh.userData.buildingShadowBatch = mesh.castShadow;

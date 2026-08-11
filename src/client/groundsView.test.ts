@@ -2,6 +2,8 @@ import * as THREE from "three";
 import { describe, expect, it, vi } from "vitest";
 import { CIVS } from "../shared/civs";
 import type { Building } from "../shared/types";
+import { civAccented } from "../shared/civColor";
+import { PIGMENT_SAT_CEILING } from "./structures";
 import {
   buildGroundsGroup,
   disposeGroundsGroup,
@@ -198,5 +200,67 @@ describe("grounds group", () => {
     expect(releaseSharedGeometry).not.toHaveBeenCalled();
     expect(holder.getObjectByName(GROUNDS_GROUP)).toBeUndefined();
     vi.restoreAllMocks();
+  });
+});
+
+
+describe("the banner hue on market awnings", () => {
+  const vivid = civAccented(CIVS.japanese, "#22e6a0");
+  const markets = [
+    building("m1", "market", 20, 20),
+    building("m2", "market", 30, 22),
+    building("m3", "market", 24, 32),
+    building("m4", "market", 34, 34),
+  ];
+
+  function canopies(group: THREE.Group): THREE.InstancedMesh[] {
+    const found: THREE.InstancedMesh[] = [];
+    group.traverse((o) => {
+      const mesh = o as THREE.InstancedMesh;
+      if (!mesh.isInstancedMesh) return;
+      const geo = mesh.geometry as THREE.BoxGeometry;
+      if (geo.type === "BoxGeometry" && geo.parameters?.width === 1.35) found.push(mesh);
+    });
+    return found;
+  }
+
+  it("chalks a vivid banner down to clay instead of painting fluorescent sheets", () => {
+    const group = buildGroundsGroup({
+      buildings: markets,
+      civ: vivid,
+      islandSeed: 5,
+      heightAt: flatGround,
+      half: 48,
+    });
+    const sheets = canopies(group);
+    expect(sheets.length).toBeGreaterThan(0);
+    const hsl = { h: 0, s: 0, l: 0 };
+    for (const sheet of sheets) {
+      (sheet.material as THREE.MeshStandardMaterial).color.getHSL(hsl);
+      expect(hsl.s).toBeLessThanOrEqual(PIGMENT_SAT_CEILING + 1e-6);
+    }
+    disposeGroundsGroup(group.parent ? group : new THREE.Group().add(group));
+  });
+
+  it("gives every market its own awning shade inside one draw call", () => {
+    const group = buildGroundsGroup({
+      buildings: markets,
+      civ: vivid,
+      islandSeed: 5,
+      heightAt: flatGround,
+      half: 48,
+    });
+    const sheets = canopies(group);
+    // one bucket, not one mesh per market
+    expect(sheets.length).toBe(1);
+    const sheet = sheets[0]!;
+    expect(sheet.instanceColor).not.toBeNull();
+    const shades = new Set<string>();
+    const scratch = new THREE.Color();
+    for (let i = 0; i < sheet.count; i++) {
+      sheet.getColorAt(i, scratch);
+      shades.add(scratch.getHexString());
+    }
+    expect(shades.size).toBe(sheet.count);
   });
 });

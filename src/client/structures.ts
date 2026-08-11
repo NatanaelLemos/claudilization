@@ -72,6 +72,26 @@ export function isRoofMaterial(material: THREE.Material | THREE.Material[]): boo
 }
 
 /**
+ * The one law for every large surface a civilization paints with its banner
+ * hue: chalked toward the world neutral and capped in saturation, so clay
+ * stays clay. Roofs get it here; market canopies and every other broad sheet
+ * of colour outside the building models get it through the same call, which
+ * is why an island whose banner is vivid mint no longer grows fluorescent
+ * awnings while its roofs stay dusty.
+ */
+export function clayPigment(hex: string, target = new THREE.Color()): THREE.Color {
+  target.set(hex);
+  target.lerp(new THREE.Color(CLAY_PALETTE.chalk), 0.3);
+  const hsl = { h: 0, s: 0, l: 0 };
+  target.getHSL(hsl);
+  target.setHSL(hsl.h, Math.min(hsl.s, PIGMENT_SAT_CEILING), Math.min(0.62, hsl.l + 0.02));
+  return target;
+}
+
+/** hard saturation ceiling on any painted clay surface */
+export const PIGMENT_SAT_CEILING = 0.34;
+
+/**
  * A per-block roof tint, multiplied over the civ's roof colour by the
  * instanced batch. Townscaper's towns read as a mosaic because no two
  * neighbouring roofs share a shade; the hue stays inside a narrow band around
@@ -130,6 +150,8 @@ interface Ctx {
   trim: THREE.MeshStandardMaterial;
   /** roof planes only — tinted per block by the instanced batch */
   roofMat: THREE.MeshStandardMaterial;
+  /** flat roof caps and parapets — a roof surface, tinted per block too */
+  parapet: THREE.MeshStandardMaterial;
 }
 
 function part(
@@ -449,7 +471,7 @@ function bRowHome(ctx: Ctx): void {
   for (let f = 0; f < floors; f++) windows(ctx, w, d, 0.5 + f * fh, 3);
   door(ctx, d);
   // parapet instead of the town roof — the age of soot builds flat
-  box(ctx, w + 0.12, 0.12, d + 0.12, ctx.trim, 0, h + 0.14);
+  box(ctx, w + 0.12, 0.12, d + 0.12, ctx.parapet, 0, h + 0.14);
   box(ctx, w * 0.5, 0.3, d * 0.5, ctx.wall, 0, h + 0.3, -d * 0.1);
   chimney(ctx, w * 0.32, -d * 0.22, h + 0.2);
   chimney(ctx, -w * 0.32, -d * 0.22, h + 0.2, false);
@@ -476,7 +498,7 @@ function bTowerHome(ctx: Ctx, future: boolean): void {
   for (const [sx, sz] of [[-1, -1], [-1, 1], [1, -1], [1, 1]] as const) {
     part(ctx, mull, ctx.trim, (sx * w) / 2, h / 2 + 0.1, (sz * d) / 2);
   }
-  box(ctx, w * 0.96, 0.1, d * 0.96, ctx.trim, 0, h + 0.14);
+  box(ctx, w * 0.96, 0.1, d * 0.96, ctx.parapet, 0, h + 0.14);
   if (future) {
     const crown = box(ctx, w * 0.55, 0.34, d * 0.55, lam(...TECH), 0, h + 0.36);
     crown.castShadow = false;
@@ -538,7 +560,7 @@ function bOfficeTower(ctx: Ctx, future: boolean, small: boolean): void {
   }
   // a setback crown, then the spire
   box(ctx, w * 0.62, 0.4, d * 0.62, glass, 0, h + 0.3);
-  box(ctx, w * 0.66, 0.07, d * 0.66, ctx.trim, 0, h + 0.53);
+  box(ctx, w * 0.66, 0.07, d * 0.66, ctx.parapet, 0, h + 0.53);
   cyl(ctx, 0.02, 0.02, future ? 1.1 : 0.8, 5, ctx.trim, 0, h + 0.55 + (future ? 0.55 : 0.4));
   door(ctx, d, 0.6);
 }
@@ -2818,16 +2840,19 @@ export function createBuildingMesh(
   // Roofs are the town's biggest colour surface seen from map height, so they
   // keep far more of the civ's pigment than the trim does — chalked just
   // enough to stay clay, then painted per block by the batch tint.
-  const roofColor = new THREE.Color(civ.architecture.trim);
-  roofColor.lerp(new THREE.Color(CLAY_PALETTE.chalk), 0.3);
   // Banner colours run the whole wheel, and an island whose colour is already
   // vivid turned its roofs electric once they stopped being chalked to death.
   // Clay pigment has a ceiling: saturation is capped, never boosted.
-  const roofHsl = { h: 0, s: 0, l: 0 };
-  roofColor.getHSL(roofHsl);
-  roofColor.setHSL(roofHsl.h, Math.min(roofHsl.s, 0.34), Math.min(0.62, roofHsl.l + 0.02));
+  const roofColor = clayPigment(civ.architecture.trim);
   if (era === 0) roofColor.lerp(new THREE.Color("#8a7a4f"), 0.45);
   if (era >= 7) roofColor.lerp(new THREE.Color("#6d7884"), 0.22 + (era - 7) * 0.1);
+  // From the industrial age on, the roofline is a flat parapet, not a pitch.
+  // It is still the block's biggest surface from map height, so it must be a
+  // roof material too — otherwise a whole late-age town shares one cap colour
+  // and reads as a single dark mass.
+  const parapetColor = roofColor.clone();
+  parapetColor.lerp(new THREE.Color(CLAY_PALETTE.stone), 0.22);
+  parapetColor.offsetHSL(0, 0, -0.05);
   const ctx: Ctx = {
     g: group,
     civ,
@@ -2838,6 +2863,7 @@ export function createBuildingMesh(
     wall: lamColor(wallColor),
     trim: lamColor(trimColor),
     roofMat: roofLam(roofColor),
+    parapet: roofLam(parapetColor),
   };
 
   const w = 1.1 + (hashString(building.type) % 2) * 0.4;
