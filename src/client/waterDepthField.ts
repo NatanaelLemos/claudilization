@@ -38,6 +38,14 @@ export interface WaterDepthField {
     terrain: StampableTerrain,
     tint: { r: number; g: number; b: number },
   ): void;
+  /**
+   * The seabed height under a world point, in world units — the CPU read of
+   * the same alpha channel the water shader samples. Anything that has to sit
+   * on the water (craft, wakes) needs it: the swell is damped in the vertex
+   * shader as the sea shallows, and a craft that ignores that heaves on an
+   * open-ocean swell while beached in a lagoon.
+   */
+  landAt(worldX: number, worldZ: number): number;
   /** how many islands have stamped — tooling and tests */
   stamped(): number;
   /** raw field bytes, for tests only */
@@ -110,6 +118,25 @@ export function createWaterDepthField(texels: number): WaterDepthField {
       }
       stampedCount += 1;
       texture.needsUpdate = true;
+    },
+    landAt(worldX, worldZ) {
+      // bilinear, matching the texture's LinearFilter so the craft and the
+      // surface never disagree by a texel
+      const u = (worldX / WATER_FIELD_SPAN + 0.5) * texels - 0.5;
+      const v = (worldZ / WATER_FIELD_SPAN + 0.5) * texels - 0.5;
+      const last = texels - 1;
+      const cu = Math.min(last, Math.max(0, u));
+      const cv = Math.min(last, Math.max(0, v));
+      const x0 = Math.floor(cu);
+      const y0 = Math.floor(cv);
+      const x1 = Math.min(last, x0 + 1);
+      const y1 = Math.min(last, y0 + 1);
+      const fx = cu - x0;
+      const fy = cv - y0;
+      const a = (x: number, y: number) => data[(y * texels + x) * 4 + 3]! / 255;
+      const top = a(x0, y0) * (1 - fx) + a(x1, y0) * fx;
+      const bottom = a(x0, y1) * (1 - fx) + a(x1, y1) * fx;
+      return (top * (1 - fy) + bottom * fy) * WATER_FIELD_LAND_MAX;
     },
     stamped: () => stampedCount,
     data: () => data,

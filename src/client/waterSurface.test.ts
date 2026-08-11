@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { generateIsland } from "../shared/terrain";
 import {
   createWaterSurface,
+  shoreDepth01,
   WATER_SHADER_MARKER,
   waterRenderProfile,
   waterSwellPose,
@@ -70,6 +71,32 @@ describe("procedural clay water", () => {
     expect(water.daylight()).toBe(0);
     water.setDaylight(9);
     expect(water.daylight()).toBe(1);
+  });
+
+  it("damps a craft's swell in the shallows without being told the depth", () => {
+    const water = createWaterSurface({ reducedMotion: false, mobile: false });
+    water.tick(1);
+    const terrain = generateIsland(19, 32);
+    water.stampIsland(0, 0, 19, terrain);
+
+    // the waterline maps to no depth, the deep to full depth
+    expect(shoreDepth01(0)).toBe(1);
+    expect(shoreDepth01(999)).toBe(0);
+
+    // over the island's own shallows the field reads land; far out it does not
+    const inshore = water.field.landAt(0, 0);
+    expect(inshore).toBeGreaterThan(0);
+    expect(water.field.landAt(2_000, 2_000)).toBe(0);
+
+    // and the pose the craft ride follows it, with no depth argument passed —
+    // the bug was every caller getting the open-ocean amplitude
+    const open = water.poseAt(2_000, 2_000);
+    const shallow = water.poseAt(0, 0);
+    const heave = (p: { height: number }) => Math.abs(p.height + 0.08);
+    expect(heave(shallow)).toBeLessThan(heave(open));
+    expect(Math.abs(shallow.pitch)).toBeLessThanOrEqual(Math.abs(open.pitch));
+    // never frozen solid: a moored boat still breathes
+    expect(water.poseAt(0, 0, 0).height).not.toBe(-0.08);
   });
 
   it("pins the shoreline foam to a screen-space width and keeps its glint bounded", () => {

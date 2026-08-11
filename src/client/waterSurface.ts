@@ -26,6 +26,11 @@ export interface WaterSwellPose {
  * hovering through an unrelated sine wave. `depth01=1` is open water; the
  * amplitude calms toward a shore just like the GPU surface.
  */
+/** the shader's `vertexDepth`, on the CPU: 0 at the waterline, 1 in the deep */
+export function shoreDepth01(landHeight: number): number {
+  return Math.min(1, Math.max(0, (SEA_LEVEL - landHeight) / SEA_LEVEL));
+}
+
 export function waterSwellPose(
   x: number,
   z: number,
@@ -296,6 +301,11 @@ normal = normalize((viewMatrix * vec4(seaNormal, 0.0)).xyz);
       dayness.value = Math.min(1, Math.max(0, value));
     },
     daylight: () => dayness.value,
-    poseAt: (x, z, depth01) => waterSwellPose(x, z, time.value, depth01),
+    // Default the depth from the stamped bathymetry rather than assuming open
+    // ocean: every craft in the world called this without a depth, so a boat
+    // moored in a lagoon heaved on the full open-water swell while the surface
+    // under it lay nearly flat.
+    poseAt: (x, z, depth01) =>
+      waterSwellPose(x, z, time.value, depth01 ?? shoreDepth01(field.landAt(x, z))),
   };
 }
