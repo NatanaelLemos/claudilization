@@ -145,7 +145,7 @@ describe("creations in the world", () => {
   it("dispatch raids a rival colony and conquest follows the one law", () => {
     // a wild island rises through the world's own clockwork; the defender
     // colonizes it lawfully, and only then is there anything to raid
-    const w2 = World.create({ seed: 8, balance: { ...FAST, wildSpawnIntervalSeconds: 5, maxWildPerHome: 2 } });
+    const w2 = World.create({ seed: 8, balance: { ...FAST, wildSpawnIntervalSeconds: 5 } });
     const atk = w2.join({ civ: "mongol" });
     const dfd = w2.join({ civ: "greek" });
     w2.debugGrant(atk.islandId, { age: "bronze", stocks: { food: 1e5, wood: 1e5 } });
@@ -191,7 +191,7 @@ describe("creations in the world", () => {
   });
 
   it("a design without the raid verb may garrison but never attack", () => {
-    const w = World.create({ seed: 9, balance: { ...FAST, wildSpawnIntervalSeconds: 5, maxWildPerHome: 2 } });
+    const w = World.create({ seed: 9, balance: { ...FAST, wildSpawnIntervalSeconds: 5 } });
     const a = w.join({ civ: "roman" });
     const b = w.join({ civ: "greek" });
     w.debugGrant(a.islandId, { age: "bronze", addBoat: true, stocks: { food: 1e5, wood: 1e5 } });

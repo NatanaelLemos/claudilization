@@ -38,10 +38,10 @@ export interface Balance {
   boatSpeed: number;
   /** planes cross the same ocean much faster than sails */
   planeSpeed: number;
-  /** seconds between chances for an empty island to rise; 0 disables */
+  /** seconds between chances for an empty island to rise; 0 disables.
+   * A new empty island rises only when no empty island waits on the map —
+   * one vacancy at a time, however many civilizations are playing. */
   wildSpawnIntervalSeconds: number;
-  /** wild islands never outnumber living home islands × this factor */
-  maxWildPerHome: number;
   /** settlers a colonizing voyage carries */
   colonyCrew: number;
   /** raiders an attacking voyage carries */
@@ -85,7 +85,6 @@ export const DEFAULT_BALANCE: Balance = {
   boatSpeed: 8,
   planeSpeed: 40,
   wildSpawnIntervalSeconds: 7200,
-  maxWildPerHome: 1,
   colonyCrew: 3,
   raidCrew: 4,
   // a flotilla launched together rings once; a renewed assault two minutes
