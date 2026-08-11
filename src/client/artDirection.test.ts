@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import {
   ART_DIRECTION,
+  BEAUTY_MARKER,
   CLAY_PALETTE,
   clayMaterial,
   effectDensity,
+  islandPalette,
   settlerRole,
 } from "./artDirection";
 
@@ -30,6 +32,50 @@ describe("miniature clay art direction", () => {
     expect(effectDensity(false, false)).toBe(1);
     expect(effectDensity(false, true)).toBeLessThan(1);
     expect(effectDensity(true, false)).toBe(0);
+  });
+});
+
+describe("per-island palette", () => {
+  it("ships the scroll-diorama beauty marker", () => {
+    expect(BEAUTY_MARKER).toBe("scroll-diorama-v1");
+  });
+
+  it("is deterministic per seed and varies between seeds", () => {
+    const a = islandPalette(42);
+    const b = islandPalette(42);
+    expect(a).toEqual(b);
+    const seeds = [1, 2, 3, 4, 5, 6, 7, 8];
+    const grasses = new Set(seeds.map((seed) => islandPalette(seed).grass));
+    expect(grasses.size).toBeGreaterThan(3);
+  });
+
+  it("keeps every island within a small drift of the shared clay palette", () => {
+    const base = new THREE.Color(CLAY_PALETTE.grass);
+    const baseHsl = { h: 0, s: 0, l: 0 };
+    base.getHSL(baseHsl);
+    for (const seed of [1, 7, 99, 1234, 987654]) {
+      const palette = islandPalette(seed);
+      const hsl = { h: 0, s: 0, l: 0 };
+      new THREE.Color(palette.grass).getHSL(hsl);
+      const drift = Math.min(
+        Math.abs(hsl.h - baseHsl.h),
+        1 - Math.abs(hsl.h - baseHsl.h),
+      );
+      expect(drift).toBeLessThan(0.08);
+      // the whole island paints from a small set of pots: 4-6 hex families
+      expect(palette.canopy).toHaveLength(3);
+      expect(palette.bloom).toHaveLength(2);
+      for (const hex of [
+        palette.grass,
+        palette.grassLight,
+        ...palette.canopy,
+        ...palette.bloom,
+        palette.soil,
+        palette.rock,
+      ]) {
+        expect(hex).toMatch(/^#[0-9a-f]{6}$/);
+      }
+    }
   });
 });
 
