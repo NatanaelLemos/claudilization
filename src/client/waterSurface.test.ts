@@ -72,6 +72,34 @@ describe("procedural clay water", () => {
     expect(water.daylight()).toBe(1);
   });
 
+  it("pins the shoreline foam to a screen-space width and keeps its glint bounded", () => {
+    const water = createWaterSurface({ reducedMotion: false, mobile: false });
+    const shader = {
+      uniforms: {} as Record<string, unknown>,
+      vertexShader: "#include <common>\n#include <begin_vertex>\n#include <worldpos_vertex>",
+      fragmentShader:
+        "#include <common>\nvec4 diffuseColor = vec4( diffuse, opacity );\n#include <normal_fragment_begin>",
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    water.material.onBeforeCompile(shader as any, null as any);
+    const frag = shader.fragmentShader;
+
+    // the contact band widens with the local depth gradient, so a cliff coast
+    // and a flat beach both render one crisp line instead of a hairline or a
+    // smear across half the bay
+    expect(frag).toContain("fwidth(shoreDist)");
+    expect(frag).toMatch(/float shoreCore = 1\.0 - smoothstep\(/);
+
+    // the wet-edge specular only ever fires in daylight and stays a kick, not
+    // a light source — an unbounded add here blows the coast to white
+    const glint = frag.match(/seaCol \+= foamCol \* shoreCore \* uWaterDaylight \* ([\d.]+);/);
+    expect(glint).not.toBeNull();
+    expect(Number(glint![1])).toBeLessThanOrEqual(0.3);
+
+    // and the foam blend is still clamped: no channel can run away
+    expect(frag).toMatch(/float foamMix = clamp\(/);
+  });
+
   it("exposes the shader-identical swell pose that keeps craft on the water", () => {
     const pose = waterSwellPose(31, -17, 4.2);
     const expected =

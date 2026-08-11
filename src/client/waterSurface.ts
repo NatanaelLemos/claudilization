@@ -199,8 +199,19 @@ seaCol = mix(seaCol, uWaterSand, smoothstep(0.045, 0.006, max(shoreDist, 0.0)) *
 // soft clay foam hugging the real coastline, its edge breathing with the sea
 float foamWobble = sin(vWaterWorld.x * 0.33 + uWaterTime * 0.7)
   * sin(vWaterWorld.z * 0.29 - uWaterTime * 0.55);
-float contact = 1.0 - smoothstep(0.003, 0.017 + foamWobble * 0.005, shoreDist);
-contact *= 0.72 + 0.28 * sin(vWaterWorld.x * 0.21 - vWaterWorld.z * 0.17 + foamWobble);
+// The shore band is measured in world *height*, so a steep coast squeezed it
+// to sub-pixel and a flat beach smeared it across half a bay — the reference
+// frame's coastline is one crisp bright line at every angle. Widening the
+// band by the local screen-space gradient of the depth pins it to a constant
+// on-screen width from any camera height.
+float shoreAA = fwidth(shoreDist);
+float coreEdge = 0.0065 + foamWobble * 0.0022 + shoreAA * 1.6;
+// the hard bright core: the wet line where the sea actually meets the clay
+float shoreCore = 1.0 - smoothstep(coreEdge * 0.3, coreEdge, shoreDist);
+// and the soft halo behind it, still allowed to breathe
+float halo = 1.0 - smoothstep(0.004, 0.019 + foamWobble * 0.006, shoreDist);
+halo *= 0.66 + 0.34 * sin(vWaterWorld.x * 0.21 - vWaterWorld.z * 0.17 + foamWobble);
+float contact = max(shoreCore, halo);
 // slow lapping rings rolling in toward the beach
 float lap = sin(shoreDist * 110.0 + uWaterTime * 1.35 + foamWobble * 1.2);
 float lapMask = (1.0 - smoothstep(0.012, 0.13, shoreDist)) * step(0.0, shoreDist);
@@ -212,7 +223,13 @@ float crestB = sin(vWaterWorld.z * 0.037 - vWaterWorld.x * 0.011 - uWaterTime * 
 float crestCut = sin(vWaterWorld.x * 0.011 - vWaterWorld.z * 0.017 + uWaterTime * 0.18);
 float crest = smoothstep(1.52, 1.94, crestA + crestB) * smoothstep(-0.2, 0.55, crestCut);
 vec3 foamCol = uWaterFoam * (0.5 + 0.5 * dayGlow);
-seaCol = mix(seaCol, foamCol, clamp(foamAmt * 0.82 + crest * (0.05 + 0.09 * depth01), 0.0, 1.0));
+// the core reaches the foam colour outright — a shoreline that only ever gets
+// 82% of the way there is a smudge, not a contact line
+float foamMix = clamp(foamAmt * 0.8 + shoreCore * 0.45 + crest * (0.05 + 0.09 * depth01), 0.0, 1.0);
+seaCol = mix(seaCol, foamCol, foamMix);
+// and the wet edge catches the sun: a specular kick that lives only on the
+// contact line, so the coast reads bright against the land even in shadow
+seaCol += foamCol * shoreCore * uWaterDaylight * 0.26;
 #ifdef WATER_SHEEN
 // scattered sun glitter drifting on the open water
 float glintA = sin(vWaterWorld.x * 0.83 + uWaterTime * 0.9)
