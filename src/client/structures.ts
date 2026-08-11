@@ -86,7 +86,7 @@ export function roofInstanceTint(
 ): THREE.Color {
   const r = mulberry32(hashString(`roof:${buildingId}`));
   const hue = (((baseHue + (r() - 0.5) * 0.24) % 1) + 1) % 1;
-  const sat = 0.13 + r() * 0.12;
+  const sat = 0.14 + r() * 0.14;
   // LinearSRGBColorSpace on purpose: this is a multiplier in the renderer's
   // working space, not a colour to look at. Letting three convert from sRGB
   // would put lightness 0.5 at ~0.21 linear and the normalisation below would
@@ -94,7 +94,7 @@ export function roofInstanceTint(
   // roofs turned into a field of blown-out mint.
   target.setHSL(hue, sat, 0.5, THREE.LinearSRGBColorSpace);
   const luma = target.r * 0.299 + target.g * 0.587 + target.b * 0.114;
-  const gain = (0.92 + r() * 0.18) / Math.max(0.0001, luma);
+  const gain = (0.88 + r() * 0.26) / Math.max(0.0001, luma);
   target.multiplyScalar(gain);
   return target;
 }
@@ -2819,8 +2819,13 @@ export function createBuildingMesh(
   // keep far more of the civ's pigment than the trim does — chalked just
   // enough to stay clay, then painted per block by the batch tint.
   const roofColor = new THREE.Color(civ.architecture.trim);
-  roofColor.lerp(new THREE.Color(CLAY_PALETTE.chalk), 0.2);
-  roofColor.offsetHSL(0, 0.04, 0.02);
+  roofColor.lerp(new THREE.Color(CLAY_PALETTE.chalk), 0.3);
+  // Banner colours run the whole wheel, and an island whose colour is already
+  // vivid turned its roofs electric once they stopped being chalked to death.
+  // Clay pigment has a ceiling: saturation is capped, never boosted.
+  const roofHsl = { h: 0, s: 0, l: 0 };
+  roofColor.getHSL(roofHsl);
+  roofColor.setHSL(roofHsl.h, Math.min(roofHsl.s, 0.34), Math.min(0.62, roofHsl.l + 0.02));
   if (era === 0) roofColor.lerp(new THREE.Color("#8a7a4f"), 0.45);
   if (era >= 7) roofColor.lerp(new THREE.Color("#6d7884"), 0.22 + (era - 7) * 0.1);
   const ctx: Ctx = {
