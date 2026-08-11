@@ -222,6 +222,8 @@ interface Ctx {
   roofMat: THREE.MeshStandardMaterial;
   /** flat roof caps and parapets — a roof surface, tinted per block too */
   parapet: THREE.MeshStandardMaterial;
+  /** working skillions over every workshop — a roof surface, tinted too */
+  shed: THREE.MeshStandardMaterial;
 }
 
 function part(
@@ -677,7 +679,26 @@ function bHall(ctx: Ctx, opts: { columns?: boolean; wide?: boolean; small?: bool
   civSignature(ctx, w, d, h, 1.15);
 }
 
-const SHED_ROOF = "#4a3f30";
+const SHED_TIMBER = "#7d6a4e";
+const SHED_ALLOY = "#c6c0b1";
+/** The floor a working roof may never fall below. Workshops, mills, plants,
+ * refineries and labs all wear the skillion, so on a late-age island it is the
+ * single largest surface in town — a quarter of everything the camera sees
+ * looking down. When it was one fixed sooty timber (`#4a3f30`, display luma
+ * 0.25) the whole city read as one black slab with painted slivers between the
+ * caps, which is the exact failure the painted-town work exists to kill. */
+export const SHED_LUMA_FLOOR = 0.4;
+export const SHED_LUMA_FLOOR_LATE = 0.55;
+
+/** Working roofs by era: sawn timber through the craft ages, then corrugated
+ * alloy sheeting once the works are industrial. The badge survives — a shed is
+ * still flat, striped and stacked, never the civ's pitched roof — but its
+ * *value* now sits in the town's midtones instead of under everything. */
+export function shedRoofColor(era: number): THREE.Color {
+  const color = new THREE.Color(SHED_TIMBER);
+  if (era >= 6) color.lerp(new THREE.Color(SHED_ALLOY), Math.min(0.66, 0.4 + (era - 6) * 0.13));
+  return color;
+}
 
 function bWorkshop(
   ctx: Ctx,
@@ -693,7 +714,7 @@ function bWorkshop(
   // workshops wear a plain timber skillion, never the town's grand roof —
   // from map height the roof is the badge: the civ roof means a home, dark
   // timber with the trade's colored stripe means work happens here
-  const slope = part(ctx, new THREE.BoxGeometry(w + 0.35, 0.09, d + 0.5), lam(SHED_ROOF), 0, h + 0.2);
+  const slope = part(ctx, new THREE.BoxGeometry(w + 0.35, 0.09, d + 0.5), ctx.shed, 0, h + 0.2);
   slope.rotation.x = 0.16;
   if (opts.accent) {
     const stripe = part(ctx, new THREE.BoxGeometry(w * 0.92, 0.05, 0.42), lam(opts.accent), 0, h + 0.27, d * 0.12);
@@ -707,7 +728,7 @@ function bWorkshop(
   for (let i = 0; i < stacks; i++) chimney(ctx, w * 0.32 - i * 0.5, -d * 0.28, h + 0.3);
   // side lean-to with stores
   box(ctx, w * 0.5, 0.5, d * 0.6, ctx.wall, w * 0.72, 0.35);
-  const lean = box(ctx, w * 0.6, 0.07, d * 0.7, lam(SHED_ROOF), w * 0.72, 0.66);
+  const lean = box(ctx, w * 0.6, 0.07, d * 0.7, ctx.shed, w * 0.72, 0.66);
   lean.rotation.z = -0.28;
   cyl(ctx, 0.14, 0.14, 0.3, 8, lam(WOOD), w * 0.72, 0.25, d * 0.55);
   if (opts.ember) {
@@ -1664,7 +1685,7 @@ function bSmokehouse(ctx: Ctx): void {
 function bTanner(ctx: Ctx): void {
   plinth(ctx, 1.2, 0.9);
   box(ctx, 1.0, 0.6, 0.8, ctx.wall, 0, 0.4);
-  const slope = part(ctx, new THREE.BoxGeometry(1.3, 0.08, 1.2), lam(SHED_ROOF), 0, 0.78);
+  const slope = part(ctx, new THREE.BoxGeometry(1.3, 0.08, 1.2), ctx.shed, 0, 0.78);
   slope.rotation.x = 0.16;
   // a hide big as a sail stretched on its frame, pits of different steeps
   const frame = new THREE.BoxGeometry(0.08, 1.4, 0.08);
@@ -2934,6 +2955,9 @@ export function createBuildingMesh(
     trim: lamColor(trimColor),
     roofMat: roofLam(roofColor),
     parapet: roofLam(parapetColor),
+    // a roof material, so forty workshops down one street are a family of
+    // shades in a single instanced draw instead of one continuous dark sheet
+    shed: roofLam(shedRoofColor(era)),
   };
 
   const w = 1.1 + (hashString(building.type) % 2) * 0.4;

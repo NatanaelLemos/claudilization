@@ -6,8 +6,20 @@ import {
   buildingModelSpec,
   buildingRenderSignature,
   createBuildingMesh,
+  isRoofMaterial,
+  SHED_LUMA_FLOOR,
+  SHED_LUMA_FLOOR_LATE,
+  shedRoofColor,
   windowGlowIntensity,
 } from "./structures";
+
+/** Display-referred luminance — what the eye reads off the screen, not the
+ * linear working value, so a value floor means what it says. */
+function displayLuma(color: THREE.Color): number {
+  const hex = color.getHexString();
+  const channel = (i: number) => parseInt(hex.slice(i, i + 2), 16) / 255;
+  return channel(0) * 0.299 + channel(2) * 0.587 + channel(4) * 0.114;
+}
 
 const EXISTING: Building[] = [
   { id: "old-home", type: "hut", stage: "complete", progress: 30, pos: { x: 1, y: 1 } },
@@ -56,5 +68,41 @@ describe("age-aware building models", () => {
     expect(windowGlowIntensity(0)).toBeGreaterThan(1);
     expect(windowGlowIntensity(-5)).toBe(windowGlowIntensity(0));
     expect(windowGlowIntensity(5)).toBe(windowGlowIntensity(1));
+  });
+});
+
+describe("working roofs keep their value", () => {
+  it("never lets a skillion fall under the town's midtone floor", () => {
+    for (let era = 0; era <= 8; era++) {
+      const luma = displayLuma(shedRoofColor(era));
+      expect(luma).toBeGreaterThanOrEqual(SHED_LUMA_FLOOR);
+      if (era >= 6) expect(luma).toBeGreaterThanOrEqual(SHED_LUMA_FLOOR_LATE);
+    }
+    // the works brighten with the ages — sawn timber, then alloy sheeting
+    expect(displayLuma(shedRoofColor(8))).toBeGreaterThan(displayLuma(shedRoofColor(3)));
+    // and the lift is bounded: a shed never bleaches out to a white roof
+    expect(displayLuma(shedRoofColor(8))).toBeLessThan(0.8);
+  });
+
+  it("dresses every workshop skillion in a tintable roof material", () => {
+    const workshop: Building = {
+      id: "works-1",
+      type: "blacksmith",
+      stage: "complete",
+      progress: 60,
+      pos: { x: 7, y: 7 },
+    };
+    const mesh = createBuildingMesh(workshop, CIVS.greek, "industrial");
+    const shedLuma = displayLuma(shedRoofColor(6));
+    let skillion: THREE.Mesh | undefined;
+    mesh.traverse((object) => {
+      const candidate = object as THREE.Mesh;
+      if (!candidate.isMesh || Array.isArray(candidate.material)) return;
+      const material = candidate.material as THREE.MeshStandardMaterial;
+      if (Math.abs(displayLuma(material.color) - shedLuma) < 0.001) skillion = candidate;
+    });
+    expect(skillion).toBeDefined();
+    // a roof surface, so the instanced batch hands every block its own shade
+    expect(isRoofMaterial(skillion!.material)).toBe(true);
   });
 });
