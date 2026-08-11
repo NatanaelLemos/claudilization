@@ -115,6 +115,10 @@ describe("instanced building batches", () => {
       const luma = tint.r * 0.299 + tint.g * 0.587 + tint.b * 0.114;
       expect(luma).toBeGreaterThan(0.85);
       expect(luma).toBeLessThan(1.2);
+      // a tint is a whisper of pigment, never a floodlight: the mint-roof
+      // regression multiplied every channel by ~4.7
+      expect(Math.max(tint.r, tint.g, tint.b)).toBeLessThan(1.45);
+      expect(Math.min(tint.r, tint.g, tint.b)).toBeGreaterThan(0.6);
     }
   });
 

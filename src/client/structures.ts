@@ -86,10 +86,15 @@ export function roofInstanceTint(
 ): THREE.Color {
   const r = mulberry32(hashString(`roof:${buildingId}`));
   const hue = (((baseHue + (r() - 0.5) * 0.24) % 1) + 1) % 1;
-  const sat = 0.18 + r() * 0.16;
-  target.setHSL(hue, sat, 0.5);
+  const sat = 0.13 + r() * 0.12;
+  // LinearSRGBColorSpace on purpose: this is a multiplier in the renderer's
+  // working space, not a colour to look at. Letting three convert from sRGB
+  // would put lightness 0.5 at ~0.21 linear and the normalisation below would
+  // then multiply every roof by ~4.7 — which is exactly how a town of clay
+  // roofs turned into a field of blown-out mint.
+  target.setHSL(hue, sat, 0.5, THREE.LinearSRGBColorSpace);
   const luma = target.r * 0.299 + target.g * 0.587 + target.b * 0.114;
-  const gain = (0.9 + r() * 0.24) / Math.max(0.0001, luma);
+  const gain = (0.92 + r() * 0.18) / Math.max(0.0001, luma);
   target.multiplyScalar(gain);
   return target;
 }
@@ -2815,7 +2820,7 @@ export function createBuildingMesh(
   // enough to stay clay, then painted per block by the batch tint.
   const roofColor = new THREE.Color(civ.architecture.trim);
   roofColor.lerp(new THREE.Color(CLAY_PALETTE.chalk), 0.2);
-  roofColor.offsetHSL(0, 0.05, 0.045);
+  roofColor.offsetHSL(0, 0.04, 0.02);
   if (era === 0) roofColor.lerp(new THREE.Color("#8a7a4f"), 0.45);
   if (era >= 7) roofColor.lerp(new THREE.Color("#6d7884"), 0.22 + (era - 7) * 0.1);
   const ctx: Ctx = {
