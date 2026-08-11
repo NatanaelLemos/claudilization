@@ -5,6 +5,7 @@
 //
 //   node scripts/capture-evidence.mjs <url> <outPrefix> [dayFraction]
 import { chromium } from "@playwright/test";
+import { writeFile } from "node:fs/promises";
 
 const [, , url, outPrefix, dayFraction] = process.argv;
 if (!url || !outPrefix) {
@@ -20,20 +21,29 @@ const shots = [
 for (const shot of shots) {
   const page = await browser.newPage({ viewport: { width: shot.width, height: shot.height } });
   await page.goto(url, { waitUntil: "networkidle" });
-  await page.waitForFunction(
-    () => {
-      const t = window.__terrain?.();
-      return t && t.built > 0 && t.pending === 0;
-    },
-    undefined,
-    { timeout: 90_000 },
-  );
+  // The focused island and its neighbours must be built before the shot is
+  // worth anything. A full drain is not a useful gate any more: the live world
+  // is 45 islands and the distant ones stream in as lightweight silhouettes,
+  // which software WebGL never finishes inside a capture window. Wait for the
+  // foreground, then give the queue a bounded grace period to go quiet.
+  await page.waitForFunction(() => (window.__terrain?.()?.built ?? 0) >= 3, undefined, {
+    timeout: 120_000,
+  });
+  await page
+    .waitForFunction(() => window.__terrain?.()?.pending === 0, undefined, { timeout: 45_000 })
+    .catch(() => {});
   if (dayFraction) {
     await page.evaluate((f) => window.__day?.(Number(f)), dayFraction);
   }
   await page.waitForTimeout(4_000); // settle streaming meshes and shadows
   const file = `${outPrefix}-${shot.name}.png`;
-  await page.screenshot({ path: file });
+  // Raw CDP rather than page.screenshot(): Playwright blocks on
+  // document.fonts.ready first, and a webfont request that never settles in
+  // this headless environment would strand the capture on a frame we can see
+  // is already correct.
+  const cdp = await page.context().newCDPSession(page);
+  const { data } = await cdp.send("Page.captureScreenshot", { format: "png" });
+  await writeFile(file, Buffer.from(data, "base64"));
   const marker = await page.evaluate(() => ({
     art: document.querySelector("canvas#world")?.dataset.artDirection,
     beauty: document.querySelector("canvas#world")?.dataset.beauty,
