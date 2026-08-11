@@ -64,8 +64,8 @@ Markers: `data-beauty="scroll-diorama-v1"`, `data-post-support` /
 
 - `notes/evidence/2026-08-11-before-desktop.png` / `-mobile.png` — production
   v32 before the pass.
-- `notes/evidence/2026-08-11-after-desktop.png` / `-mobile.png` — to be
-  captured by the validation/release leg after deploy.
+- `notes/evidence/2026-08-11-after-desktop.png` / `-mobile.png` — production
+  v33 after the pass, captured live post-deploy.
 - Captured with `scripts/capture-evidence.mjs` (local headless Chromium +
   SwiftShader; the pooled browser still has no WebGL).
 
