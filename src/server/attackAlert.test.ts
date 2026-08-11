@@ -8,7 +8,6 @@ const FAST = {
   daySeconds: 30,
   boatSpeed: 40,
   wildSpawnIntervalSeconds: 5,
-  maxWildPerHome: 3,
   daylightShare: 1,
   attackAlertCooldownSeconds: 20,
 };

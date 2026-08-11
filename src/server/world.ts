@@ -493,8 +493,11 @@ export class World {
     if (interval <= 0 || this.t % interval !== 0) return;
     const all = [...this.islandsMap.values()];
     const homes = all.filter((i) => i.kind === "home" && !i.ruins).length;
-    const wilds = all.filter((i) => i.kind === "wild").length;
-    if (homes === 0 || wilds >= Math.ceil(homes * this.balance.maxWildPerHome)) return;
+    // the law of scarce land: while even one island lies empty — wild,
+    // unclaimed, waiting for whoever lands first — the sea holds its peace.
+    // A new empty island rises only when every shore on the map is spoken for.
+    const anyEmpty = all.some((i) => i.kind === "wild" && !i.ruins);
+    if (homes === 0 || anyEmpty) return;
 
     const n = this.wildCount++;
     const id = `island-${++this.idCounter}`;

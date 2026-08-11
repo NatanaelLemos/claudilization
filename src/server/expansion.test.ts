@@ -43,12 +43,63 @@ describe("wild islands", () => {
     expect(moment?.text).toContain(wild.name);
   });
 
-  it("wild land never outnumbers the living home islands", () => {
+  it("one vacancy at a time — no new empty island while one lies unclaimed", () => {
     const w = World.create({ seed: 41, balance: FAST });
     w.join({ civ: "norse" });
-    w.tick(200);
+    w.join({ civ: "roman" });
+    w.join({ civ: "greek" });
+    w.tick(200); // forty spawn chances, three civilizations watching
     const wilds = w.islands().filter((i) => i.kind === "wild");
-    expect(wilds.length).toBe(1); // ceil(1 home × maxWildPerHome)
+    expect(wilds.length).toBe(1); // the map never holds a second empty island
+  });
+
+  it("claiming the empty island frees the sea to raise the next one", () => {
+    const w = World.create({ seed: 41, balance: FAST });
+    const a = seafarer(w, "norse");
+    const { wild } = spawnWild(w);
+    const [outcome] = w.applyOrders(a.secret, [
+      { kind: "voyage", dest: wild.id, intent: "colonize" },
+    ]);
+    expect(outcome!.ok).toBe(true);
+    // while the crew is still at sea the island is unclaimed — no new land
+    sailUntilDone(w, a.islandId);
+    expect(w.island(wild.id)!.kind).toBe("colony");
+    // the vacancy is filled; the next interval may raise a fresh empty island
+    for (let t = 0; t < 10 && !w.islands().some((i) => i.kind === "wild"); t++) {
+      w.tick(1);
+    }
+    const wilds = w.islands().filter((i) => i.kind === "wild");
+    expect(wilds).toHaveLength(1);
+    expect(wilds[0]!.id).not.toBe(wild.id);
+  });
+
+  it("a join founds an occupied home and never mints or consumes empty land", () => {
+    const w = World.create({ seed: 41, balance: FAST });
+    w.join({ civ: "norse" });
+    w.tick(5); // one empty island waits
+    const before = w.islands().filter((i) => i.kind === "wild").map((i) => i.id);
+    expect(before).toHaveLength(1);
+    const r = w.join({ civ: "roman" });
+    const home = w.island(r.islandId)!;
+    expect(home.kind).toBe("home");
+    expect(home.origin).toBe("home"); // sacred from birth — never former empty land
+    expect(home.settlers.length).toBeGreaterThan(0); // occupied from birth
+    const after = w.islands().filter((i) => i.kind === "wild").map((i) => i.id);
+    expect(after).toEqual(before); // the vacant island is neither taken nor doubled
+  });
+
+  it("two identically driven worlds agree on when land rises — determinism", () => {
+    const run = () => {
+      const w = World.create({ seed: 77, balance: FAST });
+      const a = seafarer(w, "norse");
+      w.tick(5);
+      const wild = w.islands().find((i) => i.kind === "wild")!;
+      w.applyOrders(a.secret, [{ kind: "voyage", dest: wild.id, intent: "colonize" }]);
+      sailUntilDone(w, a.islandId);
+      w.tick(20);
+      return w.serialize();
+    };
+    expect(run()).toBe(run());
   });
 
   it("no players, no wild islands — an empty world stays empty", () => {
