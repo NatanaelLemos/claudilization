@@ -72,10 +72,27 @@ describe("per-island palette", () => {
         ...palette.bloom,
         palette.soil,
         palette.rock,
+        palette.lagoon,
       ]) {
         expect(hex).toMatch(/^#[0-9a-f]{6}$/);
       }
     }
+  });
+
+  it("deals each island its own lagoon in the shared turquoise family", () => {
+    const base = new THREE.Color(CLAY_PALETTE.oceanShallow);
+    const baseHsl = { h: 0, s: 0, l: 0 };
+    base.getHSL(baseHsl);
+    const lagoons = new Set<string>();
+    for (const seed of [1, 7, 99, 1234, 987654]) {
+      const lagoon = islandPalette(seed).lagoon;
+      lagoons.add(lagoon);
+      const hsl = { h: 0, s: 0, l: 0 };
+      new THREE.Color(lagoon).getHSL(hsl);
+      const drift = Math.min(Math.abs(hsl.h - baseHsl.h), 1 - Math.abs(hsl.h - baseHsl.h));
+      expect(drift).toBeLessThan(0.05);
+    }
+    expect(lagoons.size).toBeGreaterThan(2);
   });
 });
 

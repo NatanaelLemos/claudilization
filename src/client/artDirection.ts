@@ -54,6 +54,7 @@ export const ART_DIRECTION = {
 export const CLAY_PALETTE = {
   ocean: "#24566a",
   oceanDeep: "#173f52",
+  oceanShallow: "#43a3a4",
   foam: "#d9eee9",
   sand: "#dcc79a",
   grass: "#78945b",
@@ -165,6 +166,8 @@ export interface IslandPalette {
   soil: string;
   /** warm sculpted boulder clay */
   rock: string;
+  /** the island's own shallow-water turquoise — the sea harmonizes per island */
+  lagoon: string;
 }
 
 const BLOOM_POTS: [string, string][] = [
@@ -197,5 +200,8 @@ export function islandPalette(seed: number): IslandPalette {
     bloom,
     soil: shifted("#a3805c", hue * 0.4, 0, (rng() - 0.5) * 0.03),
     rock: shifted("#8d867b", hue * 0.3, 0, (rng() - 0.5) * 0.04),
+    // derived from the same hue/sat season with no extra rng draws, so every
+    // color existing saves were dealt stays exactly where it was
+    lagoon: shifted(CLAY_PALETTE.oceanShallow, hue * 0.5, sat * 0.5, 0),
   };
 }
