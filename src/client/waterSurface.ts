@@ -1,12 +1,25 @@
 import * as THREE from "three";
-import { CLAY_PALETTE, clayMaterial } from "./artDirection";
+import { CLAY_PALETTE, clayMaterial, islandPalette } from "./artDirection";
+import {
+  createWaterDepthField,
+  WATER_FIELD_LAND_MAX,
+  type StampableTerrain,
+  type WaterDepthField,
+} from "./waterDepthField";
 
-export const WATER_SHADER_MARKER = "clay-water-waves-v1";
+export const WATER_SHADER_MARKER = "clay-water-waves-v2";
+
+/** the sea level of the shared terrain law (`terrain.ts` WATER) */
+const SEA_LEVEL = 0.2;
 
 export interface WaterRenderProfile {
   segments: number;
   animationHz: number;
   maxTriangles: number;
+  /** bathymetry texels per side — coarser on phones */
+  fieldTexels: number;
+  /** analytic wave normals + sun glitter — desktop only */
+  sheen: boolean;
 }
 
 export function waterRenderProfile(
@@ -18,6 +31,8 @@ export function waterRenderProfile(
     segments,
     animationHz: reducedMotion ? 0 : mobile ? 20 : 30,
     maxTriangles: segments * segments * 2,
+    fieldTexels: mobile ? 1_024 : 2_048,
+    sheen: !mobile,
   };
 }
 
@@ -25,15 +40,28 @@ export interface WaterSurface {
   mesh: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshStandardMaterial>;
   material: THREE.MeshStandardMaterial;
   profile: WaterRenderProfile;
+  field: WaterDepthField;
   tick(dt: number): void;
   animationTime(): number;
+  /** paint one built island's bathymetry + lagoon tint into the sea */
+  stampIsland(centerX: number, centerZ: number, seed: number, terrain: StampableTerrain): void;
+  /** the rig's dayness — shallows, foam and glints dim with the sun */
+  setDaylight(dayness: number): void;
+  daylight(): number;
 }
 
 /**
- * One procedural GPU surface for the whole ocean. The vertex shader supplies
- * broad, low clay swells while the fragment shader lays translucent crossing
- * ripple/foam bands over the current daylight color. There are no downloaded
- * textures and no CPU-side vertex updates.
+ * One procedural GPU surface for the whole ocean — still a single draw call.
+ *
+ * The vertex shader rolls broad clay swells that calm as the sea shallows.
+ * The fragment shader reads the world bathymetry field and paints the
+ * miniature-diorama sea: each island's own lagoon turquoise banking down to
+ * the rig's deep blue, a sand-warmed last metre, soft clay foam hugging the
+ * real coastline with slow lapping rings rolling in, quiet crest bands out at
+ * sea, and — on desktop — analytic wave normals so the warm key sun lays
+ * moving satin glints across the surface. Everything is procedural math plus
+ * one stamped data texture; there are no downloaded assets and no CPU-side
+ * vertex updates.
  */
 export function createWaterSurface(options: {
   reducedMotion: boolean;
@@ -42,28 +70,53 @@ export function createWaterSurface(options: {
   const profile = waterRenderProfile(options.reducedMotion, options.mobile);
   const geometry = new THREE.PlaneGeometry(5_200, 5_200, profile.segments, profile.segments);
   const material = clayMaterial({ color: CLAY_PALETTE.oceanDeep });
-  material.roughness = 0.64;
-  material.metalness = 0.025;
+  // satin resin-pour water, not matte clay: the sheen is the diorama's charm
+  material.roughness = profile.sheen ? 0.5 : 0.62;
+  material.metalness = 0.03;
+  if (profile.sheen) material.defines = { WATER_SHEEN: "" };
 
+  const field = createWaterDepthField(profile.fieldTexels);
   const time = { value: 0 };
+  const dayness = { value: 1 };
   const foam = { value: new THREE.Color(CLAY_PALETTE.foam) };
+  const sand = { value: new THREE.Color(CLAY_PALETTE.sand) };
+  const fieldUniform = { value: field.texture };
+  const fieldSpan = { value: field.span };
+  const landMax = { value: WATER_FIELD_LAND_MAX };
+  const seaLevel = { value: SEA_LEVEL };
+
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uWaterTime = time;
+    shader.uniforms.uWaterDaylight = dayness;
     shader.uniforms.uWaterFoam = foam;
+    shader.uniforms.uWaterSand = sand;
+    shader.uniforms.uWaterField = fieldUniform;
+    shader.uniforms.uWaterFieldSpan = fieldSpan;
+    shader.uniforms.uWaterLandMax = landMax;
+    shader.uniforms.uWaterSeaLevel = seaLevel;
     shader.vertexShader = shader.vertexShader
       .replace(
         "#include <common>",
         `#include <common>
 uniform float uWaterTime;
+uniform sampler2D uWaterField;
+uniform float uWaterFieldSpan;
+uniform float uWaterLandMax;
+uniform float uWaterSeaLevel;
 varying vec3 vWaterWorld;`,
       )
       .replace(
         "#include <begin_vertex>",
         `#include <begin_vertex>
-float claySwell = sin(position.x * 0.020 + uWaterTime * 0.55) * 0.22;
-claySwell += sin(position.y * 0.031 - uWaterTime * 0.38) * 0.14;
-claySwell += sin((position.x + position.y) * 0.013 + uWaterTime * 0.24) * 0.10;
-transformed.z += claySwell;`,
+// the plane lies rotated -90° about x: local (x, y) is world (x, -z)
+vec2 seaXZ = vec2(position.x, -position.y);
+float vertexLand = texture2D(uWaterField, seaXZ / uWaterFieldSpan + 0.5).a * uWaterLandMax;
+float vertexDepth = clamp((uWaterSeaLevel - vertexLand) / uWaterSeaLevel, 0.0, 1.0);
+// broad rolling swell that calms as the sea shallows toward a beach
+float claySwell = sin(seaXZ.x * 0.020 + uWaterTime * 0.55) * 0.22;
+claySwell += sin(seaXZ.y * 0.031 - uWaterTime * 0.38) * 0.14;
+claySwell += sin((seaXZ.x + seaXZ.y) * 0.013 + uWaterTime * 0.24) * 0.10;
+transformed.z += claySwell * (0.35 + 0.65 * smoothstep(0.0, 0.45, vertexDepth));`,
       )
       .replace(
         "#include <worldpos_vertex>",
@@ -75,20 +128,86 @@ vWaterWorld = worldPosition.xyz;`,
         "#include <common>",
         `#include <common>
 uniform float uWaterTime;
+uniform float uWaterDaylight;
 uniform vec3 uWaterFoam;
+uniform vec3 uWaterSand;
+uniform sampler2D uWaterField;
+uniform float uWaterFieldSpan;
+uniform float uWaterLandMax;
+uniform float uWaterSeaLevel;
 varying vec3 vWaterWorld;`,
       )
       .replace(
         "vec4 diffuseColor = vec4( diffuse, opacity );",
         `vec4 diffuseColor = vec4( diffuse, opacity );
-float clayRippleA = sin(vWaterWorld.x * 0.16 + vWaterWorld.z * 0.05 + uWaterTime * 0.9);
-float clayRippleB = sin(vWaterWorld.z * 0.12 - vWaterWorld.x * 0.035 - uWaterTime * 0.7);
-float clayRipple = smoothstep(1.34, 1.88, clayRippleA + clayRippleB);
-float clayGlint = 0.5 + 0.5 * sin((vWaterWorld.x - vWaterWorld.z) * 0.035 + uWaterTime * 0.34);
-diffuseColor.rgb = mix(diffuseColor.rgb, uWaterFoam, clayRipple * (0.10 + clayGlint * 0.10));`,
+vec4 shoreTex = texture2D(uWaterField, vWaterWorld.xz / uWaterFieldSpan + 0.5);
+float landH = shoreTex.a * uWaterLandMax;
+// how far below the waterline the clay seabed lies here
+float shoreDist = uWaterSeaLevel - landH;
+float depth01 = clamp(shoreDist / uWaterSeaLevel, 0.0, 1.0);
+float dayGlow = 0.22 + 0.78 * uWaterDaylight;
+// each island's lagoon turquoise banks down to the rig's deep-sea blue
+vec3 deepCol = diffuseColor.rgb * 0.78;
+float hasTint = step(0.01, shoreTex.r + shoreTex.g + shoreTex.b);
+vec3 shallowCol = mix(diffuseColor.rgb, shoreTex.rgb, 0.85 * dayGlow * hasTint);
+float bank = smoothstep(0.0, 0.75, 1.0 - depth01);
+vec3 seaCol = mix(deepCol, shallowCol, bank);
+// slow painterly patches keep the open sea from reading flat
+float seaPatch = sin(vWaterWorld.x * 0.004 + vWaterWorld.z * 0.006 + uWaterTime * 0.05)
+  * sin(vWaterWorld.x * 0.0023 - vWaterWorld.z * 0.0031 - uWaterTime * 0.03);
+seaCol *= 1.0 + seaPatch * 0.055 * depth01;
+// the sand floor warms the last metre of the shallows
+seaCol = mix(seaCol, uWaterSand, smoothstep(0.045, 0.006, max(shoreDist, 0.0)) * 0.4 * dayGlow);
+// soft clay foam hugging the real coastline, its edge breathing with the sea
+float foamWobble = sin(vWaterWorld.x * 0.33 + uWaterTime * 0.7)
+  * sin(vWaterWorld.z * 0.29 - uWaterTime * 0.55);
+float contact = 1.0 - smoothstep(0.003, 0.017 + foamWobble * 0.005, shoreDist);
+contact *= 0.72 + 0.28 * sin(vWaterWorld.x * 0.21 - vWaterWorld.z * 0.17 + foamWobble);
+// slow lapping rings rolling in toward the beach
+float lap = sin(shoreDist * 110.0 + uWaterTime * 1.35 + foamWobble * 1.2);
+float lapMask = (1.0 - smoothstep(0.012, 0.13, shoreDist)) * step(0.0, shoreDist);
+float lapFoam = smoothstep(0.62, 0.9, lap) * lapMask;
+float foamAmt = clamp(contact + lapFoam * 0.8, 0.0, 1.0);
+// quiet crest bands out at sea — long strokes, never polka dots
+float crestA = sin(vWaterWorld.x * 0.052 + vWaterWorld.z * 0.014 + uWaterTime * 0.55);
+float crestB = sin(vWaterWorld.z * 0.037 - vWaterWorld.x * 0.011 - uWaterTime * 0.4);
+float crestCut = sin(vWaterWorld.x * 0.011 - vWaterWorld.z * 0.017 + uWaterTime * 0.18);
+float crest = smoothstep(1.52, 1.94, crestA + crestB) * smoothstep(-0.2, 0.55, crestCut);
+vec3 foamCol = uWaterFoam * (0.5 + 0.5 * dayGlow);
+seaCol = mix(seaCol, foamCol, clamp(foamAmt * 0.82 + crest * (0.05 + 0.09 * depth01), 0.0, 1.0));
+#ifdef WATER_SHEEN
+// scattered sun glitter drifting on the open water
+float glintA = sin(vWaterWorld.x * 0.83 + uWaterTime * 0.9)
+  * sin(vWaterWorld.z * 1.07 - uWaterTime * 0.65);
+float glintB = sin((vWaterWorld.x + vWaterWorld.z) * 0.61 + uWaterTime * 1.25);
+float glitter = pow(clamp(glintA * glintB, 0.0, 1.0), 16.0)
+  * uWaterDaylight * (0.3 + 0.7 * depth01);
+seaCol += uWaterFoam * glitter * 0.4;
+#endif
+diffuseColor.rgb = seaCol;`,
+      )
+      .replace(
+        "#include <normal_fragment_begin>",
+        `#include <normal_fragment_begin>
+#ifdef WATER_SHEEN
+// analytic slope of the swell plus finer ripples: the warm sun lays soft
+// moving glints across the surface without any extra geometry
+vec2 sw = vWaterWorld.xz;
+float slopeX = cos(sw.x * 0.020 + uWaterTime * 0.55) * 0.0044
+  + cos((sw.x + sw.y) * 0.013 + uWaterTime * 0.24) * 0.0013
+  + cos(sw.x * 0.141 + uWaterTime * 0.85) * 0.012
+  + cos((sw.x - sw.y) * 0.094 - uWaterTime * 0.6) * 0.009;
+float slopeZ = cos(sw.y * 0.031 - uWaterTime * 0.38) * 0.0043
+  + cos((sw.x + sw.y) * 0.013 + uWaterTime * 0.24) * 0.0013
+  + cos(sw.y * 0.118 - uWaterTime * 0.7) * 0.012
+  - cos((sw.x - sw.y) * 0.094 - uWaterTime * 0.6) * 0.009;
+vec3 seaNormal = normalize(vec3(-slopeX * 16.0, 1.0, -slopeZ * 16.0));
+normal = normalize((viewMatrix * vec4(seaNormal, 0.0)).xyz);
+#endif`,
       );
   };
-  material.customProgramCacheKey = () => WATER_SHADER_MARKER;
+  material.customProgramCacheKey = () =>
+    `${WATER_SHADER_MARKER}${profile.sheen ? "+sheen" : ""}`;
   material.needsUpdate = true;
 
   const mesh = new THREE.Mesh(geometry, material);
@@ -104,6 +223,7 @@ diffuseColor.rgb = mix(diffuseColor.rgb, uWaterFoam, clayRipple * (0.10 + clayGl
     mesh,
     material,
     profile,
+    field,
     tick(dt) {
       if (profile.animationHz === 0 || !Number.isFinite(dt) || dt <= 0) return;
       accumulated += Math.min(dt, 0.1);
@@ -114,5 +234,12 @@ diffuseColor.rgb = mix(diffuseColor.rgb, uWaterFoam, clayRipple * (0.10 + clayGl
       time.value = elapsed;
     },
     animationTime: () => time.value,
+    stampIsland(centerX, centerZ, seed, terrain) {
+      field.stampIsland(centerX, centerZ, terrain, new THREE.Color(islandPalette(seed).lagoon));
+    },
+    setDaylight(value) {
+      dayness.value = Math.min(1, Math.max(0, value));
+    },
+    daylight: () => dayness.value,
   };
 }

@@ -14,7 +14,7 @@ test("the live canvas carries the miniature-clay art marker and responsive HUD",
   );
   await expect(page.locator("canvas#world")).toHaveAttribute(
     "data-water",
-    "clay-water-waves-v1",
+    "clay-water-waves-v2",
   );
   await expect(page.locator("canvas#world")).toHaveAttribute(
     "data-beauty",
@@ -48,7 +48,7 @@ test("reduced motion is detected before ambient effects run", async ({ browser }
     await expect(page.locator("html")).toHaveAttribute("data-reduced-motion", "true");
     await expect(page.locator("canvas#world")).toHaveAttribute(
       "data-water",
-      "clay-water-waves-v1",
+      "clay-water-waves-v2",
     );
     // reduced motion renders direct: no tilt-shift pass
     await expect(page.locator("canvas#world")).toHaveAttribute("data-post", "off");
