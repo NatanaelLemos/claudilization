@@ -4,22 +4,37 @@ import type { RenderQuality } from "./renderQuality";
 export const POST_MARKER = "tilt-shift-post-v1";
 
 /**
- * The studio-miniature finish: one full-screen pass over the rendered frame
- * adds a tilt-shift focus band, a soft vignette and a gentle warm grade —
- * the photographic half of the Scroll World look. It is a single extra draw
- * with no depth texture and no intermediate blur chain, so the whole cost is
- * one screen-sized render target plus nine texture taps.
+ * The studio-miniature finish: one full-screen pass over the rendered frame.
  *
- * The pass runs only when the machine can afford it: desktop, full quality,
- * and no reduced-motion request. Everywhere else the renderer draws straight
- * to the canvas exactly as before.
+ * The pass has two halves with very different costs:
+ *
+ * - The **grade** — split-toned warm highlights and cool shadows, a whisper
+ *   of extra saturation, a soft vignette and a four-tap lamp glow. Five
+ *   texture taps total. This is the photographic half of the Scroll World
+ *   look and it is close to free, so every desktop keeps it at every quality
+ *   tier. Dropping it was the single most visible thing an adaptive quality
+ *   step used to throw away.
+ * - The **tilt-shift band** — eight more taps that defocus everything outside
+ *   the focus band, the cue that sells "miniature". Only full quality pays.
+ *
+ * Phones and reduced-motion viewers still render straight to the canvas.
  */
 export function postEnabled(
   quality: RenderQuality,
   mobile: boolean,
   reducedMotion: boolean,
 ): boolean {
-  return quality === "high" && !mobile && !reducedMotion;
+  void quality;
+  return !mobile && !reducedMotion;
+}
+
+/** The expensive half: the defocus band is full-quality desktop only. */
+export function tiltShiftEnabled(
+  quality: RenderQuality,
+  mobile: boolean,
+  reducedMotion: boolean,
+): boolean {
+  return quality === "high" && postEnabled(quality, mobile, reducedMotion);
 }
 
 const VERTEX = /* glsl */ `
@@ -38,9 +53,14 @@ uniform float uBandWidth;
 uniform float uMaxBlur;
 uniform float uVignette;
 uniform vec3 uWarm;
+uniform vec3 uShadowTint;
+uniform float uGlow;
 varying vec2 vUv;
 
+const vec3 LUMA = vec3(0.299, 0.587, 0.114);
+
 void main() {
+#ifdef TILT_SHIFT
   // blur strength grows with distance from the horizontal focus band
   float band = abs(vUv.y - uFocusY);
   float blur = smoothstep(uBandWidth, 0.5, band) * uMaxBlur;
@@ -54,10 +74,27 @@ void main() {
   color += texture2D(tDiffuse, vUv + vec2(-1.3,  0.6) * r).rgb * 0.09;
   color += texture2D(tDiffuse, vUv + vec2( 0.6,  1.3) * r).rgb * 0.09;
   color += texture2D(tDiffuse, vUv + vec2(-0.6, -1.3) * r).rgb * 0.09;
-  // gentle warm studio grade with a whisper more saturation
-  color *= uWarm;
-  float grey = dot(color, vec3(0.299, 0.587, 0.114));
-  color = mix(vec3(grey), color, 1.06);
+#else
+  vec3 color = texture2D(tDiffuse, vUv).rgb;
+#endif
+
+  // lamp glow: four wide taps, and only what is brighter than its
+  // surroundings blooms — lit windows, braziers, sun glint on the swell
+  vec2 g = uTexel * 7.0;
+  vec3 wide = texture2D(tDiffuse, vUv + vec2( g.x,  g.y)).rgb;
+  wide += texture2D(tDiffuse, vUv + vec2(-g.x,  g.y)).rgb;
+  wide += texture2D(tDiffuse, vUv + vec2( g.x, -g.y)).rgb;
+  wide += texture2D(tDiffuse, vUv + vec2(-g.x, -g.y)).rgb;
+  wide *= 0.25;
+  vec3 bloom = max(wide - 0.62, 0.0);
+  color += bloom * uGlow;
+
+  // split tone: the key stays warm, the shade cools — the painted separation
+  // that keeps flat clay faces from reading as one plastic hue
+  float luma = dot(color, LUMA);
+  vec3 tone = mix(uShadowTint, uWarm, smoothstep(0.08, 0.62, luma));
+  color *= tone;
+  color = mix(vec3(luma), color, 1.11);
   // soft vignette pools the eye toward the diorama
   vec2 fromCentre = vUv - 0.5;
   float vignette = 1.0 - dot(fromCentre, fromCentre) * uVignette;
@@ -69,6 +106,9 @@ void main() {
 export interface PostPipeline {
   enabled(): boolean;
   setEnabled(on: boolean): void;
+  /** Toggle the expensive defocus band without disturbing the grade. */
+  setTiltShift(on: boolean): void;
+  tiltShift(): boolean;
   setSize(width: number, height: number, pixelRatio: number): void;
   /** Draw the scene through the pass — or straight through when disabled. */
   render(scene: THREE.Scene, camera: THREE.Camera): void;
@@ -90,9 +130,12 @@ export function createPostPipeline(renderer: THREE.WebGLRenderer): PostPipeline 
       uFocusY: { value: 0.52 },
       uBandWidth: { value: 0.14 },
       uMaxBlur: { value: 3.4 },
-      uVignette: { value: 0.55 },
-      uWarm: { value: new THREE.Vector3(1.035, 1.005, 0.955) },
+      uVignette: { value: 0.62 },
+      uWarm: { value: new THREE.Vector3(1.045, 1.008, 0.948) },
+      uShadowTint: { value: new THREE.Vector3(0.955, 0.985, 1.055) },
+      uGlow: { value: 0.85 },
     },
+    defines: { TILT_SHIFT: "" },
     depthTest: false,
     depthWrite: false,
   });
@@ -126,14 +169,24 @@ export function createPostPipeline(renderer: THREE.WebGLRenderer): PostPipeline 
     return target;
   }
 
+  let tilt = true;
+
   return {
     enabled: () => on,
+    tiltShift: () => tilt,
     setEnabled(next) {
       on = next;
       if (!next) {
         target?.dispose();
         target = undefined;
       }
+    },
+    setTiltShift(next) {
+      if (next === tilt) return;
+      tilt = next;
+      if (next) material.defines = { TILT_SHIFT: "" };
+      else material.defines = {};
+      material.needsUpdate = true;
     },
     setSize(w, h, pixelRatio) {
       width = Math.max(1, Math.round(w * pixelRatio));

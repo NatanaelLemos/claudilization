@@ -5,7 +5,7 @@ import { mulberry32 } from "../shared/rng";
 import { skyClock, type SkyClock } from "./skyClock";
 import { EMBER, skyRig, type Rgb } from "./skyRig";
 import { ART_DIRECTION, BEAUTY_MARKER, CLAY_PALETTE } from "./artDirection";
-import { createPostPipeline, POST_MARKER, postEnabled } from "./postEffects";
+import { createPostPipeline, POST_MARKER, postEnabled, tiltShiftEnabled } from "./postEffects";
 import {
   AdaptiveRenderQuality,
   renderQualityProfile,
@@ -303,15 +303,18 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
       sun.shadow.map = null;
     }
     shadowBudget.invalidate();
-    // the miniature post pass runs only where it is free: desktop, full
-    // quality, and no reduced-motion request — everyone else renders direct.
-    // ?post=1/0 pins it for screenshot tooling and slow headless GPUs.
+    // the grade half of the miniature pass is near free, so every desktop
+    // keeps it at every quality tier; only the defocus band is dropped when
+    // the machine slows down. Phones and reduced-motion viewers render
+    // direct. ?post=1/0 pins it for screenshot tooling and headless GPUs.
     const w = canvas.clientWidth || window.innerWidth;
     const h = canvas.clientHeight || window.innerHeight;
+    const mobile = w <= 640;
     const pin = new URLSearchParams(location.search).get("post");
     const enabled =
-      pin === "1" ? true : pin === "0" ? false : postEnabled(quality, w <= 640, REDUCED_MOTION);
+      pin === "1" ? true : pin === "0" ? false : postEnabled(quality, mobile, REDUCED_MOTION);
     post.setEnabled(enabled);
+    post.setTiltShift(tiltShiftEnabled(quality, mobile, REDUCED_MOTION));
     post.setSize(w, h, profile.pixelRatio);
     canvas.dataset.post = post.enabled() ? POST_MARKER : "off";
   }
