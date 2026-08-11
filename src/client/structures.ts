@@ -51,13 +51,56 @@ function lamColor(color: THREE.Color): THREE.MeshStandardMaterial {
   return lam(`#${color.getHexString()}`);
 }
 
+/** Roof planes get their own material identity so the batch builder can tint
+ * every block's roof individually — a town of one roof colour reads as a
+ * single dark mass from map height, which is the opposite of a painted town. */
+function roofLam(color: THREE.Color): THREE.MeshStandardMaterial {
+  const hex = `#${color.getHexString()}`;
+  const key = `roof|${hex}`;
+  let m = MATS.get(key);
+  if (!m) {
+    m = clayMaterial({ color: hex });
+    m.userData.roofSurface = true;
+    MATS.set(key, m);
+  }
+  return m;
+}
+
+export function isRoofMaterial(material: THREE.Material | THREE.Material[]): boolean {
+  const list = Array.isArray(material) ? material : [material];
+  return list.some((m) => m.userData?.roofSurface === true);
+}
+
+/**
+ * A per-block roof tint, multiplied over the civ's roof colour by the
+ * instanced batch. Townscaper's towns read as a mosaic because no two
+ * neighbouring roofs share a shade; the hue stays inside a narrow band around
+ * the civilization's own colour, so the town is varied without going rainbow.
+ * The tint is normalised to average brightness 1, so variation never darkens
+ * or blows out the roofline — it only paints it.
+ */
+export function roofInstanceTint(
+  buildingId: string,
+  baseHue: number,
+  target = new THREE.Color(),
+): THREE.Color {
+  const r = mulberry32(hashString(`roof:${buildingId}`));
+  const hue = (((baseHue + (r() - 0.5) * 0.24) % 1) + 1) % 1;
+  const sat = 0.18 + r() * 0.16;
+  target.setHSL(hue, sat, 0.5);
+  const luma = target.r * 0.299 + target.g * 0.587 + target.b * 0.114;
+  const gain = (0.9 + r() * 0.24) / Math.max(0.0001, luma);
+  target.multiplyScalar(gain);
+  return target;
+}
+
 const WOOD = CLAY_PALETTE.wood;
 const WOOD_DARK = CLAY_PALETTE.woodDark;
 const STONE = CLAY_PALETTE.stone;
 const STONE_DARK = CLAY_PALETTE.stoneDark;
 const WINDOW_GLOW = ["#4b3525", "#ffc978", 1.15] as const;
 const EMBER = ["#4a1d08", "#ff7a2f", 1.8] as const;
-const TECH = ["#0f2f3a", "#6fe3ff", 1.6] as const;
+const TECH = ["#0f2f3a", "#6fe3ff", 1.0] as const;
 
 const ORE_COLORS: Record<string, string> = {
   copper: "#c47b3d",
@@ -80,6 +123,8 @@ interface Ctx {
   grand: number;
   wall: THREE.MeshStandardMaterial;
   trim: THREE.MeshStandardMaterial;
+  /** roof planes only — tinted per block by the instanced batch */
+  roofMat: THREE.MeshStandardMaterial;
 }
 
 function part(
@@ -127,10 +172,10 @@ function roof(ctx: Ctx, w: number, d: number, topY: number, scale = 1): void {
   switch (ctx.civ.architecture.roof) {
     case "pagoda": {
       const h1 = 0.3 + ov * 0.42;
-      const lower = cone(ctx, ov * 1.1, h1, 4, ctx.trim, 0, topY + h1 * 0.45);
+      const lower = cone(ctx, ov * 1.1, h1, 4, ctx.roofMat, 0, topY + h1 * 0.45);
       lower.rotation.y = Math.PI / 4;
       const h2 = h1 * 0.75;
-      const upper = cone(ctx, ov * 0.66, h2, 4, ctx.trim, 0, topY + h1 * 0.85);
+      const upper = cone(ctx, ov * 0.66, h2, 4, ctx.roofMat, 0, topY + h1 * 0.85);
       upper.rotation.y = Math.PI / 4;
       break;
     }
@@ -138,22 +183,22 @@ function roof(ctx: Ctx, w: number, d: number, topY: number, scale = 1): void {
       part(
         ctx,
         new THREE.SphereGeometry(ov * 0.78, 12, 7, 0, Math.PI * 2, 0, Math.PI / 2),
-        ctx.trim,
+        ctx.roofMat,
         0,
         topY,
       );
       break;
     case "stepped":
-      box(ctx, w * 0.82, 0.26 * scale, d * 0.82, ctx.trim, 0, topY + 0.13 * scale);
-      box(ctx, w * 0.5, 0.24 * scale, d * 0.5, ctx.trim, 0, topY + 0.37 * scale);
+      box(ctx, w * 0.82, 0.26 * scale, d * 0.82, ctx.roofMat, 0, topY + 0.13 * scale);
+      box(ctx, w * 0.5, 0.24 * scale, d * 0.5, ctx.roofMat, 0, topY + 0.37 * scale);
       break;
     case "flat":
-      box(ctx, w * 1.14, 0.12, d * 1.14, ctx.trim, 0, topY + 0.06);
+      box(ctx, w * 1.14, 0.12, d * 1.14, ctx.roofMat, 0, topY + 0.06);
       break;
     default: {
       // gabled
       const h = 0.35 + ov * 0.5;
-      const r = cone(ctx, ov * 1.05, h, 4, ctx.trim, 0, topY + h * 0.48);
+      const r = cone(ctx, ov * 1.05, h, 4, ctx.roofMat, 0, topY + h * 0.48);
       r.rotation.y = Math.PI / 4;
     }
   }
@@ -691,7 +736,7 @@ function bTech(ctx: Ctx, opts: { dome?: boolean; ring?: boolean; obelisk?: boole
         transparent: true,
         opacity: 0.55,
         emissive: new THREE.Color("#6fe3ff"),
-        emissiveIntensity: 0.35,
+        emissiveIntensity: 0.28,
       }),
       0,
       0.4,
@@ -2186,7 +2231,7 @@ function bHoloTheater(ctx: Ctx): void {
     transparent: true,
     opacity: 0.55,
     emissive: new THREE.Color("#6fe3ff"),
-    emissiveIntensity: 1.2,
+    emissiveIntensity: 0.6,
   });
   const fig = part(ctx, new THREE.SphereGeometry(0.12, 7, 6), holo, 0, 1.05, -0.15);
   fig.scale.set(1, 1.7, 0.8);
@@ -2765,6 +2810,14 @@ export function createBuildingMesh(
   trimColor.offsetHSL(0, -0.1, 0);
   if (era === 0) trimColor.lerp(new THREE.Color("#8a7a4f"), 0.55);
   if (era >= 7) trimColor.lerp(new THREE.Color("#5d6874"), 0.28 + (era - 7) * 0.14);
+  // Roofs are the town's biggest colour surface seen from map height, so they
+  // keep far more of the civ's pigment than the trim does — chalked just
+  // enough to stay clay, then painted per block by the batch tint.
+  const roofColor = new THREE.Color(civ.architecture.trim);
+  roofColor.lerp(new THREE.Color(CLAY_PALETTE.chalk), 0.2);
+  roofColor.offsetHSL(0, 0.05, 0.045);
+  if (era === 0) roofColor.lerp(new THREE.Color("#8a7a4f"), 0.45);
+  if (era >= 7) roofColor.lerp(new THREE.Color("#6d7884"), 0.22 + (era - 7) * 0.1);
   const ctx: Ctx = {
     g: group,
     civ,
@@ -2774,6 +2827,7 @@ export function createBuildingMesh(
     grand: 1 + era * 0.09,
     wall: lamColor(wallColor),
     trim: lamColor(trimColor),
+    roofMat: roofLam(roofColor),
   };
 
   const w = 1.1 + (hashString(building.type) % 2) * 0.4;

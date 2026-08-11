@@ -9,7 +9,7 @@ import {
   disposeBuildingBatch,
 } from "./buildingBatch";
 import { pickOf } from "./picking";
-import { createBuildingMesh } from "./structures";
+import { createBuildingMesh, isRoofMaterial, roofInstanceTint } from "./structures";
 
 const buildings = Array.from({ length: 600 }, (_, index): Building => ({
   id: `townhouse-${index}`,
@@ -80,6 +80,42 @@ describe("instanced building batches", () => {
         .filter((mesh) => mesh.userData.buildingShadowBatch)
         .every((mesh) => mesh.castShadow === true),
     ).toBe(true);
+  });
+
+  it("paints every block's roof its own shade while sharing one draw call", () => {
+    const batch = buildBuildingBatch({
+      buildings: buildings.slice(0, 40),
+      civ: CIVS.roman,
+      age: "renaissance",
+      heightAt: () => 0,
+      half: 0,
+    });
+    const roofs = meshes(batch).filter((mesh) => isRoofMaterial(mesh.material));
+    expect(roofs.length).toBeGreaterThan(0);
+    const roof = roofs[0] as THREE.InstancedMesh;
+    expect(roof.isInstancedMesh).toBe(true);
+    expect(roof.instanceColor).not.toBeNull();
+    const shades = new Set<string>();
+    const scratch = new THREE.Color();
+    for (let i = 0; i < roof.count; i++) {
+      roof.getColorAt(i, scratch);
+      shades.add(`${scratch.r.toFixed(3)}|${scratch.g.toFixed(3)}|${scratch.b.toFixed(3)}`);
+    }
+    expect(shades.size).toBeGreaterThan(roof.count * 0.9);
+    disposeBuildingBatch(batch);
+  });
+
+  it("keeps the roof tint deterministic and brightness-neutral", () => {
+    const a = roofInstanceTint("townhouse-7", 0.02);
+    const b = roofInstanceTint("townhouse-7", 0.02);
+    expect(a.getHexString()).toBe(b.getHexString());
+    expect(roofInstanceTint("townhouse-8", 0.02).getHexString()).not.toBe(a.getHexString());
+    for (const id of ["a", "b", "c", "d", "e", "f"]) {
+      const tint = roofInstanceTint(id, 0.02);
+      const luma = tint.r * 0.299 + tint.g * 0.587 + tint.b * 0.114;
+      expect(luma).toBeGreaterThan(0.85);
+      expect(luma).toBeLessThan(1.2);
+    }
   });
 
   it("disposes generated geometry when a batch is replaced", () => {

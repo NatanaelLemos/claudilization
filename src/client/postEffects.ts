@@ -45,7 +45,7 @@ void main() {
 }
 `;
 
-const FRAGMENT = /* glsl */ `
+export const POST_FRAGMENT = /* glsl */ `
 uniform sampler2D tDiffuse;
 uniform vec2 uTexel;
 uniform float uFocusY;
@@ -87,6 +87,12 @@ void main() {
   wide += texture2D(tDiffuse, vUv + vec2(-g.x, -g.y)).rgb;
   wide *= 0.25;
   vec3 bloom = max(wide - 0.62, 0.0);
+  // glow is light, not pigment: a saturated source (a future age's lit panel)
+  // used to bloom in its own hue and clip to neon, so the bloom is pulled
+  // most of the way to its own luminance and rolled off before it is added
+  float bloomLuma = dot(bloom, LUMA);
+  bloom = mix(vec3(bloomLuma), bloom, 0.4);
+  bloom = bloom / (1.0 + bloom * 1.6);
   color += bloom * uGlow;
 
   // split tone: the key stays warm, the shade cools — the painted separation
@@ -95,6 +101,10 @@ void main() {
   vec3 tone = mix(uShadowTint, uWarm, smoothstep(0.08, 0.62, luma));
   color *= tone;
   color = mix(vec3(luma), color, 1.11);
+  // painted highlights: past a hot threshold the brightest faces bend toward
+  // white instead of clipping one channel — gouache, not a light-up sign
+  float hot = smoothstep(0.78, 1.15, dot(color, LUMA));
+  color = mix(color, mix(color, vec3(1.0), 0.42), hot);
   // soft vignette pools the eye toward the diorama
   vec2 fromCentre = vUv - 0.5;
   float vignette = 1.0 - dot(fromCentre, fromCentre) * uVignette;
@@ -123,7 +133,7 @@ export function createPostPipeline(renderer: THREE.WebGLRenderer): PostPipeline 
 
   const material = new THREE.ShaderMaterial({
     vertexShader: VERTEX,
-    fragmentShader: FRAGMENT,
+    fragmentShader: POST_FRAGMENT,
     uniforms: {
       tDiffuse: { value: null },
       uTexel: { value: new THREE.Vector2(1 / 1024, 1 / 1024) },

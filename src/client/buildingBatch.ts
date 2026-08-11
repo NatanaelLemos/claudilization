@@ -8,7 +8,9 @@ import {
   buildingModelSpec,
   buildingVisualTransform,
   createBuildingMesh,
+  isRoofMaterial,
   resolveModelAge,
+  roofInstanceTint,
 } from "./structures";
 
 const pickGeometry = new THREE.BoxGeometry(1, 1, 1);
@@ -33,6 +35,8 @@ const composeQuat = new THREE.Quaternion();
 const composeEuler = new THREE.Euler();
 const composePos = new THREE.Vector3();
 const composeScale = new THREE.Vector3();
+const tintColor = new THREE.Color();
+const hslScratch = { h: 0, s: 0, l: 0 };
 
 export interface BuildingBatchOptions {
   buildings: Building[];
@@ -128,6 +132,7 @@ export function buildBuildingBatch({
   islandSeed,
 }: BuildingBatchOptions): THREE.Group {
   const holder = new THREE.Group();
+  const roofHue = new THREE.Color(civ.architecture.trim).getHSL(hslScratch).h;
   const plan: TownPlan | undefined =
     terrain && islandSeed !== undefined ? townPlan(terrain, islandSeed) : undefined;
   const batches = new Map<string, Building[]>();
@@ -176,6 +181,14 @@ export function buildBuildingBatch({
         materials.add(material);
       }
       const instanced = new THREE.InstancedMesh(mesh.geometry, mesh.material, batch.length);
+      // one roof colour per block: the same model repeated down a street is
+      // still one draw call, but no two roofs land on the same shade
+      if (isRoofMaterial(mesh.material)) {
+        batch.forEach((building, index) => {
+          instanced.setColorAt(index, roofInstanceTint(building.id, roofHue, tintColor));
+        });
+        if (instanced.instanceColor) instanced.instanceColor.needsUpdate = true;
+      }
       instanced.castShadow = mesh.castShadow;
       instanced.receiveShadow = mesh.receiveShadow;
       instanced.renderOrder = mesh.renderOrder;
