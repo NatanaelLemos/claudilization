@@ -1,5 +1,6 @@
 import * as THREE from "three";
-import type { SettlerTask, TileKind } from "../shared/types";
+import { hashString, mulberry32 } from "../shared/rng";
+import type { SettlerTask } from "../shared/types";
 
 /**
  * The visual contract for the whole live world. Keep renderer-facing art
@@ -70,13 +71,6 @@ export const CLAY_PALETTE = {
   panel: "rgba(30, 38, 38, 0.82)",
 } as const;
 
-export const TERRAIN_CLAY_COLORS: Record<TileKind, string> = {
-  water: CLAY_PALETTE.oceanDeep,
-  sand: CLAY_PALETTE.sand,
-  grass: CLAY_PALETTE.grass,
-  rock: CLAY_PALETTE.stone,
-};
-
 export interface ClayMaterialOptions {
   color: THREE.ColorRepresentation;
   emissive?: THREE.ColorRepresentation;
@@ -140,4 +134,68 @@ export const ROLE_ACCENTS: Record<SettlerRole, string> = {
 export function effectDensity(reducedMotion: boolean, mobile: boolean): number {
   if (reducedMotion) return ART_DIRECTION.density.reducedMotionAmbientScale;
   return mobile ? ART_DIRECTION.density.mobilePropScale : 1;
+}
+
+/**
+ * The Scroll World beauty pass: composed groves, sculpted outcrops, meadow
+ * clearings, clay footpaths, building yards and a studio-miniature post
+ * grade, all reachable from one marker so tests and live bundles can prove
+ * which look shipped.
+ */
+export const BEAUTY_MARKER = "scroll-diorama-v1";
+
+/**
+ * One island, one place: a small cohesive palette derived deterministically
+ * from the island seed. Every decorative hue on the island — canopies,
+ * blooms, shrubs, paths, soil — is drawn from these few pots of clay, so an
+ * island reads as a single hand-painted diorama rather than a scatter of
+ * unrelated props. The hue drift is deliberately small: islands vary like
+ * neighbouring valleys, not like different games.
+ */
+export interface IslandPalette {
+  /** low meadow grass — the brightest green on the island */
+  grassLight: string;
+  /** the working mid-green of open ground */
+  grass: string;
+  /** three canopy pots: broadleaf, deep conifer, sun-touched */
+  canopy: [string, string, string];
+  /** two bloom accents for meadow flowers */
+  bloom: [string, string];
+  /** footpaths, field rows and bare earth */
+  soil: string;
+  /** warm sculpted boulder clay */
+  rock: string;
+}
+
+const BLOOM_POTS: [string, string][] = [
+  ["#c96a50", "#e8ddc4"], // poppy + chalk
+  ["#d9a24b", "#e8ddc4"], // marigold + chalk
+  ["#a06f9e", "#d9a24b"], // heather + marigold
+  ["#c96a50", "#d9a24b"], // poppy + marigold
+];
+
+function shifted(base: string, hue: number, sat: number, light: number): string {
+  const c = new THREE.Color(base);
+  c.offsetHSL(hue, sat, light);
+  return `#${c.getHexString()}`;
+}
+
+export function islandPalette(seed: number): IslandPalette {
+  const rng = mulberry32(hashString(`${seed}|palette`));
+  // a gentle per-island season: -0.030 leans autumn-warm, +0.035 leans lush
+  const hue = (rng() - 0.45) * 0.065;
+  const sat = (rng() - 0.5) * 0.08;
+  const bloom = BLOOM_POTS[Math.floor(rng() * BLOOM_POTS.length)]!;
+  return {
+    grassLight: shifted(CLAY_PALETTE.grassLight, hue, sat, 0.015),
+    grass: shifted(CLAY_PALETTE.grass, hue, sat, 0),
+    canopy: [
+      shifted(CLAY_PALETTE.leaf, hue, sat, 0.01),
+      shifted("#3f5f45", hue, sat, 0),
+      shifted(CLAY_PALETTE.leafLight, hue, sat + 0.04, 0.03),
+    ],
+    bloom,
+    soil: shifted("#a3805c", hue * 0.4, 0, (rng() - 0.5) * 0.03),
+    rock: shifted("#8d867b", hue * 0.3, 0, (rng() - 0.5) * 0.04),
+  };
 }

@@ -1,11 +1,11 @@
 import * as THREE from "three";
 import { hashString, mulberry32 } from "../shared/rng";
 import { generateIsland } from "../shared/terrain";
-import type { TileKind } from "../shared/types";
 import {
   CLAY_PALETTE,
-  TERRAIN_CLAY_COLORS,
   clayMaterial,
+  islandPalette,
+  type IslandPalette,
 } from "./artDirection";
 import { compactStaticMeshes } from "./meshCompaction";
 import { setBatchedAssetPicks, setInstanceAssetPicks, type AssetPick } from "./picking";
@@ -13,14 +13,36 @@ import { setBatchedAssetPicks, setInstanceAssetPicks, type AssetPick } from "./p
 const AMP = 7;
 const SEA = 0.2;
 const TERRAIN_LOD_DISTANCE = 240;
+/** Fine decoration — meadows, blooms, shrubs — hides beyond this range. */
+export const DECOR_FINE_DISTANCE = 260;
+export const DECOR_FINE_GROUP = "island-decor-fine";
 
-const KIND_COLORS: Record<TileKind, THREE.Color> = Object.fromEntries(
-  Object.entries(TERRAIN_CLAY_COLORS).map(([kind, color]) => [kind, new THREE.Color(color)]),
-) as Record<TileKind, THREE.Color>;
+/**
+ * Visual relief only: the same tile heights the whole game reasons about,
+ * shaped so the island reads as a sculpted diorama instead of a flat disc.
+ * The interior swells into soft rolling hills and the shore banks round off
+ * and dip faster under the sea. Every placed thing — buildings, settlers,
+ * paths, props — reads its ground through this one function, so gameplay
+ * tile logic and save data never move.
+ */
+export function surfaceY(height: number): number {
+  const base = (height - SEA) * AMP;
+  if (height <= SEA) return base * 1.7;
+  const t = Math.min(1, Math.max(0, (height - 0.42) / 0.58));
+  const s = t * t * (3 - 2 * t);
+  return base + s * 3.8;
+}
 
 /** Terrain + nature for one island, regenerated deterministically from its seed. */
-export function createIslandGroup(seed: number, size: number, islandId = "unknown-island"): THREE.Group {
+export function createIslandGroup(
+  seed: number,
+  size: number,
+  islandId = "unknown-island",
+  options: { propScale?: number } = {},
+): THREE.Group {
+  const propScale = options.propScale ?? 1;
   const terrain = generateIsland(seed, size);
+  const palette = islandPalette(seed);
   const group = new THREE.Group();
   const half = size / 2;
 
@@ -30,16 +52,44 @@ export function createIslandGroup(seed: number, size: number, islandId = "unknow
   const colors = new Float32Array(pos.count * 3);
   const shade = mulberry32(hashString(`${seed}|shade`));
   const tinted = new THREE.Color();
+  const grassLow = new THREE.Color(palette.grassLight);
+  const grassHigh = new THREE.Color(palette.grass);
+  const moss = new THREE.Color(palette.canopy[1]);
+  const rockWarm = new THREE.Color(palette.rock);
+  const rockDark = new THREE.Color(CLAY_PALETTE.stoneDark);
+  const sandBase = new THREE.Color(CLAY_PALETTE.sand);
+  const lagoon = new THREE.Color(CLAY_PALETTE.oceanDeep);
+  const smooth = (edge0: number, edge1: number, x: number) => {
+    const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
+    return t * t * (3 - 2 * t);
+  };
   for (let i = 0; i < pos.count; i++) {
     const gx = i % size;
     const gy = Math.floor(i / size);
     const tile = terrain.tiles[gy * size + gx]!;
-    pos.setY(i, (tile.height - SEA) * AMP);
-    // per-vertex lightness jitter breaks up flat color fields; higher ground
-    // sits a hair brighter so slopes read even under flat shading
-    tinted
-      .copy(KIND_COLORS[tile.kind]!)
-      .offsetHSL(0, 0, (shade() - 0.5) * 0.045 + (tile.height - SEA) * 0.06);
+    pos.setY(i, surfaceY(tile.height));
+    // an elevation ramp instead of four flat pots: bright meadow low, working
+    // green mid, moss toward the heights, then warm banded rock — with the
+    // same per-vertex jitter that keeps clay from reading as plastic
+    switch (tile.kind) {
+      case "water":
+        tinted.copy(sandBase).lerp(lagoon, smooth(SEA, 0.04, tile.height));
+        break;
+      case "sand":
+        tinted.copy(sandBase).offsetHSL(0, 0, smooth(0.28, SEA, tile.height) * 0.05);
+        break;
+      case "grass":
+        tinted.copy(grassLow).lerp(grassHigh, smooth(0.3, 0.58, tile.height));
+        tinted.lerp(moss, smooth(0.56, 0.7, tile.height) * 0.4);
+        break;
+      default: {
+        // rock — layered clay strata: soft lightness bands riding elevation
+        const band = Math.sin(tile.height * 46) * 0.5 + 0.5;
+        tinted.copy(rockWarm).lerp(rockDark, 0.18 + band * 0.24);
+        break;
+      }
+    }
+    tinted.offsetHSL(0, 0, (shade() - 0.5) * 0.045 + (tile.height - SEA) * 0.05);
     colors[i * 3] = tinted.r;
     colors[i * 3 + 1] = tinted.g;
     colors[i * 3 + 2] = tinted.b;
@@ -69,7 +119,7 @@ export function createIslandGroup(seed: number, size: number, islandId = "unknow
     const gy = Math.round((ly / lowSegments) * (size - 1));
     const source = gy * size + gx;
     const tile = terrain.tiles[source]!;
-    lowPos.setY(i, (tile.height - SEA) * AMP);
+    lowPos.setY(i, surfaceY(tile.height));
     lowColors[i * 3] = colors[source * 3]!;
     lowColors[i * 3 + 1] = colors[source * 3 + 1]!;
     lowColors[i * 3 + 2] = colors[source * 3 + 2]!;
@@ -93,7 +143,7 @@ export function createIslandGroup(seed: number, size: number, islandId = "unknow
 
   const heightAt = (x: number, y: number) => {
     const tile = terrain.tiles[Math.round(y) * size + Math.round(x)];
-    return tile ? (tile.height - SEA) * AMP : 0;
+    return tile ? surfaceY(tile.height) : 0;
   };
 
   // nature: instanced trees and rocks, plus wild food — grazing animals,
@@ -103,9 +153,10 @@ export function createIslandGroup(seed: number, size: number, islandId = "unknow
     resource: string;
     source?: string;
     pos: THREE.Vector3;
+    tile: { x: number; y: number };
   }
   const byResource = { wood: [] as NodeVisual[], stone: [] as NodeVisual[] };
-  const foodNodes: (NodeVisual & { source: string; tile: { x: number; y: number } })[] = [];
+  const foodNodes: (NodeVisual & { source: string })[] = [];
   const mineralNodes: NodeVisual[] = [];
   for (const node of terrain.nodes) {
     const p = new THREE.Vector3(
@@ -113,18 +164,17 @@ export function createIslandGroup(seed: number, size: number, islandId = "unknow
       heightAt(node.pos.x, node.pos.y),
       node.pos.y - half,
     );
+    const visual: NodeVisual = {
+      nodeId: node.id,
+      resource: node.resource,
+      pos: p,
+      tile: node.pos,
+    };
     if (node.resource === "food") {
-      foodNodes.push({
-        nodeId: node.id,
-        resource: node.resource,
-        source: node.source ?? "berry-bushes",
-        pos: p,
-        tile: node.pos,
-      });
+      foodNodes.push({ ...visual, source: node.source ?? "berry-bushes" });
       continue;
     }
     const list = byResource[node.resource as keyof typeof byResource];
-    const visual = { nodeId: node.id, resource: node.resource, pos: p };
     if (list) list.push(visual);
     else mineralNodes.push(visual);
   }
@@ -132,90 +182,229 @@ export function createIslandGroup(seed: number, size: number, islandId = "unknow
   // sized against the settlers (~1.65 tall): trees tower, rocks reach the
   // knee-to-waist, bushes sit about hip height
   const jitter = mulberry32(hashString(`${seed}|nature`));
-  // The wood family is a two-part toy tree (warm trunk + rounded crown), but
-  // remains two instanced submissions no matter how many nodes an island has.
-  if (byResource.wood.length) {
+
+  // ── composed groves ──────────────────────────────────────────────────────
+  // Every wood node becomes a small grove: the harvestable tree stands at
+  // the node in one of three species — broadleaf, pine, cypress — coloured
+  // from the island's own canopy pots, and companion trees cluster around
+  // it. Companions are pure composition, so they live in the distance-culled
+  // decoration layer: a distant island costs exactly one tree per node, the
+  // same budget the old forest paid, while a watched island reads as groves
+  // with clearings between them.
+  interface TreePlacement {
+    node: NodeVisual;
+    x: number;
+    y: number;
+    z: number;
+    s: number;
+    rotY: number;
+    species: "broadleaf" | "pine" | "cypress";
+    color: THREE.Color;
+  }
+  const decorGroup = new THREE.Group();
+  decorGroup.name = DECOR_FINE_GROUP;
+  const groveRng = mulberry32(hashString(`${seed}|groves`));
+  const primaries: TreePlacement[] = [];
+  const companions: TreePlacement[] = [];
+  const canopyPots = palette.canopy.map((hex) => new THREE.Color(hex));
+  for (const node of byResource.wood) {
+    const count = 1 + (groveRng() < 0.7 ? 1 : 0) + (groveRng() < 0.35 ? 1 : 0);
+    for (let i = 0; i < count; i++) {
+      const a = groveRng() * Math.PI * 2;
+      const r = i === 0 ? 0 : 0.7 + groveRng() * 1.4;
+      const tx = node.tile.x + Math.cos(a) * r;
+      const ty = node.tile.y + Math.sin(a) * r;
+      const kind = terrain.tiles[Math.round(ty) * size + Math.round(tx)]?.kind;
+      if (i > 0 && (kind === "water" || kind === undefined)) continue;
+      const roll = groveRng();
+      const species = roll < 0.55 ? "broadleaf" : roll < 0.85 ? "pine" : "cypress";
+      const color = new THREE.Color(
+        species === "broadleaf"
+          ? canopyPots[groveRng() < 0.3 ? 2 : 0]!
+          : canopyPots[groveRng() < 0.25 ? 0 : 1]!,
+      ).offsetHSL(0, 0, (groveRng() - 0.5) * 0.06);
+      (i === 0 ? primaries : companions).push({
+        node,
+        x: tx - half,
+        y: heightAt(tx, ty),
+        z: ty - half,
+        s: (i === 0 ? 0.95 : 0.6) + groveRng() * 0.35,
+        rotY: groveRng() * Math.PI * 2,
+        species,
+        color,
+      });
+    }
+  }
+  const plantTrees = (
+    trees: TreePlacement[],
+    parent: THREE.Group,
+    namePrefix: string,
+    withPicks: boolean,
+  ): void => {
+    if (!trees.length) return;
     const trunks = new THREE.InstancedMesh(
-      new THREE.CylinderGeometry(0.18, 0.25, 2.5, 7),
+      new THREE.CylinderGeometry(0.16, 0.24, 1.8, 5),
       clayMaterial({ color: CLAY_PALETTE.wood }),
-      byResource.wood.length,
+      trees.length,
+    );
+    const round = new THREE.InstancedMesh(
+      new THREE.DodecahedronGeometry(1.05, 0),
+      clayMaterial({ color: "#ffffff" }),
+      trees.filter((t) => t.species === "broadleaf").length,
+    );
+    const cones = new THREE.InstancedMesh(
+      new THREE.ConeGeometry(1, 2.4, 6),
+      clayMaterial({ color: "#ffffff" }),
+      trees.filter((t) => t.species !== "broadleaf").length,
     );
     const matrix = new THREE.Matrix4();
-    byResource.wood.forEach((node, index) => {
-      const s = 0.85 + jitter() * 0.4;
-      matrix.makeScale(s, s, s);
-      matrix.setPosition(node.pos.x, node.pos.y + 1.2 * s, node.pos.z);
-      trunks.setMatrixAt(index, matrix);
-    });
-    trunks.name = "clay-tree-trunks";
-    trunks.castShadow = true;
-    trunks.instanceMatrix.needsUpdate = true;
-    trunks.computeBoundingBox();
-    trunks.computeBoundingSphere();
-    setInstanceAssetPicks(
-      trunks,
-      byResource.wood.map((node) => ({
+    const quat = new THREE.Quaternion();
+    const euler = new THREE.Euler();
+    const scl = new THREE.Vector3();
+    const posV = new THREE.Vector3();
+    const roundPicks: AssetPick[] = [];
+    const conePicks: AssetPick[] = [];
+    const trunkPicks: AssetPick[] = [];
+    let roundIndex = 0;
+    let coneIndex = 0;
+    for (const [index, tree] of trees.entries()) {
+      const pick: AssetPick = {
         kind: "resource",
         islandId,
-        nodeId: node.nodeId,
-        resource: node.resource,
+        nodeId: tree.node.nodeId,
+        resource: tree.node.resource,
         label: "Trees",
         meta: "natural resource",
-      })),
-    );
-    resources.add(trunks);
-  }
+      };
+      quat.setFromEuler(euler.set(0, tree.rotY, 0));
+      matrix.compose(
+        posV.set(tree.x, tree.y + 0.9 * tree.s, tree.z),
+        quat,
+        scl.setScalar(tree.s),
+      );
+      trunks.setMatrixAt(index, matrix);
+      trunkPicks.push(pick);
+      if (tree.species === "broadleaf") {
+        matrix.compose(
+          posV.set(tree.x, tree.y + 2.5 * tree.s, tree.z),
+          quat,
+          scl.set(1.15 * tree.s, 1.0 * tree.s, 1.15 * tree.s),
+        );
+        round.setMatrixAt(roundIndex, matrix);
+        round.setColorAt(roundIndex, tree.color);
+        roundPicks.push(pick);
+        roundIndex += 1;
+      } else if (tree.species === "pine") {
+        matrix.compose(
+          posV.set(tree.x, tree.y + 2.3 * tree.s, tree.z),
+          quat,
+          scl.set(0.95 * tree.s, 1.15 * tree.s, 0.95 * tree.s),
+        );
+        cones.setMatrixAt(coneIndex, matrix);
+        cones.setColorAt(coneIndex, tree.color);
+        conePicks.push(pick);
+        coneIndex += 1;
+      } else {
+        matrix.compose(
+          posV.set(tree.x, tree.y + 2.9 * tree.s, tree.z),
+          quat,
+          scl.set(0.52 * tree.s, 1.65 * tree.s, 0.52 * tree.s),
+        );
+        cones.setMatrixAt(coneIndex, matrix);
+        cones.setColorAt(coneIndex, tree.color);
+        conePicks.push(pick);
+        coneIndex += 1;
+      }
+    }
+    for (const [mesh, picks, suffix] of [
+      [trunks, trunkPicks, "trunks"],
+      [round, roundPicks, "crowns"],
+      [cones, conePicks, "conifers"],
+    ] as const) {
+      if (!mesh.count) {
+        mesh.dispose();
+        continue;
+      }
+      mesh.name = `${namePrefix}-${suffix}`;
+      mesh.castShadow = true;
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+      mesh.computeBoundingBox();
+      mesh.computeBoundingSphere();
+      if (withPicks) setInstanceAssetPicks(mesh, picks);
+      parent.add(mesh);
+    }
+  };
+  plantTrees(primaries, resources, "clay-tree", true);
+  if (propScale > 0) plantTrees(companions, decorGroup, "clay-grove", false);
 
-  const nature: [THREE.BufferGeometry, THREE.Material, NodeVisual[], number][] = [
-    [
-      new THREE.DodecahedronGeometry(1.35, 0),
-      clayMaterial({ color: CLAY_PALETTE.leaf }),
-      byResource.wood,
-      3.05,
-    ],
-    [
-      new THREE.IcosahedronGeometry(0.8),
-      clayMaterial({ color: CLAY_PALETTE.stone }),
-      byResource.stone,
-      0.45,
-    ],
-  ];
-  for (const [geometry, material, points, lift] of nature) {
-    if (!points.length) continue;
-    const instanced = new THREE.InstancedMesh(geometry, material, points.length);
-    instanced.castShadow = true;
-    instanced.name = points === byResource.wood ? "clay-tree-crowns" : "clay-rocks";
-    const m = new THREE.Matrix4();
-    points.forEach((node, i) => {
-      const p = node.pos;
-      const s = 0.85 + jitter() * 0.4;
-      m.makeScale(s, s, s);
-      m.setPosition(p.x, p.y + lift * s, p.z);
-      instanced.setMatrixAt(i, m);
-    });
-    instanced.instanceMatrix.needsUpdate = true;
-    instanced.computeBoundingBox();
-    instanced.computeBoundingSphere();
-    setInstanceAssetPicks(
-      instanced,
-      points.map((node) => ({
+  // ── sculpted outcrops ────────────────────────────────────────────────────
+  // Stone reads as a few large rounded boulders with a companion stone, not
+  // a field of identical pebbles. Two instanced meshes for the whole island.
+  if (byResource.stone.length) {
+    const outcropRng = mulberry32(hashString(`${seed}|outcrops`));
+    const rockMatWarm = clayMaterial({ color: palette.rock });
+    const rockMatDark = clayMaterial({ color: CLAY_PALETTE.stoneDark });
+    const bigRocks = new THREE.InstancedMesh(
+      new THREE.IcosahedronGeometry(0.95, 1),
+      rockMatWarm,
+      byResource.stone.length,
+    );
+    const smallRocks = new THREE.InstancedMesh(
+      new THREE.IcosahedronGeometry(0.5, 0),
+      rockMatDark,
+      byResource.stone.length,
+    );
+    const matrix = new THREE.Matrix4();
+    const quat = new THREE.Quaternion();
+    const euler = new THREE.Euler();
+    const scl = new THREE.Vector3();
+    const posV = new THREE.Vector3();
+    const picks: AssetPick[] = [];
+    byResource.stone.forEach((node, index) => {
+      const s = 0.8 + outcropRng() * 0.55;
+      quat.setFromEuler(euler.set(0, outcropRng() * Math.PI * 2, 0));
+      matrix.compose(
+        posV.set(node.pos.x, node.pos.y + 0.5 * s, node.pos.z),
+        quat,
+        scl.set((1.25 + outcropRng() * 0.5) * s, (0.75 + outcropRng() * 0.35) * s, (1.0 + outcropRng() * 0.45) * s),
+      );
+      bigRocks.setMatrixAt(index, matrix);
+      const a = outcropRng() * Math.PI * 2;
+      const r = 1.0 + outcropRng() * 0.5;
+      const s2 = (0.55 + outcropRng() * 0.4) * s;
+      quat.setFromEuler(euler.set(0, outcropRng() * Math.PI * 2, 0));
+      matrix.compose(
+        posV.set(node.pos.x + Math.cos(a) * r, node.pos.y + 0.24 * s2, node.pos.z + Math.sin(a) * r),
+        quat,
+        scl.set(s2, s2 * 0.8, s2),
+      );
+      smallRocks.setMatrixAt(index, matrix);
+      picks.push({
         kind: "resource",
         islandId,
         nodeId: node.nodeId,
         resource: node.resource,
-        source: node.source,
-        label: node.resource === "wood" ? "Trees" : "Stone Outcrop",
+        label: "Stone Outcrop",
         meta: "natural resource",
-      })),
-    );
-    resources.add(instanced);
+      });
+    });
+    for (const mesh of [bigRocks, smallRocks]) {
+      mesh.name = mesh === bigRocks ? "clay-outcrops" : "clay-outcrop-stones";
+      mesh.castShadow = true;
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.computeBoundingBox();
+      mesh.computeBoundingSphere();
+      setInstanceAssetPicks(mesh, picks);
+      resources.add(mesh);
+    }
   }
 
   const mats = {
     trunk: clayMaterial({ color: CLAY_PALETTE.wood }),
-    canopy: clayMaterial({ color: CLAY_PALETTE.leafLight }),
+    canopy: clayMaterial({ color: palette.canopy[2] }),
     apple: clayMaterial({ color: CLAY_PALETTE.terracotta }),
-    bush: clayMaterial({ color: CLAY_PALETTE.leaf }),
+    bush: clayMaterial({ color: palette.canopy[0] }),
     berry: clayMaterial({ color: "#7d587e" }),
     hide: clayMaterial({ color: "#987555" }),
     fin: clayMaterial({ color: "#9abcc5" }),
@@ -378,10 +567,138 @@ export function createIslandGroup(seed: number, size: number, islandId = "unknow
     resources.add(mesh);
   }
 
+  // ── meadows ──────────────────────────────────────────────────────────────
+  // Pure decoration, deterministic from the seed: a handful of flowering
+  // clearings with clay blooms and shrubs, leaving deliberate negative space
+  // between the groves. No picks, no gameplay, hidden beyond map range.
+  if (propScale > 0) {
+    buildMeadows(decorGroup, terrain, size, half, heightAt, seed, palette, propScale);
+  }
+  if (decorGroup.children.length) group.add(decorGroup);
+
   group.userData.heightAt = heightAt;
   group.userData.half = half;
+  group.userData.palette = palette;
   group.userData.assetRoots = [resources];
   return group;
+}
+
+function buildMeadows(
+  decor: THREE.Group,
+  terrain: ReturnType<typeof generateIsland>,
+  size: number,
+  half: number,
+  heightAt: (x: number, y: number) => number,
+  seed: number,
+  palette: IslandPalette,
+  propScale: number,
+): void {
+  if (propScale <= 0) return;
+  const rng = mulberry32(hashString(`${seed}|meadow`));
+  const nodeTiles = new Set(terrain.nodes.map((n) => `${n.pos.x},${n.pos.y}`));
+  const grassTiles = terrain.tiles.filter(
+    (t) => t.kind === "grass" && !nodeTiles.has(`${t.x},${t.y}`),
+  );
+  if (!grassTiles.length) return;
+  const patchCount = Math.min(
+    10,
+    Math.max(4, Math.round((grassTiles.length / 1500) * propScale)),
+  );
+  interface Sprout {
+    x: number;
+    y: number;
+    z: number;
+    s: number;
+    color: THREE.Color;
+  }
+  const blooms: Sprout[] = [];
+  const shrubs: Sprout[] = [];
+  const bloomPots = palette.bloom.map((hex) => new THREE.Color(hex));
+  const shrubPots = [new THREE.Color(palette.canopy[0]), new THREE.Color(palette.canopy[1])];
+  const kindAt = (x: number, y: number) =>
+    terrain.tiles[Math.round(y) * size + Math.round(x)]?.kind;
+  for (let p = 0; p < patchCount; p++) {
+    const centre = grassTiles[Math.floor(rng() * grassTiles.length)]!;
+    const flowerCount = Math.round((9 + rng() * 8) * propScale);
+    for (let i = 0; i < flowerCount; i++) {
+      const a = rng() * Math.PI * 2;
+      const r = rng() * rng() * 4.5;
+      const tx = centre.x + Math.cos(a) * r;
+      const ty = centre.y + Math.sin(a) * r;
+      if (kindAt(tx, ty) !== "grass") continue;
+      blooms.push({
+        x: tx - half,
+        y: heightAt(tx, ty),
+        z: ty - half,
+        s: 0.7 + rng() * 0.6,
+        color: bloomPots[Math.floor(rng() * bloomPots.length)]!,
+      });
+    }
+    const shrubCount = Math.round((2 + rng() * 3) * propScale);
+    for (let i = 0; i < shrubCount; i++) {
+      const a = rng() * Math.PI * 2;
+      const r = 1 + rng() * 5;
+      const tx = centre.x + Math.cos(a) * r;
+      const ty = centre.y + Math.sin(a) * r;
+      if (kindAt(tx, ty) !== "grass") continue;
+      shrubs.push({
+        x: tx - half,
+        y: heightAt(tx, ty),
+        z: ty - half,
+        s: 0.55 + rng() * 0.5,
+        color: shrubPots[Math.floor(rng() * shrubPots.length)]!
+          .clone()
+          .offsetHSL(0, 0, (rng() - 0.5) * 0.05),
+      });
+    }
+  }
+  if (!blooms.length && !shrubs.length) return;
+  const matrix = new THREE.Matrix4();
+  const place = (
+    list: Sprout[],
+    geometry: THREE.BufferGeometry,
+    material: THREE.Material,
+    name: string,
+    lift: number,
+    tint = true,
+  ) => {
+    if (!list.length) return;
+    const mesh = new THREE.InstancedMesh(geometry, material, list.length);
+    list.forEach((item, index) => {
+      matrix.makeScale(item.s, item.s, item.s);
+      matrix.setPosition(item.x, item.y + lift * item.s, item.z);
+      mesh.setMatrixAt(index, matrix);
+      if (tint) mesh.setColorAt(index, item.color);
+    });
+    mesh.name = name;
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    mesh.computeBoundingBox();
+    mesh.computeBoundingSphere();
+    decor.add(mesh);
+  };
+  place(
+    blooms,
+    new THREE.SphereGeometry(0.11, 5, 4),
+    clayMaterial({ color: "#ffffff" }),
+    "meadow-blooms",
+    0.34,
+  );
+  place(
+    blooms,
+    new THREE.ConeGeometry(0.045, 0.4, 4),
+    clayMaterial({ color: palette.canopy[1] }),
+    "meadow-stems",
+    0.18,
+    false,
+  );
+  place(
+    shrubs,
+    new THREE.DodecahedronGeometry(0.42, 0),
+    clayMaterial({ color: "#ffffff" }),
+    "meadow-shrubs",
+    0.28,
+  );
 }
 
 export function terrainLodSegments(size: number): number {
@@ -517,12 +834,23 @@ function createFoodSource(source: string, jitter: () => number, mats: FoodMats):
 
 /** Ruins are remembered, not erased: the island grays and dims. */
 export function setIslandMood(group: THREE.Group, ruins: boolean, dormant: boolean): void {
+  const tint = new THREE.Color();
   group.traverse((obj) => {
     const mesh = obj as THREE.Mesh;
     const mat = mesh.material as (THREE.Material & { color: THREE.Color }) | undefined;
     if (!mat || !("color" in mat)) return;
     if (ruins) {
       mat.color.offsetHSL(0, -1, 0);
+      // per-instance tints — canopies, blooms, shrubs — gray with the island
+      const instanced = mesh as unknown as THREE.InstancedMesh;
+      if (instanced.isInstancedMesh && instanced.instanceColor) {
+        for (let i = 0; i < instanced.count; i++) {
+          instanced.getColorAt(i, tint);
+          tint.offsetHSL(0, -1, 0);
+          instanced.setColorAt(i, tint);
+        }
+        instanced.instanceColor.needsUpdate = true;
+      }
     }
   });
   group.visible = true;

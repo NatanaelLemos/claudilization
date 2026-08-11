@@ -16,6 +16,16 @@ test("the live canvas carries the miniature-clay art marker and responsive HUD",
     "data-water",
     "clay-water-waves-v1",
   );
+  await expect(page.locator("canvas#world")).toHaveAttribute(
+    "data-beauty",
+    "scroll-diorama-v1",
+  );
+  await expect(page.locator("canvas#world")).toHaveAttribute(
+    "data-post-support",
+    "tilt-shift-post-v1",
+  );
+  // a phone viewport never pays for the miniature post pass
+  await expect(page.locator("canvas#world")).toHaveAttribute("data-post", "off");
   await expect(page.getByTestId("compass")).toBeVisible();
   await expect(page.getByTestId("island-title")).not.toBeEmpty({ timeout: 15_000 });
   const titleBox = await page.getByTestId("island-title").boundingBox();
@@ -40,6 +50,8 @@ test("reduced motion is detected before ambient effects run", async ({ browser }
       "data-water",
       "clay-water-waves-v1",
     );
+    // reduced motion renders direct: no tilt-shift pass
+    await expect(page.locator("canvas#world")).toHaveAttribute("data-post", "off");
   } finally {
     await context.close();
   }

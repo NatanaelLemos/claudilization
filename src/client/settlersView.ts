@@ -36,10 +36,22 @@ const hairGeo = new THREE.SphereGeometry(0.285, 8, 4, 0, Math.PI * 2, 0, Math.PI
 );
 const roleGeo = new THREE.CylinderGeometry(0.31, 0.35, 0.1, 8);
 const toolGeo = new THREE.CylinderGeometry(0.032, 0.04, 0.6, 6).translate(0, -0.3, 0);
+// figures cast no shadow maps (1,024 instances x 7 parts would blow the
+// budget) — a soft instanced contact blob grounds them instead, the diorama
+// way: one extra draw per island, zero shadow cost
+const blobGeo = new THREE.CircleGeometry(0.46, 10).rotateX(-Math.PI / 2);
 
 // One shared white material — every part is tinted through instanceColor.
 const partMat = clayMaterial({ color: "#ffffff" });
 const toolMat = clayMaterial({ color: CLAY_PALETTE.woodDark });
+const blobMat = new THREE.MeshBasicMaterial({
+  color: "#33261c",
+  transparent: true,
+  opacity: 0.26,
+  depthWrite: false,
+  polygonOffset: true,
+  polygonOffsetFactor: -2,
+});
 
 const SKIN_TONES = ["#f0c9a6", "#e3b68c", "#c98f5f", "#a96f43", "#7f5232"];
 const HAIR_TONES = ["#241b12", "#4a3320", "#6e4a26", "#8a6a3c", "#3a3a3f", "#8f8578"];
@@ -83,6 +95,7 @@ interface Parts {
   legs: THREE.InstancedMesh; // two instances per settler
   roles: THREE.InstancedMesh; // hat/band silhouette, colored by authoritative role
   tools: THREE.InstancedMesh; // tiny work prop; hidden by scale for idle villagers
+  blobs: THREE.InstancedMesh; // soft contact shadow disc at the feet
 }
 
 interface SettlerAnim {
@@ -144,6 +157,13 @@ function buildParts(holder: THREE.Group, count: number): Parts {
       const mesh = new THREE.InstancedMesh(toolGeo, toolMat, count);
       mesh.frustumCulled = false;
       mesh.name = "clay-character-tools";
+      holder.add(mesh);
+      return mesh;
+    })(),
+    blobs: (() => {
+      const mesh = new THREE.InstancedMesh(blobGeo, blobMat, count);
+      mesh.frustumCulled = false;
+      mesh.name = "clay-character-blobs";
       holder.add(mesh);
       return mesh;
     })(),
@@ -346,6 +366,15 @@ export function tickSettlers(dt: number): void {
       parts.torso.setMatrixAt(i, rootM);
       parts.head.setMatrixAt(i, rootM);
       parts.hair.setMatrixAt(i, rootM);
+      // the contact blob stays glued to the ground while the figure bobs,
+      // breathing a little smaller as the body lifts
+      const blobScale = 1 - bob * 0.9;
+      localM.compose(
+        accessoryPosition.set(s.x - view.half, ground + 0.05, s.z - view.half),
+        identityQ,
+        accessoryScale.set(blobScale, 1, blobScale),
+      );
+      parts.blobs.setMatrixAt(i, localM);
       const roleShape = ROLE_SHAPE[s.role];
       localM.compose(
         accessoryPosition.set(0, 1.72, 0),

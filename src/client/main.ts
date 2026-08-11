@@ -17,7 +17,14 @@ import {
   updateCreationBands,
   updateCreations,
 } from "./creationsView";
-import { createIslandGroup, setIslandMood } from "./islandMesh";
+import { ART_DIRECTION } from "./artDirection";
+import { buildGroundsGroup, GROUNDS_DISTANCE, GROUNDS_GROUP } from "./groundsView";
+import {
+  createIslandGroup,
+  DECOR_FINE_DISTANCE,
+  DECOR_FINE_GROUP,
+  setIslandMood,
+} from "./islandMesh";
 import { Net, type IslandSummary } from "./net";
 import { createStage } from "./scene";
 import { initCatastropheEffects } from "./catastropheEffects";
@@ -116,7 +123,9 @@ function ensureView(summary: IslandSummary): IslandView {
 /** Build one island's terrain now and move its content groups onto the land. */
 function buildTerrain(view: IslandView): void {
   const s = view.summary;
-  const ground = createIslandGroup(s.seed, s.size ?? DEFAULT_BALANCE.islandSize, s.id);
+  const ground = createIslandGroup(s.seed, s.size ?? DEFAULT_BALANCE.islandSize, s.id, {
+    propScale: window.innerWidth <= 640 ? ART_DIRECTION.density.mobilePropScale : 1,
+  });
   ground.position.copy(view.group.position);
   ground.add(view.buildings, view.settlers, view.creations);
   stage.scene.remove(view.group);
@@ -183,6 +192,11 @@ function rebuildBuildings(
   const heightAt = view.group.userData.heightAt as (x: number, y: number) => number;
   const half = view.group.userData.half as number;
   view.buildings.add(buildBuildingBatch({ buildings, civ, age, heightAt, half }));
+  // the settlement's street layer: clay footpaths between finished buildings
+  // and a small working yard per building — same lifecycle as the batch
+  view.buildings.add(
+    buildGroundsGroup({ buildings, civ, islandSeed: view.summary.seed, heightAt, half }),
+  );
 }
 
 /** Summary-driven meshes for an unfocused island — needs its terrain built. */
@@ -365,6 +379,8 @@ stage.onFrame(tickCreations);
 stage.onFrame(tickBoats);
 
 // Re-evaluate the shadow caster budget twice a second while the camera roams.
+// The same sweep hides street-level detail — meadows, paths, yards — on
+// islands far from the eye, so the beauty pass never taxes the map view.
 const shadowTarget = new THREE.Vector3();
 let shadowBudgetIn = 0;
 stage.onFrame((dt) => {
@@ -378,6 +394,10 @@ stage.onFrame((dt) => {
       view.summary.position.y - shadowTarget.z,
     );
     applyBuildingShadowDistance(view.buildings, distance);
+    const decorFine = view.group.getObjectByName(DECOR_FINE_GROUP);
+    if (decorFine) decorFine.visible = distance <= DECOR_FINE_DISTANCE;
+    const grounds = view.buildings.getObjectByName(GROUNDS_GROUP);
+    if (grounds) grounds.visible = distance <= GROUNDS_DISTANCE;
   }
 });
 

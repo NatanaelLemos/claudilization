@@ -4,7 +4,8 @@ import { DEFAULT_BALANCE } from "../shared/balance";
 import { mulberry32 } from "../shared/rng";
 import { skyClock, type SkyClock } from "./skyClock";
 import { EMBER, skyRig, type Rgb } from "./skyRig";
-import { ART_DIRECTION, CLAY_PALETTE } from "./artDirection";
+import { ART_DIRECTION, BEAUTY_MARKER, CLAY_PALETTE } from "./artDirection";
+import { createPostPipeline, POST_MARKER, postEnabled } from "./postEffects";
 import {
   AdaptiveRenderQuality,
   renderQualityProfile,
@@ -56,6 +57,7 @@ export interface StagePerformanceSnapshot {
   drawingBuffer: { width: number; height: number };
   shadows: { enabled: boolean; mapSize: number };
   quality: RenderQuality;
+  postActive: boolean;
 }
 
 /** dawn and dusk each burn a while; the share is server law — the same
@@ -78,7 +80,10 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
 
   const scene = new THREE.Scene();
   scene.userData.artDirection = ART_DIRECTION.id;
+  scene.userData.beautyPass = BEAUTY_MARKER;
   canvas.dataset.artDirection = ART_DIRECTION.id;
+  canvas.dataset.beauty = BEAUTY_MARKER;
+  canvas.dataset.postSupport = POST_MARKER;
   document.documentElement.dataset.reducedMotion = String(REDUCED_MOTION);
   scene.background = new THREE.Color(CLAY_PALETTE.ocean);
   scene.fog = new THREE.Fog(
@@ -191,7 +196,9 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
     const rig = skyRig(clock.phase(), daylightShare);
     const a = rig.angle;
 
-    SUN_OFFSET.set(Math.cos(a) * 150, 40 + Math.max(0, rig.elevation) * 150, 60);
+    // the key sun rides lower than the old rig — the long soft shadows of a
+    // studio-lit miniature, even at the height of the day
+    SUN_OFFSET.set(Math.cos(a) * 150, 34 + Math.max(0, rig.elevation) * 112, 60);
     sun.intensity = rig.sunIntensity;
     toColor(sun.color, rig.sunColor);
 
@@ -238,6 +245,7 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
   const drawingBufferSize = new THREE.Vector2();
   const qualityController = new AdaptiveRenderQuality();
   const shadowBudget = new ShadowRefreshBudget();
+  const post = createPostPipeline(renderer);
   const previousShadowCameraPosition = new THREE.Vector3().copy(camera.position);
   const previousShadowCameraQuaternion = new THREE.Quaternion().copy(camera.quaternion);
   const renderCameraPosition = new THREE.Vector3();
@@ -254,6 +262,17 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
       sun.shadow.map = null;
     }
     shadowBudget.invalidate();
+    // the miniature post pass runs only where it is free: desktop, full
+    // quality, and no reduced-motion request — everyone else renders direct.
+    // ?post=1/0 pins it for screenshot tooling and slow headless GPUs.
+    const w = canvas.clientWidth || window.innerWidth;
+    const h = canvas.clientHeight || window.innerHeight;
+    const pin = new URLSearchParams(location.search).get("post");
+    const enabled =
+      pin === "1" ? true : pin === "0" ? false : postEnabled(quality, w <= 640, REDUCED_MOTION);
+    post.setEnabled(enabled);
+    post.setSize(w, h, profile.pixelRatio);
+    canvas.dataset.post = post.enabled() ? POST_MARKER : "off";
   }
 
   function resize() {
@@ -304,7 +323,7 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
     renderCameraQuaternion.copy(camera.quaternion);
     camera.position.add(shakeOffset);
     if (shakeRoll) camera.rotateZ(shakeRoll);
-    renderer.render(scene, camera);
+    post.render(scene, camera);
     camera.position.copy(renderCameraPosition);
     camera.quaternion.copy(renderCameraQuaternion);
   });
@@ -380,6 +399,7 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
         drawingBuffer: { width: drawingBufferSize.x, height: drawingBufferSize.y },
         shadows: { enabled: renderer.shadowMap.enabled, mapSize: sun.shadow.mapSize.x },
         quality: qualityController.current(),
+        postActive: post.enabled(),
       };
     },
   };
