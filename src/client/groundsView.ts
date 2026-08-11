@@ -1,7 +1,14 @@
 import * as THREE from "three";
 import { hashString, mulberry32 } from "../shared/rng";
 import { buildingSpec } from "../shared/buildings";
-import type { Building, CivSpec } from "../shared/types";
+import {
+  buildingFacing,
+  doorPoint,
+  nearestStreet,
+  townPlan,
+  type TownPlan,
+} from "../shared/townPlan";
+import type { Building, CivSpec, IslandTerrain } from "../shared/types";
 import { CLAY_PALETTE, clayMaterial, islandPalette } from "./artDirection";
 
 export const GROUNDS_GROUP = "island-grounds";
@@ -27,6 +34,8 @@ export interface GroundsOptions {
   islandSeed: number;
   heightAt: (x: number, y: number) => number;
   half: number;
+  /** With terrain the paths run door-to-door and lean into the streets. */
+  terrain?: IslandTerrain;
 }
 
 // shared prop geometry — one of each shape for the whole world
@@ -147,10 +156,12 @@ export function buildGroundsGroup({
   islandSeed,
   heightAt,
   half,
+  terrain,
 }: GroundsOptions): THREE.Group {
   const holder = new THREE.Group();
   holder.name = GROUNDS_GROUP;
   const palette = islandPalette(islandSeed);
+  const plan: TownPlan | undefined = terrain ? townPlan(terrain, islandSeed) : undefined;
   const complete = buildings
     .filter((b) => b.stage === "complete")
     .sort((a, b) => (a.id < b.id ? -1 : 1));
@@ -159,9 +170,18 @@ export function buildGroundsGroup({
   const props: PropPlacement[] = [];
   const soil = palette.soil;
   const soilDark = `#${new THREE.Color(palette.soil).offsetHSL(0, 0, -0.06).getHexString()}`;
+  const facings = complete.map((b) =>
+    plan && terrain ? buildingFacing(plan, terrain, b) : undefined,
+  );
 
   // ── footpaths ────────────────────────────────────────────────────────────
-  const points = complete.map((b) => ({ x: b.pos.x, y: b.pos.y }));
+  // With a town plan the network runs door-to-door and each stone leans into
+  // the street skeleton, so the footpaths *reinforce* the avenues the placer
+  // built along instead of cutting across them.
+  const points = complete.map((b, i) => {
+    const facing = facings[i];
+    return facing === undefined ? { x: b.pos.x, y: b.pos.y } : doorPoint(b.pos, facing);
+  });
   let stones = 0;
   for (const [a, b] of pathEdges(points)) {
     if (stones >= MAX_PATH_STONES) break;
@@ -177,12 +197,21 @@ export function buildGroundsGroup({
       const sway = Math.sin(t * Math.PI) * (wobble() - 0.5) * 1.4;
       const dx = (end.x - start.x) / length;
       const dy = (end.y - start.y) / length;
-      const px = start.x + (end.x - start.x) * t - dy * sway;
-      const py = start.y + (end.y - start.y) * t + dx * sway;
-      // leave a clear yard at each doorstep instead of poking through walls
+      let px = start.x + (end.x - start.x) * t - dy * sway;
+      let py = start.y + (end.y - start.y) * t + dx * sway;
+      if (plan) {
+        // stones drift onto the nearby avenue — the MST bundles along it
+        const street = nearestStreet(plan, px, py);
+        if (street && street.distance > 0.001 && street.distance < 3) {
+          const pull = 0.6 * (1 - street.distance / 3);
+          px += (street.point.x - px) * pull;
+          py += (street.point.y - py) * pull;
+        }
+      }
+      // leave a clear mouth at each doorstep instead of poking through walls
       if (
-        Math.hypot(px - start.x, py - start.y) < 1.6 ||
-        Math.hypot(px - end.x, py - end.y) < 1.6
+        Math.hypot(px - start.x, py - start.y) < 1.1 ||
+        Math.hypot(px - end.x, py - end.y) < 1.1
       ) {
         continue;
       }
@@ -203,14 +232,25 @@ export function buildGroundsGroup({
 
   // ── yards ────────────────────────────────────────────────────────────────
   const trim = civ.architecture.trim;
-  for (const building of complete) {
+  complete.forEach((building, buildingIndex) => {
     const kind = yardKind(building.type);
-    if (kind === "none") continue;
+    if (kind === "none") return;
     const rand = mulberry32(hashString(`${building.id}|yard`));
     const bx = building.pos.x;
     const by = building.pos.y;
-    const place = (shape: PropShape, r: number, color: string, s = 1, lift = 0) => {
-      const a = rand() * Math.PI * 2;
+    const facing = facings[buildingIndex];
+    // door direction in yard-angle terms (yards use cos/sin over x/y)
+    const doorA = facing === undefined ? undefined : Math.PI / 2 - facing;
+    const place = (
+      shape: PropShape,
+      r: number,
+      color: string,
+      s = 1,
+      lift = 0,
+      angle?: number,
+    ) => {
+      const roll = rand();
+      const a = angle ?? roll * Math.PI * 2;
       const px = bx + Math.cos(a) * r;
       const py = by + Math.sin(a) * r;
       const ground = heightAt(px, py);
@@ -227,8 +267,8 @@ export function buildGroundsGroup({
     };
     switch (kind) {
       case "field": {
-        // three tilled rows beside the farm, fenced on one side
-        const a = rand() * Math.PI * 2;
+        // three tilled rows behind the farmhouse, fenced on one side
+        const a = doorA === undefined ? rand() * Math.PI * 2 : doorA + Math.PI;
         const cx = bx + Math.cos(a) * 3.1;
         const cy = by + Math.sin(a) * 3.1;
         for (let i = -1; i <= 1; i++) {
@@ -252,8 +292,8 @@ export function buildGroundsGroup({
         break;
       }
       case "market": {
-        // a canted market awning in the civ's colors plus goods
-        const a = rand() * Math.PI * 2;
+        // a canted market awning in the civ's colors, trading at the door
+        const a = doorA === undefined ? rand() * Math.PI * 2 : doorA + (rand() - 0.5) * 0.8;
         const px = bx + Math.cos(a) * 2.4;
         const py = by + Math.sin(a) * 2.4;
         const ground = heightAt(px, py);
@@ -308,10 +348,11 @@ export function buildGroundsGroup({
         break;
       }
       case "civic": {
-        // banner poles flying the civilization's pennant
+        // banner poles flying the civilization's pennant, flanking the door
         for (const side of [-1, 1]) {
-          const a = rand() * Math.PI * 2;
-          const px = bx + Math.cos(a) * 2.2 * side;
+          const roll = rand();
+          const a = doorA === undefined ? roll * Math.PI * 2 : doorA + side * 0.55;
+          const px = bx + Math.cos(a) * 2.2 * (doorA === undefined ? side : 1);
           const py = by + Math.sin(a) * 2.2;
           const ground = heightAt(px, py);
           if (ground < 0.12) continue;
@@ -337,14 +378,16 @@ export function buildGroundsGroup({
         break;
       }
       default: {
-        // home: modest domestic clutter
-        place("crate", 1.7, CLAY_PALETTE.wood, 0.8, 0.15);
-        if (rand() < 0.6) place("sack", 1.5, "#c9b183", 0.8, 0.13);
-        if (rand() < 0.4) place("barrel", 1.9, CLAY_PALETTE.woodDark, 0.85, 0.19);
+        // home: modest domestic clutter kept beside the door, never across it
+        const sideA =
+          doorA === undefined ? undefined : doorA + (rand() < 0.5 ? 1.15 : -1.15);
+        place("crate", 1.7, CLAY_PALETTE.wood, 0.8, 0.15, sideA);
+        if (rand() < 0.6) place("sack", 1.5, "#c9b183", 0.8, 0.13, sideA);
+        if (rand() < 0.4) place("barrel", 1.9, CLAY_PALETTE.woodDark, 0.85, 0.19, sideA);
         break;
       }
     }
-  }
+  });
 
   // ── one instanced mesh per shape+color ───────────────────────────────────
   const buckets = new Map<string, PropPlacement[]>();
@@ -381,4 +424,20 @@ export function buildGroundsGroup({
     holder.add(mesh);
   }
   return holder;
+}
+
+/**
+ * Grounds use module-shared geometry and materials. Replacing a focused town
+ * therefore releases only each InstancedMesh's renderer-owned instance data;
+ * the shared assets stay valid for the next island that receives full detail.
+ */
+export function disposeGroundsGroup(holder: THREE.Group): void {
+  const grounds = holder.getObjectByName(GROUNDS_GROUP) as THREE.Group | undefined;
+  if (!grounds) return;
+  grounds.traverse((object) => {
+    if ((object as THREE.InstancedMesh).isInstancedMesh) {
+      (object as THREE.InstancedMesh).dispose();
+    }
+  });
+  grounds.parent?.remove(grounds);
 }

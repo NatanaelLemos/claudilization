@@ -12,7 +12,7 @@ import {
   ShadowRefreshBudget,
   type RenderQuality,
 } from "./renderQuality";
-import { createWaterSurface } from "./waterSurface";
+import { createWaterSurface, type WaterSwellPose } from "./waterSurface";
 import type { StampableTerrain } from "./waterDepthField";
 
 CameraControls.install({ THREE });
@@ -26,6 +26,8 @@ export interface Stage {
   /** Accessibility preference shared with transient world effects. */
   reducedMotion: boolean;
   flyTo(x: number, z: number): void;
+  /** First-load reveal: begin above the whole island, then settle into play. */
+  establishAt(x: number, z: number): void;
   onFrame(fn: (dt: number) => void): void;
   /** anchor the sky to the world's clock; it free-runs between world frames */
   setWorldClock(worldSeconds: number, daySeconds: number, daylightShare?: number): void;
@@ -41,6 +43,7 @@ export interface Stage {
   /** Paint a built island's bathymetry into the sea — visual only, from the
    * island's already generated terrain; shores, lagoons and foam follow it. */
   stampWater(centerX: number, centerZ: number, seed: number, terrain: StampableTerrain): void;
+  waterPose(x: number, z: number): WaterSwellPose;
   /** On-demand renderer diagnostics for benchmarks; never runs in the frame loop. */
   performanceSnapshot(): StagePerformanceSnapshot;
 }
@@ -153,6 +156,38 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
   scene.userData.waterShader = water.mesh.userData.waterShader;
   canvas.dataset.water = water.mesh.userData.waterShader as string;
   scene.add(water.mesh);
+
+  // A few hand-shaped clouds, instanced into one draw call. They drift on the
+  // world clock, not frame accumulation, and freeze for reduced-motion users.
+  const cloudCount = window.innerWidth <= 640 ? 12 : 21;
+  const cloudGeometry = new THREE.DodecahedronGeometry(1, 0);
+  const cloudMaterial = new THREE.MeshBasicMaterial({
+    color: "#edf1ed",
+    transparent: true,
+    opacity: 0.28,
+    depthWrite: false,
+    fog: true,
+  });
+  const clouds = new THREE.InstancedMesh(cloudGeometry, cloudMaterial, cloudCount);
+  clouds.name = "drifting-clay-clouds";
+  clouds.frustumCulled = false;
+  clouds.renderOrder = -2;
+  scene.add(clouds);
+  const cloudSeeds = Array.from({ length: Math.ceil(cloudCount / 3) }, (_, i) => {
+    const rand = mulberry32(20260811 + i * 97);
+    return {
+      x: rand() * 1_600 - 800,
+      z: rand() * 1_500 - 750,
+      y: 96 + rand() * 46,
+      speed: 1.2 + rand() * 1.1,
+      scale: 8 + rand() * 7,
+    };
+  });
+  const cloudMatrix = new THREE.Matrix4();
+  const cloudPos = new THREE.Vector3();
+  const cloudQuat = new THREE.Quaternion();
+  const cloudScale = new THREE.Vector3();
+  let cloudTickIn = 0;
 
   // stars pinned to a far dome, revealed as the daylight drains away
   const starRng = mulberry32(20260730);
@@ -314,6 +349,26 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
     // the stars ride along so their dome never drifts off-centre
     controls.getTarget(lookTarget);
     applyTimeOfDay(lookTarget);
+    cloudTickIn -= dt;
+    if (cloudTickIn <= 0) {
+      cloudTickIn = window.innerWidth <= 640 ? 0.12 : 0.08;
+      const driftTime = REDUCED_MOTION ? 0 : clock.worldTime();
+      for (let i = 0; i < cloudCount; i++) {
+        const seed = cloudSeeds[Math.floor(i / 3)]!;
+        const lobe = i % 3;
+        const wrap = ((seed.x + driftTime * seed.speed + 900) % 1_800 + 1_800) % 1_800 - 900;
+        const offsets = [[-0.72, 0, 0], [0.45, 0.12, 0.15], [0, -0.08, 0.52]] as const;
+        const off = offsets[lobe]!;
+        const scale = seed.scale * (lobe === 0 ? 1 : lobe === 1 ? 0.78 : 0.66);
+        cloudMatrix.compose(
+          cloudPos.set(wrap + off[0] * scale, seed.y + off[1] * scale, seed.z + off[2] * scale),
+          cloudQuat,
+          cloudScale.set(scale * 1.65, scale * 0.42, scale),
+        );
+        clouds.setMatrixAt(i, cloudMatrix);
+      }
+      clouds.instanceMatrix.needsUpdate = true;
+    }
     sun.target.position.copy(lookTarget);
     sun.position.copy(lookTarget).add(SUN_OFFSET);
     stars.position.copy(lookTarget);
@@ -352,6 +407,22 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
         !REDUCED_MOTION,
       );
     },
+    establishAt(x, z) {
+      const mobile = window.innerWidth <= 640;
+      const highY = mobile ? 150 : 132;
+      const highZ = mobile ? 196 : 180;
+      void controls.setLookAt(x, highY, z + highZ, x, 0, z, false).then(() =>
+        controls.setLookAt(
+          x,
+          ART_DIRECTION.camera.landing.y + (mobile ? 12 : 0),
+          z + ART_DIRECTION.camera.landing.z + (mobile ? 18 : 0),
+          x,
+          0,
+          z,
+          !REDUCED_MOTION,
+        ),
+      );
+    },
     onFrame(fn) {
       frameFns.push(fn);
     },
@@ -375,6 +446,9 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
     },
     stampWater(centerX, centerZ, seed, terrain) {
       water.stampIsland(centerX, centerZ, seed, terrain);
+    },
+    waterPose(x, z) {
+      return water.poseAt(x, z);
     },
     performanceSnapshot() {
       let objects = 0;

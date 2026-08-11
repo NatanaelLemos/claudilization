@@ -18,7 +18,12 @@ import {
   updateCreations,
 } from "./creationsView";
 import { ART_DIRECTION } from "./artDirection";
-import { buildGroundsGroup, GROUNDS_DISTANCE, GROUNDS_GROUP } from "./groundsView";
+import {
+  buildGroundsGroup,
+  disposeGroundsGroup,
+  GROUNDS_DISTANCE,
+  GROUNDS_GROUP,
+} from "./groundsView";
 import {
   createIslandGroup,
   DECOR_FINE_DISTANCE,
@@ -32,6 +37,15 @@ import { setSettlerViewActive, tickSettlers, updateSettlers } from "./settlersVi
 import { initPicking } from "./picking";
 import { startRenderBenchmark } from "./renderBenchmark";
 import { buildingRenderSignature } from "./structures";
+import { setWindowGlow } from "./structures";
+import { openingIslandId } from "./openingView";
+import { skyRig } from "./skyRig";
+import {
+  buildTownEffects,
+  disposeTownEffects,
+  tickTownEffects,
+  TOWN_EFFECTS_GROUP,
+} from "./townEffects";
 import {
   applyBuildingShadowDistance,
   buildBuildingBatch,
@@ -55,6 +69,7 @@ const key = new URLSearchParams(location.search).get("key") ?? undefined;
 const canvas = document.getElementById("world") as HTMLCanvasElement;
 const titleEl = document.getElementById("island-title")!;
 const ageEl = document.getElementById("island-age")!;
+const worldCurtain = document.getElementById("world-curtain")!;
 
 const stage = createStage(canvas);
 const catastropheEffects = initCatastropheEffects(stage);
@@ -80,6 +95,7 @@ const views = new Map<string, IslandView>();
 const terrainQueue = new Set<string>();
 let focusedId: string | undefined;
 let myIslandId: string | undefined;
+let openingRevealed = false;
 
 /**
  * Register an island without paying for its terrain. The heavy work —
@@ -139,6 +155,11 @@ function buildTerrain(view: IslandView): void {
   // the world already told us what stands here — fill the fresh land in
   applySummaryVisuals(view, s);
   if (view.island) applyIslandDetail(view, view.island);
+  if (s.id === focusedId && !openingRevealed) {
+    openingRevealed = true;
+    stage.establishAt(s.position.x, s.position.y);
+    requestAnimationFrame(() => worldCurtain.classList.add("ready"));
+  }
 }
 
 // the terrain builder: one island per frame keeps every frame fluid while
@@ -185,21 +206,60 @@ function rebuildBuildings(
   buildings: Island["buildings"],
   civ: CivSpec,
   age: Island["age"],
+  enhanced: boolean,
 ): void {
   // the civ's accent is part of the look — a conquest that recolors an island
   // must rebuild its roofs even when the building list is unchanged
-  const signature = `${civ.accent}|${buildingRenderSignature(buildings, age)}`;
+  const signature = `${civ.accent}|${enhanced ? "town" : "map"}|${buildingRenderSignature(buildings, age)}`;
   if (signature === view.buildingIds) return;
   view.buildingIds = signature;
+  disposeTownEffects(view.buildings);
+  disposeGroundsGroup(view.buildings);
   disposeBuildingBatch(view.buildings);
   const heightAt = view.group.userData.heightAt as (x: number, y: number) => number;
   const half = view.group.userData.half as number;
-  view.buildings.add(buildBuildingBatch({ buildings, civ, age, heightAt, half }));
+  // the town plan (same shared module the server places with) orients every
+  // building toward its street, plaza, or the sea, and grounds it on slopes
+  const terrain = enhanced
+    ? (view.group.userData.terrain as IslandTerrain | undefined)
+    : undefined;
+  view.buildings.add(
+    buildBuildingBatch({
+      buildings,
+      civ,
+      age,
+      heightAt,
+      half,
+      terrain,
+      islandSeed: view.summary.seed,
+    }),
+  );
+  if (enhanced) {
+    view.buildings.add(
+      buildTownEffects({
+        buildings,
+        civ,
+        terrain,
+        islandSeed: view.summary.seed,
+        heightAt,
+        half,
+      }),
+    );
+  }
   // the settlement's street layer: clay footpaths between finished buildings
   // and a small working yard per building — same lifecycle as the batch
-  view.buildings.add(
-    buildGroundsGroup({ buildings, civ, islandSeed: view.summary.seed, heightAt, half }),
-  );
+  if (enhanced) {
+    view.buildings.add(
+      buildGroundsGroup({
+        buildings,
+        civ,
+        islandSeed: view.summary.seed,
+        heightAt,
+        half,
+        terrain,
+      }),
+    );
+  }
 }
 
 /** Summary-driven meshes for an unfocused island — needs its terrain built. */
@@ -208,7 +268,7 @@ function applySummaryVisuals(view: IslandView, s: IslandSummary): void {
   const heightAt = view.group.userData.heightAt as (x: number, y: number) => number;
   const half = view.group.userData.half as number;
   const civ = civAccented(CIVS[s.civ], s.color);
-  rebuildBuildings(view, s.buildings ?? [], civ, s.age);
+  rebuildBuildings(view, s.buildings ?? [], civ, s.age, s.id === focusedId);
   updateBoats(
     view.boats,
     { id: s.id, boats: s.boats ?? [] } as unknown as Island,
@@ -224,7 +284,7 @@ function applyIslandDetail(view: IslandView, island: Island): void {
   const civ = civAccented(CIVS[island.civ], view.summary.color ?? island.color);
   const heightAt = view.group.userData.heightAt as (x: number, y: number) => number;
   const half = view.group.userData.half as number;
-  rebuildBuildings(view, island.buildings, civ, island.age);
+  rebuildBuildings(view, island.buildings, civ, island.age, island.id === focusedId);
   updateSettlers(view.settlers, island, civ, heightAt, half, island.id === focusedId);
   updateBoats(view.boats, island, civ);
   updateCreations(view.creations, island.creationSpecs, island.creations, heightAt, half);
@@ -306,9 +366,8 @@ net.onWorld = (summaries) => {
   }
   if (!focusedId && summaries.length) {
     // spectators never see dead air: land on the most recently active island
-    const target = myIslandId ??
-      [...summaries].sort((a, b) => b.lastPulseSeq - a.lastPulseSeq)[0]!.id;
-    focusIsland(target);
+    const target = openingIslandId(summaries, myIslandId);
+    if (target) focusIsland(target);
   }
   if (focusedId) {
     const s = summaries.find((x) => x.id === focusedId);
@@ -379,13 +438,14 @@ net.onHello = (reply) => {
 initChat(Boolean(key), (text) => net.chat(text));
 stage.onFrame(tickSettlers);
 stage.onFrame(tickCreations);
-stage.onFrame(tickBoats);
+stage.onFrame((dt) => tickBoats(dt, stage.waterPose));
 
 // Re-evaluate the shadow caster budget twice a second while the camera roams.
 // The same sweep hides street-level detail — meadows, paths, yards — on
 // islands far from the eye, so the beauty pass never taxes the map view.
 const shadowTarget = new THREE.Vector3();
 let shadowBudgetIn = 0;
+let townLifeIn = 0;
 stage.onFrame((dt) => {
   shadowBudgetIn -= dt;
   if (shadowBudgetIn > 0) return;
@@ -401,6 +461,25 @@ stage.onFrame((dt) => {
     if (decorFine) decorFine.visible = distance <= DECOR_FINE_DISTANCE;
     const grounds = view.buildings.getObjectByName(GROUNDS_GROUP);
     if (grounds) grounds.visible = distance <= GROUNDS_DISTANCE;
+    const effects = view.buildings.getObjectByName(TOWN_EFFECTS_GROUP);
+    if (effects) effects.visible = distance <= GROUNDS_DISTANCE;
+  }
+});
+
+// Windows wake after dusk; smoke and pennants move at a bounded 20 Hz. All
+// timing reads the one world clock and freezes cleanly for reduced motion.
+stage.onFrame((dt) => {
+  townLifeIn -= dt;
+  if (townLifeIn > 0) return;
+  townLifeIn = 0.05;
+  const share = net.daylightShare ?? DEFAULT_BALANCE.daylightShare;
+  const dayness = skyRig(stage.dayFraction(), share).dayness;
+  setWindowGlow(dayness);
+  for (const view of views.values()) {
+    const effects = view.buildings.getObjectByName(TOWN_EFFECTS_GROUP);
+    if (effects?.visible) {
+      tickTownEffects(view.buildings, stage.worldTime(), dayness, stage.reducedMotion);
+    }
   }
 });
 

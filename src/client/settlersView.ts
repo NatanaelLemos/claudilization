@@ -12,34 +12,38 @@ import {
 
 const WALK_SPEED = 3; // island units per second
 
+/** Scale audit 2026-08-11: the figure kit shrinks to 0.82 so a settler
+ * (~1.43 world units) stands door-high at a hut instead of eaves-high.
+ * Trees, buildings, and boats keep their sizes; only the people were off. */
+const PERSON_SCALE = 0.82;
+
 // A settler is a little clay person assembled from instanced parts. Geometry
 // origins are baked so the figure's root sits at its feet and limbs pivot at
 // the hip/shoulder, letting a single matrix per part both place and swing it.
-const HIP_Y = 0.6;
-const SHOULDER_Y = 1.25;
-const LEG_X = 0.12;
-const ARM_X = 0.33;
+const HIP_Y = 0.6 * PERSON_SCALE;
+const SHOULDER_Y = 1.25 * PERSON_SCALE;
+const LEG_X = 0.12 * PERSON_SCALE;
+const ARM_X = 0.33 * PERSON_SCALE;
 const ARM_TILT = 0.12; // constant outward lean so arms clear the tunic
+const ROLE_Y = 1.72 * PERSON_SCALE; // where the role hat sits
 
-const legGeo = new THREE.CylinderGeometry(0.085, 0.105, 0.58, 8).translate(0, -0.3, 0);
-const armGeo = new THREE.CylinderGeometry(0.07, 0.082, 0.54, 8).translate(0, -0.275, 0);
-const torsoGeo = new THREE.CylinderGeometry(0.25, 0.37, 0.82, 8).translate(0, 0.91, 0);
-const headGeo = new THREE.SphereGeometry(0.23 * ART_DIRECTION.sprites.headScale, 8, 6).translate(
-  0,
-  1.46,
-  0,
+const scaled = (geo: THREE.BufferGeometry) =>
+  geo.scale(PERSON_SCALE, PERSON_SCALE, PERSON_SCALE);
+const legGeo = scaled(new THREE.CylinderGeometry(0.085, 0.105, 0.58, 8).translate(0, -0.3, 0));
+const armGeo = scaled(new THREE.CylinderGeometry(0.07, 0.082, 0.54, 8).translate(0, -0.275, 0));
+const torsoGeo = scaled(new THREE.CylinderGeometry(0.25, 0.37, 0.82, 8).translate(0, 0.91, 0));
+const headGeo = scaled(
+  new THREE.SphereGeometry(0.23 * ART_DIRECTION.sprites.headScale, 8, 6).translate(0, 1.46, 0),
 );
-const hairGeo = new THREE.SphereGeometry(0.285, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2).translate(
-  0,
-  1.51,
-  0,
+const hairGeo = scaled(
+  new THREE.SphereGeometry(0.285, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2).translate(0, 1.51, 0),
 );
-const roleGeo = new THREE.CylinderGeometry(0.31, 0.35, 0.1, 8);
-const toolGeo = new THREE.CylinderGeometry(0.032, 0.04, 0.6, 6).translate(0, -0.3, 0);
+const roleGeo = scaled(new THREE.CylinderGeometry(0.31, 0.35, 0.1, 8));
+const toolGeo = scaled(new THREE.CylinderGeometry(0.032, 0.04, 0.6, 6).translate(0, -0.3, 0));
 // figures cast no shadow maps (1,024 instances x 7 parts would blow the
 // budget) — a soft instanced contact blob grounds them instead, the diorama
 // way: one extra draw per island, zero shadow cost
-const blobGeo = new THREE.CircleGeometry(0.46, 10).rotateX(-Math.PI / 2);
+const blobGeo = scaled(new THREE.CircleGeometry(0.46, 10).rotateX(-Math.PI / 2));
 
 // One shared white material — every part is tinted through instanceColor.
 const partMat = clayMaterial({ color: "#ffffff" });
@@ -377,7 +381,7 @@ export function tickSettlers(dt: number): void {
       parts.blobs.setMatrixAt(i, localM);
       const roleShape = ROLE_SHAPE[s.role];
       localM.compose(
-        accessoryPosition.set(0, 1.72, 0),
+        accessoryPosition.set(0, ROLE_Y, 0),
         identityQ,
         accessoryScale.set(roleShape.width, roleShape.height, roleShape.width),
       );

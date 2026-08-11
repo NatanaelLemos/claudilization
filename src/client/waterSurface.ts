@@ -12,6 +12,42 @@ export const WATER_SHADER_MARKER = "clay-water-waves-v2";
 /** the sea level of the shared terrain law (`terrain.ts` WATER) */
 const SEA_LEVEL = 0.2;
 
+export interface WaterSwellPose {
+  height: number;
+  /** rotation around local x: bow rises into a swell travelling along z */
+  pitch: number;
+  /** rotation around local z: port/starboard heel along x */
+  roll: number;
+}
+
+/**
+ * CPU twin of the vertex shader's three broad swells. Craft use this exact
+ * equation, at the exact shader time, so hulls ride the resin sea instead of
+ * hovering through an unrelated sine wave. `depth01=1` is open water; the
+ * amplitude calms toward a shore just like the GPU surface.
+ */
+export function waterSwellPose(
+  x: number,
+  z: number,
+  time: number,
+  depth01 = 1,
+): WaterSwellPose {
+  const depth = Math.min(1, Math.max(0, depth01));
+  const edge = Math.min(1, Math.max(0, depth / 0.45));
+  const calm = 0.35 + 0.65 * edge * edge * (3 - 2 * edge);
+  const a = x * 0.020 + time * 0.55;
+  const b = z * 0.031 - time * 0.38;
+  const c = (x + z) * 0.013 + time * 0.24;
+  const swell = Math.sin(a) * 0.22 + Math.sin(b) * 0.14 + Math.sin(c) * 0.10;
+  const dx = (Math.cos(a) * 0.22 * 0.020 + Math.cos(c) * 0.10 * 0.013) * calm;
+  const dz = (Math.cos(b) * 0.14 * 0.031 + Math.cos(c) * 0.10 * 0.013) * calm;
+  return {
+    height: -0.08 + swell * calm,
+    pitch: Math.atan(dz),
+    roll: -Math.atan(dx),
+  };
+}
+
 export interface WaterRenderProfile {
   segments: number;
   animationHz: number;
@@ -48,6 +84,8 @@ export interface WaterSurface {
   /** the rig's dayness — shallows, foam and glints dim with the sun */
   setDaylight(dayness: number): void;
   daylight(): number;
+  /** CPU pose at the same time as the current GPU surface. */
+  poseAt(x: number, z: number, depth01?: number): WaterSwellPose;
 }
 
 /**
@@ -241,5 +279,6 @@ normal = normalize((viewMatrix * vec4(seaNormal, 0.0)).xyz);
       dayness.value = Math.min(1, Math.max(0, value));
     },
     daylight: () => dayness.value,
+    poseAt: (x, z, depth01) => waterSwellPose(x, z, time.value, depth01),
   };
 }

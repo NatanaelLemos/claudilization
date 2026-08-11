@@ -1,5 +1,7 @@
 import * as THREE from "three";
-import type { Age, Building, CivSpec } from "../shared/types";
+import type { Age, Building, CivSpec, IslandTerrain } from "../shared/types";
+import { buildingFacing, townPlan, type TownPlan } from "../shared/townPlan";
+import { CLAY_PALETTE, clayMaterial } from "./artDirection";
 import { setInstanceAssetPicks } from "./picking";
 import {
   buildingInstanceKey,
@@ -16,6 +18,9 @@ const pickMaterial = new THREE.MeshBasicMaterial({
   depthWrite: false,
   colorWrite: false,
 });
+/** One shared clay block underneath every slope-perched building. */
+const plinthGeometry = new THREE.BoxGeometry(1, 1, 1);
+const plinthMaterial = clayMaterial({ color: CLAY_PALETTE.stoneDark });
 const materialReferences = new WeakMap<THREE.Material, number>();
 
 const rootMatrix = new THREE.Matrix4();
@@ -24,6 +29,10 @@ const instanceMatrix = new THREE.Matrix4();
 const bounds = new THREE.Box3();
 const boundsCenter = new THREE.Vector3();
 const boundsSize = new THREE.Vector3();
+const composeQuat = new THREE.Quaternion();
+const composeEuler = new THREE.Euler();
+const composePos = new THREE.Vector3();
+const composeScale = new THREE.Vector3();
 
 export interface BuildingBatchOptions {
   buildings: Building[];
@@ -31,21 +40,77 @@ export interface BuildingBatchOptions {
   age: Age;
   heightAt: (x: number, y: number) => number;
   half: number;
+  /** Terrain + seed switch on town-plan facings and slope terraces. */
+  terrain?: IslandTerrain;
+  islandSeed?: number;
 }
 
-function buildingRootMatrix(
+interface BuildingGrounding {
+  matrix: THREE.Matrix4;
+  /** A terrace under the downhill side, when the slope demands one. */
+  plinth?: { x: number; z: number; topY: number; depth: number; sx: number; sz: number; rotY: number };
+}
+
+/**
+ * Where a building meets the ground. The root position samples the terrain at
+ * the center and at the model's four footprint corners: the building stands on
+ * the highest of them (nothing sinks a wall into the hill), and when the
+ * lowest corner hangs more than a step below, a clay foundation terrace fills
+ * the gap so nothing floats — the diorama way of building on a slope.
+ */
+function groundBuilding(
   building: Building,
   heightAt: (x: number, y: number) => number,
   half: number,
-): THREE.Matrix4 {
-  const root = buildingVisualTransform(building, new THREE.Object3D());
-  root.position.set(
-    building.pos.x - half,
-    Math.max(0.05, heightAt(building.pos.x, building.pos.y)),
-    building.pos.y - half,
-  );
+  footX: number,
+  footZ: number,
+  facing: number | undefined,
+  ownsTerraces: boolean,
+): BuildingGrounding {
+  const root = buildingVisualTransform(building, new THREE.Object3D(), facing);
+  const scale = root.scale.x;
+  const rotY = root.rotation.y;
+  const cos = Math.cos(rotY);
+  const sin = Math.sin(rotY);
+  // the load-bearing footprint, not the full visual bounds: porticos, banner
+  // poles and yard braziers overhang the walls, and the eaves overhang the
+  // foundation — a terrace wider than the roofline reads as a parking lot
+  const hx = Math.min(2.6, Math.max(0.6, (footX * scale * 0.6) / 2));
+  const hz = Math.min(2.6, Math.max(0.6, (footZ * scale * 0.6) / 2));
+  const centerG = heightAt(building.pos.x, building.pos.y);
+  let base = centerG;
+  let lowest = centerG;
+  for (const [cx, cz] of [
+    [-hx, -hz],
+    [-hx, hz],
+    [hx, -hz],
+    [hx, hz],
+  ] as const) {
+    // rotate the local corner into island coordinates before sampling
+    const wx = building.pos.x + cx * cos + cz * sin;
+    const wy = building.pos.y - cx * sin + cz * cos;
+    const g = heightAt(wx, wy);
+    base = Math.max(base, g);
+    lowest = Math.min(lowest, g);
+  }
+  base = Math.max(0.05, base);
+  root.position.set(building.pos.x - half, base, building.pos.y - half);
   root.updateMatrix();
-  return rootMatrix.copy(root.matrix);
+  const grounding: BuildingGrounding = { matrix: root.matrix.clone() };
+  const depth = base - lowest;
+  // a terrace only where the slope truly drops away — wonders bring their own
+  if (depth > 0.24 && !ownsTerraces) {
+    grounding.plinth = {
+      x: building.pos.x - half,
+      z: building.pos.y - half,
+      topY: base + 0.02,
+      depth: depth + 0.3,
+      sx: hx * 2 + 0.35,
+      sz: hz * 2 + 0.35,
+      rotY,
+    };
+  }
+  return grounding;
 }
 
 /**
@@ -59,8 +124,12 @@ export function buildBuildingBatch({
   age,
   heightAt,
   half,
+  terrain,
+  islandSeed,
 }: BuildingBatchOptions): THREE.Group {
   const holder = new THREE.Group();
+  const plan: TownPlan | undefined =
+    terrain && islandSeed !== undefined ? townPlan(terrain, islandSeed) : undefined;
   const batches = new Map<string, Building[]>();
   for (const building of buildings) {
     const key = buildingInstanceKey(building, age);
@@ -72,6 +141,7 @@ export function buildBuildingBatch({
   const pickMatrices: THREE.Matrix4[] = [];
   const picks: { kind: "building"; buildingId: string }[] = [];
   const materials = new Set<THREE.Material>();
+  const plinths: NonNullable<BuildingGrounding["plinth"]>[] = [];
 
   for (const batch of batches.values()) {
     const first = batch[0]!;
@@ -83,6 +153,21 @@ export function buildBuildingBatch({
     bounds.setFromObject(template).getCenter(boundsCenter);
     bounds.getSize(boundsSize);
     const small = !buildingModelSpec(first.type, resolveModelAge(first, age)).wonder;
+
+    const groundings = batch.map((building) =>
+      groundBuilding(
+        building,
+        heightAt,
+        half,
+        boundsSize.x,
+        boundsSize.z,
+        plan && terrain ? buildingFacing(plan, terrain, building) : undefined,
+        buildingModelSpec(building.type, resolveModelAge(building, age)).wonder === true,
+      ),
+    );
+    for (const grounding of groundings) {
+      if (grounding.plinth) plinths.push(grounding.plinth);
+    }
 
     template.traverse((object) => {
       if (!(object as THREE.Mesh).isMesh) return;
@@ -96,8 +181,8 @@ export function buildBuildingBatch({
       instanced.renderOrder = mesh.renderOrder;
       instanced.userData.buildingShadowBatch = mesh.castShadow;
       instanced.userData.smallBuildingBatch = small;
-      batch.forEach((building, index) => {
-        buildingRootMatrix(building, heightAt, half);
+      groundings.forEach((grounding, index) => {
+        rootMatrix.copy(grounding.matrix);
         localMatrix.copy(mesh.matrixWorld);
         instanceMatrix.multiplyMatrices(rootMatrix, localMatrix);
         instanced.setMatrixAt(index, instanceMatrix);
@@ -108,13 +193,34 @@ export function buildBuildingBatch({
       holder.add(instanced);
     });
 
-    batch.forEach((building) => {
-      buildingRootMatrix(building, heightAt, half);
+    batch.forEach((building, index) => {
+      rootMatrix.copy(groundings[index]!.matrix);
       localMatrix.makeTranslation(boundsCenter.x, boundsCenter.y, boundsCenter.z);
       localMatrix.scale(boundsSize);
       pickMatrices.push(new THREE.Matrix4().multiplyMatrices(rootMatrix, localMatrix));
       picks.push({ kind: "building", buildingId: building.id });
     });
+  }
+
+  if (plinths.length) {
+    const terraceMesh = new THREE.InstancedMesh(plinthGeometry, plinthMaterial, plinths.length);
+    plinths.forEach((plinth, index) => {
+      composeQuat.setFromEuler(composeEuler.set(0, plinth.rotY, 0));
+      instanceMatrix.compose(
+        composePos.set(plinth.x, plinth.topY - plinth.depth / 2, plinth.z),
+        composeQuat,
+        composeScale.set(plinth.sx, plinth.depth, plinth.sz),
+      );
+      terraceMesh.setMatrixAt(index, instanceMatrix);
+    });
+    terraceMesh.castShadow = false;
+    terraceMesh.receiveShadow = true;
+    terraceMesh.userData.smallBuildingBatch = true;
+    terraceMesh.instanceMatrix.needsUpdate = true;
+    terraceMesh.computeBoundingBox();
+    terraceMesh.computeBoundingSphere();
+    terraceMesh.name = "building-terraces";
+    holder.add(terraceMesh);
   }
 
   if (pickMatrices.length) {
@@ -155,7 +261,9 @@ export function disposeBuildingBatch(holder: THREE.Group): void {
   const geometries = new Set<THREE.BufferGeometry>();
   holder.traverse((object) => {
     const mesh = object as THREE.Mesh;
-    if (mesh.geometry && mesh.geometry !== pickGeometry) geometries.add(mesh.geometry);
+    if (mesh.geometry && mesh.geometry !== pickGeometry && mesh.geometry !== plinthGeometry) {
+      geometries.add(mesh.geometry);
+    }
     if ((object as THREE.InstancedMesh).isInstancedMesh) {
       (object as THREE.InstancedMesh).dispose();
     }

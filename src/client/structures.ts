@@ -22,9 +22,29 @@ function lam(color: string, emissive?: string, intensity = 1): THREE.MeshStandar
   let m = MATS.get(key);
   if (!m) {
     m = clayMaterial({ color, emissive, emissiveIntensity: intensity });
+    if (emissive === WINDOW_GLOW[1]) {
+      m.userData.nightWindow = true;
+      m.userData.nightWindowPeak = intensity;
+    }
     MATS.set(key, m);
   }
   return m;
+}
+
+/** Windows are dark glass at noon and warm points of life after dusk. */
+export function windowGlowIntensity(dayness: number, peak: number = WINDOW_GLOW[2]): number {
+  const day = Math.min(1, Math.max(0, dayness));
+  return peak * (0.04 + (1 - day) ** 2 * 0.96);
+}
+
+export function setWindowGlow(dayness: number): void {
+  for (const material of MATS.values()) {
+    if (!material.userData.nightWindow) continue;
+    material.emissiveIntensity = windowGlowIntensity(
+      dayness,
+      Number(material.userData.nightWindowPeak ?? WINDOW_GLOW[2]),
+    );
+  }
 }
 
 function lamColor(color: THREE.Color): THREE.MeshStandardMaterial {
@@ -150,8 +170,10 @@ function windows(ctx: Ctx, w: number, d: number, rowY: number, count: number): v
   }
 }
 
-function door(ctx: Ctx, d: number, h = 0.5): void {
-  box(ctx, 0.3, h, 0.06, lam(WOOD_DARK), 0, h / 2 + 0.1, d / 2 + 0.01);
+/** Scale audit 2026-08-11: doors rise to ~0.9× a settler so people could
+ * plausibly walk in — the old 0.5 default reached the settlers' chest. */
+function door(ctx: Ctx, d: number, h = 0.62): void {
+  box(ctx, 0.34, h, 0.06, lam(WOOD_DARK), 0, h / 2 + 0.1, d / 2 + 0.01);
 }
 
 function chimney(ctx: Ctx, x: number, z: number, topY: number, smoke = true): void {
@@ -2694,14 +2716,19 @@ export function buildingInstanceKey(building: Building, islandAge: Age): string 
   return `${building.type}|${building.stage}|${resolveModelAge(building, islandAge)}`;
 }
 
-/** Preserve the hand-authored, deterministic street variation for instances. */
+/** Preserve the hand-authored, deterministic street variation for instances.
+ * When the town plan supplies a facing, the building addresses its street or
+ * plaza with only a whisper of jitter; without one (tests, legacy callers)
+ * the old random lean stands unchanged. */
 export function buildingVisualTransform(
   building: Building,
   target: THREE.Object3D,
+  facing?: number,
 ): THREE.Object3D {
   const irand = mulberry32(hashString(building.id));
   target.scale.setScalar(1.9 + irand() * 0.25);
-  target.rotation.y = (irand() - 0.5) * 0.4;
+  const lean = irand() - 0.5;
+  target.rotation.y = facing === undefined ? lean * 0.4 : facing;
   return target;
 }
 

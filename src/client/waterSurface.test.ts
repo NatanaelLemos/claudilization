@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { generateIsland } from "../shared/terrain";
-import { createWaterSurface, WATER_SHADER_MARKER, waterRenderProfile } from "./waterSurface";
+import {
+  createWaterSurface,
+  WATER_SHADER_MARKER,
+  waterRenderProfile,
+  waterSwellPose,
+} from "./waterSurface";
 
 describe("procedural clay water", () => {
   it("uses one bounded mesh, one stamped data texture and a stable live marker", () => {
@@ -65,5 +70,20 @@ describe("procedural clay water", () => {
     expect(water.daylight()).toBe(0);
     water.setDaylight(9);
     expect(water.daylight()).toBe(1);
+  });
+
+  it("exposes the shader-identical swell pose that keeps craft on the water", () => {
+    const pose = waterSwellPose(31, -17, 4.2);
+    const expected =
+      -0.08 +
+      Math.sin(31 * 0.020 + 4.2 * 0.55) * 0.22 +
+      Math.sin(-17 * 0.031 - 4.2 * 0.38) * 0.14 +
+      Math.sin((31 - 17) * 0.013 + 4.2 * 0.24) * 0.10;
+    expect(pose.height).toBeCloseTo(expected, 8);
+    expect(Math.abs(pose.pitch)).toBeLessThan(0.02);
+    expect(Math.abs(pose.roll)).toBeLessThan(0.02);
+    const shallow = waterSwellPose(31, -17, 4.2, 0);
+    expect(Math.abs(shallow.height + 0.08)).toBeLessThan(Math.abs(pose.height + 0.08));
+    expect(Math.abs(shallow.pitch)).toBeLessThan(Math.abs(pose.pitch));
   });
 });

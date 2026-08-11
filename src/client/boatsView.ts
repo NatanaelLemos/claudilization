@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { hashString, mulberry32 } from "../shared/rng";
 import type { CivSpec, Island } from "../shared/types";
 import { CLAY_PALETTE, clayMaterial } from "./artDirection";
+import type { WaterSwellPose } from "./waterSurface";
 
 /**
  * Boats sail (and planes fly) in world space — visible crossing the open
@@ -84,7 +85,14 @@ export function updateBoats(holder: THREE.Group, island: Island, civ: CivSpec): 
 }
 
 /** Advance every craft one frame: glide, steer, bob, and trail foam. */
-export function tickBoats(dt: number): void {
+export function tickBoats(
+  dt: number,
+  waterPose: (x: number, z: number) => WaterSwellPose = () => ({
+    height: 0,
+    pitch: 0,
+    roll: 0,
+  }),
+): void {
   for (const view of views.values()) {
     view.time += dt;
     const t = view.time;
@@ -112,9 +120,14 @@ export function tickBoats(dt: number): void {
         g.position.set(anim.x, PLANE_ALT + Math.sin(t * 1.3 + anim.phase) * 0.5, anim.z);
         g.rotation.z = Math.sin(t * 0.9 + anim.phase) * 0.06;
       } else {
-        g.position.set(anim.x, Math.sin(t * 1.7 + anim.phase) * 0.1, anim.z);
-        g.rotation.z = Math.sin(t * 1.4 + anim.phase) * 0.045;
-        g.rotation.x = Math.sin(t * 1.1 + anim.phase) * 0.03;
+        const sea = waterPose(anim.x, anim.z);
+        g.position.set(anim.x, sea.height, anim.z);
+        // The hull is authored along local +x. Project the world-water slope
+        // into the craft axes and keep a whisper of hull-specific heel.
+        const cos = Math.cos(anim.yaw);
+        const sin = Math.sin(anim.yaw);
+        g.rotation.x = sea.pitch * cos + sea.roll * sin;
+        g.rotation.z = sea.roll * cos - sea.pitch * sin + Math.sin(t * 0.7 + anim.phase) * 0.008;
         if (anim.wake) {
           const strength = Math.min(1, anim.speed / 6);
           const mat = anim.wake.material as THREE.MeshBasicMaterial;

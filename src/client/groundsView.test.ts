@@ -1,9 +1,10 @@
 import * as THREE from "three";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { CIVS } from "../shared/civs";
 import type { Building } from "../shared/types";
 import {
   buildGroundsGroup,
+  disposeGroundsGroup,
   GROUNDS_GROUP,
   MAX_PATH_STONES,
   pathEdges,
@@ -173,5 +174,29 @@ describe("grounds group", () => {
         expect(o.userData.smallBuildingBatch).toBe(true);
       }
     });
+  });
+
+  it("releases instance buffers without disposing shared ground assets", () => {
+    const holder = new THREE.Group();
+    const grounds = buildGroundsGroup({
+      buildings: [building("b1", "blacksmith", 40, 40), building("b2", "hut", 50, 50)],
+      civ,
+      islandSeed: 7,
+      heightAt: flatGround,
+      half: 48,
+    });
+    holder.add(grounds);
+    const instance = grounds.children.find(
+      (child): child is THREE.InstancedMesh => (child as THREE.InstancedMesh).isInstancedMesh,
+    )!;
+    const releaseInstances = vi.spyOn(instance, "dispose");
+    const releaseSharedGeometry = vi.spyOn(instance.geometry, "dispose");
+
+    disposeGroundsGroup(holder);
+
+    expect(releaseInstances).toHaveBeenCalledOnce();
+    expect(releaseSharedGeometry).not.toHaveBeenCalled();
+    expect(holder.getObjectByName(GROUNDS_GROUP)).toBeUndefined();
+    vi.restoreAllMocks();
   });
 });

@@ -56,6 +56,29 @@ body {
   display: block;
 }
 
+/* Hold the first frame until real land is built and the establishing camera
+   is aimed. A visitor sees intention, never the renderer's origin ocean. */
+#world-curtain {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  display: grid;
+  place-items: center;
+  color: rgba(240, 232, 217, 0.82);
+  font-family: "Fraunces", serif;
+  letter-spacing: 0.08em;
+  background:
+    radial-gradient(circle at 50% 58%, rgba(67, 163, 164, 0.5), transparent 42%),
+    linear-gradient(180deg, #2d7785, var(--ocean));
+  transition: opacity 700ms ease, visibility 700ms step-end;
+  pointer-events: none;
+}
+
+#world-curtain.ready {
+  opacity: 0;
+  visibility: hidden;
+}
+
 /* HUD — island name carries the display face */
 #hud {
   position: absolute;
@@ -1084,6 +1107,9 @@ body[data-catastrophe-active] #world {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  #world-curtain {
+    transition: none;
+  }
   #banner,
   .attack-alert {
     animation: none;

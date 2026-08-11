@@ -6,6 +6,7 @@ import {
   buildingModelSpec,
   buildingRenderSignature,
   createBuildingMesh,
+  windowGlowIntensity,
 } from "./structures";
 
 const EXISTING: Building[] = [
@@ -48,5 +49,12 @@ describe("age-aware building models", () => {
       type: "pottery-workshop",
       age: "bronze",
     });
+  });
+
+  it("keeps windows quiet by day and legible at night", () => {
+    expect(windowGlowIntensity(1)).toBeLessThan(0.06);
+    expect(windowGlowIntensity(0)).toBeGreaterThan(1);
+    expect(windowGlowIntensity(-5)).toBe(windowGlowIntensity(0));
+    expect(windowGlowIntensity(5)).toBe(windowGlowIntensity(1));
   });
 });

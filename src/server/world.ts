@@ -29,6 +29,7 @@ import { computeInspiration } from "../shared/inspiration";
 import { WONDER_CIV } from "../shared/wonders";
 import { hashString, mulberry32 } from "../shared/rng";
 import { generateIsland } from "../shared/terrain";
+import { districtFor, INDUSTRY_NODE, townPlan } from "../shared/townPlan";
 import type {
   Age,
   Boat,
@@ -1272,7 +1273,10 @@ export class World {
 
   private buildSite(island: Island, type: string): Vec2 {
     const terrain = this.islandTerrain(island);
-    const half = (terrain.size - 1) / 2;
+    const size = terrain.size;
+    const half = (size - 1) / 2;
+    const plan = townPlan(terrain, island.seed);
+    const district = districtFor(type);
     const desiredClearance = (existingType: string) =>
       this.buildingRadius(type) + this.buildingRadius(existingType);
     const clearanceRatio = (tl: Tile) => {
@@ -1291,23 +1295,124 @@ export class World {
         return distance >= BUILDING_CLEARANCE_FLOOR &&
           distance / desiredClearance(building.type) >= ratio;
       });
+
+    // ── town-plan scoring: every district has a reason to stand where it does ──
+    const plazaD = (tl: Tile) => Math.hypot(tl.x - plan.plaza.x, tl.y - plan.plaza.y);
+    const streetD = (tl: Tile) => plan.streetDist[tl.y * size + tl.x]!;
+    const shoreD = (tl: Tile) => plan.shoreDist[tl.y * size + tl.x]!;
+    const tileAt = (x: number, y: number) =>
+      x >= 0 && y >= 0 && x < size && y < size ? terrain.tiles[y * size + x] : undefined;
+    const slope = (tl: Tile) => {
+      let worst = 0;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+        const n = tileAt(tl.x + dx, tl.y + dy);
+        if (n) worst = Math.max(worst, Math.abs(n.height - tl.height));
+      }
+      return worst;
+    };
+    const nearestNodeD = (tl: Tile, match: (node: Island["nodes"][number]) => boolean) => {
+      let best = Number.POSITIVE_INFINITY;
+      for (const node of island.nodes) {
+        if (!match(node)) continue;
+        best = Math.min(best, Math.hypot(node.pos.x - tl.x, node.pos.y - tl.y));
+      }
+      return best;
+    };
+    const nearestKinD = (tl: Tile, kin: (buildingType: string) => boolean) => {
+      let best = Number.POSITIVE_INFINITY;
+      for (const b of island.buildings) {
+        if (!kin(b.type)) continue;
+        best = Math.min(best, Math.hypot(b.pos.x - tl.x, b.pos.y - tl.y));
+      }
+      return best;
+    };
+    const beltR = size * 0.16; // the farmland belt sits between town and wilds
+    const ore = INDUSTRY_NODE[type];
+    const score = (tl: Tile): number => {
+      switch (district) {
+        case "farmland":
+          return (
+            slope(tl) * 220 +
+            Math.abs(plazaD(tl) - beltR) * 0.5 +
+            Math.min(14, nearestKinD(tl, (t) => districtFor(t) === "farmland")) * 0.6 +
+            (tl.kind === "sand" ? 6 : 0)
+          );
+        case "storehouse": {
+          const farms = Math.min(
+            20,
+            nearestKinD(tl, (t) => districtFor(t) === "farmland"),
+          );
+          return farms * 1.4 + plazaD(tl) * 0.08;
+        }
+        case "industry": {
+          const lode = ore
+            ? nearestNodeD(tl, (node) => node.resource === ore)
+            : Number.POSITIVE_INFINITY;
+          if (lode === Number.POSITIVE_INFINITY)
+            return Math.abs(streetD(tl) - 2) * 3 + plazaD(tl) * 0.05;
+          return lode * 1.5 + streetD(tl) * 0.15;
+        }
+        case "grove": {
+          const wood = nearestNodeD(tl, (node) => node.resource === "wood");
+          if (wood === Number.POSITIVE_INFINITY)
+            return Math.abs(streetD(tl) - 2) * 3 + plazaD(tl) * 0.05;
+          return wood * 1.5 + streetD(tl) * 0.15;
+        }
+        case "civic":
+          return (
+            Math.abs(plazaD(tl) - (plan.plazaRadius + 2)) * 1.2 -
+            tl.height * 10 +
+            streetD(tl) * 0.2
+          );
+        case "service":
+          return Math.abs(plazaD(tl) - (plan.plazaRadius + 1.5)) * 2 + streetD(tl) * 0.3;
+        case "defense":
+          // the perimeter watches the sea: just inside the beach, spread wide
+          return Math.abs(shoreD(tl) - 2.5) * 3 - plazaD(tl) * 0.02;
+        case "wonder":
+          // a commanding site: the highest ground that still honors clearance
+          return -tl.height * 16 + plazaD(tl) * 0.06;
+        case "workshop":
+          return Math.abs(streetD(tl) - 2) * 3 + plazaD(tl) * 0.05;
+        default:
+          // housing radiates from the plaza along the street skeleton
+          return Math.abs(streetD(tl) - 2) * 3 + plazaD(tl) * 0.12;
+      }
+    };
+
+    // New buildings never squat the plaza, a grove, an outcrop, or a lode —
+    // strict tiers enforce it, the last-resort tiers relax it so a small or
+    // legacy-dense island can always still build.
+    const openGround = (tl: Tile): boolean => {
+      if (plazaD(tl) < plan.plazaRadius) return false;
+      for (const node of terrain.nodes) {
+        const d = Math.hypot(node.pos.x - tl.x, node.pos.y - tl.y);
+        const keepOut =
+          node.resource === "wood" || node.resource === "stone" ? 2.0 : 1.4;
+        if (d < keepOut) return false;
+      }
+      return true;
+    };
+
     const bestEffort = (tiles: Tile[]) =>
       [...tiles].sort(
         (a, b) =>
           clearanceRatio(b) - clearanceRatio(a) ||
-          Math.hypot(a.x - half, a.y - half) - Math.hypot(b.x - half, b.y - half) ||
+          score(a) - score(b) ||
           a.y - b.y ||
           a.x - b.x,
       )[0];
-    const choose = (tiles: Tile[], ratios: readonly number[]) => {
+    const choose = (tiles: Tile[], ratios: readonly number[], strict: boolean) => {
       for (const ratio of ratios) {
-        const eligible = tiles.filter((tile) => clear(tile, ratio));
+        const eligible = tiles.filter(
+          (tile) => clear(tile, ratio) && (!strict || openGround(tile)),
+        );
         if (!eligible.length) continue;
-        // Keep a coherent town while maximizing breathing room inside the
-        // selected tier. Coordinates break ties for replay determinism.
+        // Best-scoring ground inside the tier; breathing room breaks near-ties
+        // and coordinates keep replays deterministic.
         return eligible.sort(
           (a, b) =>
-            Math.hypot(a.x - half, a.y - half) - Math.hypot(b.x - half, b.y - half) ||
+            score(a) - score(b) ||
             clearanceRatio(b) - clearanceRatio(a) ||
             a.y - b.y ||
             a.x - b.x,
@@ -1323,19 +1428,26 @@ export class World {
       const shore = this.shoreTiles(terrain).sort(
         (a, b) => Math.hypot(a.x - cx, a.y - cy) - Math.hypot(b.x - cx, b.y - cy),
       );
-      const spot = choose(shore, [1, 0.8, 0.6, 0.4]) ?? bestEffort(shore);
+      const nearTown = (tl: Tile, ratio: number) =>
+        clear(tl, ratio) &&
+        (bs.length === 0 || Math.hypot(tl.x - cx, tl.y - cy) < size);
+      const spot =
+        shore.find((tl) => nearTown(tl, 1)) ??
+        shore.find((tl) => nearTown(tl, 0.8)) ??
+        shore.find((tl) => nearTown(tl, 0.6)) ??
+        shore.find((tl) => nearTown(tl, 0.4)) ??
+        bestEffort(shore);
       if (spot) return { x: spot.x, y: spot.y };
     }
-    const candidates = terrain.tiles
-      .filter((tl) => tl.kind === "grass" || tl.kind === "sand")
-      .sort(
-        (a, b) =>
-          Math.hypot(a.x - half, a.y - half) - Math.hypot(b.x - half, b.y - half),
-      );
+    const candidates = terrain.tiles.filter(
+      (tl) => tl.kind === "grass" || tl.kind === "sand",
+    );
     // Full structure-aware spacing is the normal law. Small or legacy-dense
     // islands relax by explicit tiers, but never collapse back to one tile.
     const minimumRatio = BUILDING_CLEARANCE_FLOOR / (this.buildingRadius(type) * 2);
-    const free = choose(candidates, [1, 0.85, 0.7, 0.55, minimumRatio]) ??
+    const free =
+      choose(candidates, [1, 0.85, 0.7, 0.55], true) ??
+      choose(candidates, [0.55, minimumRatio], false) ??
       bestEffort(candidates);
     return free ? { x: free.x, y: free.y } : { x: half, y: half };
   }

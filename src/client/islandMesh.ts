@@ -10,6 +10,25 @@ import {
 import { compactStaticMeshes } from "./meshCompaction";
 import { setBatchedAssetPicks, setInstanceAssetPicks, type AssetPick } from "./picking";
 
+/**
+ * Pick one representative resource prop per world-space cell. Simulation
+ * nodes remain untouched; this only stops large islands from drawing a
+ * boulder for every unit of a dense underground seam.
+ */
+export function spatiallyThinResourceVisuals<
+  T extends { nodeId: string; tile: { x: number; y: number } },
+>(nodes: readonly T[], cellSize: number): T[] {
+  const cells = new Map<string, T>();
+  for (const node of nodes) {
+    const key = `${Math.floor(node.tile.x / cellSize)},${Math.floor(node.tile.y / cellSize)}`;
+    const current = cells.get(key);
+    if (!current || hashString(node.nodeId) > hashString(current.nodeId)) cells.set(key, node);
+  }
+  return [...cells.values()].sort((a, b) =>
+    a.nodeId < b.nodeId ? -1 : a.nodeId > b.nodeId ? 1 : 0,
+  );
+}
+
 const AMP = 7;
 const SEA = 0.2;
 const TERRAIN_LOD_DISTANCE = 240;
@@ -55,7 +74,7 @@ export function createIslandGroup(
   const grassLow = new THREE.Color(palette.grassLight);
   const grassHigh = new THREE.Color(palette.grass);
   const moss = new THREE.Color(palette.canopy[1]);
-  const rockWarm = new THREE.Color(palette.rock);
+  const rockWarm = new THREE.Color(palette.rock).lerp(new THREE.Color(palette.soil), 0.38);
   const rockDark = new THREE.Color(CLAY_PALETTE.stoneDark);
   const sandBase = new THREE.Color(CLAY_PALETTE.sand);
   const lagoon = new THREE.Color(CLAY_PALETTE.oceanDeep);
@@ -83,9 +102,13 @@ export function createIslandGroup(
         tinted.lerp(moss, smooth(0.56, 0.7, tile.height) * 0.4);
         break;
       default: {
-        // rock — layered clay strata: soft lightness bands riding elevation
+        // rock — warm, moss-edged clay strata rather than a single grey
+        // terrain blob. High faces stay stone; low shelves belong to the same
+        // painted earth as the town paths around them.
         const band = Math.sin(tile.height * 46) * 0.5 + 0.5;
-        tinted.copy(rockWarm).lerp(rockDark, 0.18 + band * 0.24);
+        const high = smooth(0.62, 0.9, tile.height);
+        tinted.copy(rockWarm).lerp(rockDark, 0.08 + band * 0.16 + high * 0.1);
+        tinted.lerp(moss, (1 - high) * 0.12);
         break;
       }
     }
@@ -341,19 +364,20 @@ export function createIslandGroup(
   // ── sculpted outcrops ────────────────────────────────────────────────────
   // Stone reads as a few large rounded boulders with a companion stone, not
   // a field of identical pebbles. Two instanced meshes for the whole island.
-  if (byResource.stone.length) {
+  const stoneVisuals = spatiallyThinResourceVisuals(byResource.stone, 7);
+  if (stoneVisuals.length) {
     const outcropRng = mulberry32(hashString(`${seed}|outcrops`));
     const rockMatWarm = clayMaterial({ color: palette.rock });
     const rockMatDark = clayMaterial({ color: CLAY_PALETTE.stoneDark });
     const bigRocks = new THREE.InstancedMesh(
       new THREE.IcosahedronGeometry(0.95, 1),
       rockMatWarm,
-      byResource.stone.length,
+      stoneVisuals.length,
     );
     const smallRocks = new THREE.InstancedMesh(
       new THREE.IcosahedronGeometry(0.5, 0),
       rockMatDark,
-      byResource.stone.length,
+      stoneVisuals.length,
     );
     const matrix = new THREE.Matrix4();
     const quat = new THREE.Quaternion();
@@ -361,13 +385,13 @@ export function createIslandGroup(
     const scl = new THREE.Vector3();
     const posV = new THREE.Vector3();
     const picks: AssetPick[] = [];
-    byResource.stone.forEach((node, index) => {
-      const s = 0.8 + outcropRng() * 0.55;
+    stoneVisuals.forEach((node, index) => {
+      const s = 0.58 + outcropRng() * 0.36;
       quat.setFromEuler(euler.set(0, outcropRng() * Math.PI * 2, 0));
       matrix.compose(
         posV.set(node.pos.x, node.pos.y + 0.5 * s, node.pos.z),
         quat,
-        scl.set((1.25 + outcropRng() * 0.5) * s, (0.75 + outcropRng() * 0.35) * s, (1.0 + outcropRng() * 0.45) * s),
+        scl.set((1.18 + outcropRng() * 0.38) * s, (0.68 + outcropRng() * 0.28) * s, (0.95 + outcropRng() * 0.34) * s),
       );
       bigRocks.setMatrixAt(index, matrix);
       const a = outcropRng() * Math.PI * 2;
@@ -484,11 +508,7 @@ export function createIslandGroup(
 
   // mineral lodes: a grey outcrop shot through with the ore's own color —
   // the exotic finds of the late ages glow faintly where they break ground
-  const rockMat = clayMaterial({ color: CLAY_PALETTE.stoneDark });
-  const mineralBaseGeo = new THREE.IcosahedronGeometry(0.55);
   const mineralChunkGeo = new THREE.IcosahedronGeometry(0.36);
-  const baseMatrices: THREE.Matrix4[] = [];
-  const basePicks: Parameters<typeof setInstanceAssetPicks>[1] = [];
   const chunks = new Map<
     string,
     { matrices: THREE.Matrix4[]; picks: Parameters<typeof setInstanceAssetPicks>[1] }
@@ -497,20 +517,14 @@ export function createIslandGroup(
   const mineralScale = new THREE.Vector3();
   const mineralRotation = new THREE.Quaternion();
   const mineralEuler = new THREE.Euler();
-  for (const node of mineralNodes) {
+  const mineralVisuals = spatiallyThinResourceVisuals(mineralNodes, 7);
+  for (const node of mineralVisuals) {
     const meta = MINERALS[node.resource];
     if (!meta) continue;
-    const s = 0.8 + jitter() * 0.4;
+    const s = 0.62 + jitter() * 0.28;
     const rotationY = jitter() * Math.PI * 2;
     mineralRotation.setFromEuler(mineralEuler.set(0, rotationY, 0));
     mineralScale.setScalar(s);
-    baseMatrices.push(
-      new THREE.Matrix4().compose(
-        mineralPosition.set(node.pos.x, node.pos.y + 0.3 * s, node.pos.z),
-        mineralRotation,
-        mineralScale,
-      ),
-    );
     let oreMat = mineralMats.get(node.resource);
     if (!oreMat) {
       oreMat = clayMaterial({ color: meta.color, emissive: meta.emissive });
@@ -524,7 +538,6 @@ export function createIslandGroup(
       label: `${node.resource} deposit`,
       meta: "natural resource",
     };
-    basePicks.push(pick);
     let resourceChunks = chunks.get(node.resource);
     if (!resourceChunks) {
       resourceChunks = { matrices: [], picks: [] };
@@ -543,16 +556,6 @@ export function createIslandGroup(
       ),
     );
     resourceChunks.picks.push(pick);
-  }
-  if (baseMatrices.length) {
-    const bases = new THREE.InstancedMesh(mineralBaseGeo, rockMat, baseMatrices.length);
-    baseMatrices.forEach((matrix, index) => bases.setMatrixAt(index, matrix));
-    bases.castShadow = true;
-    bases.instanceMatrix.needsUpdate = true;
-    bases.computeBoundingBox();
-    bases.computeBoundingSphere();
-    setInstanceAssetPicks(bases, basePicks);
-    resources.add(bases);
   }
   for (const [resource, batch] of chunks) {
     const material = mineralMats.get(resource);

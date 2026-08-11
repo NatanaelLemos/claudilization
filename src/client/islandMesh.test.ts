@@ -3,11 +3,23 @@ import { describe, expect, it } from "vitest";
 import {
   createIslandGroup,
   DECOR_FINE_GROUP,
+  spatiallyThinResourceVisuals,
   surfaceY,
   terrainLodSegments,
 } from "./islandMesh";
 
 describe("terrain level of detail", () => {
+  it("thins only decorative resource props deterministically", () => {
+    const nodes = Array.from({ length: 40 }, (_, id) => ({
+      nodeId: `node-${id}`,
+      tile: { x: id % 10, y: Math.floor(id / 10) },
+    }));
+    const a = spatiallyThinResourceVisuals(nodes, 4);
+    const b = spatiallyThinResourceVisuals([...nodes].reverse(), 4);
+    expect(a.map((node) => node.nodeId)).toEqual(b.map((node) => node.nodeId));
+    expect(a.length).toBeLessThan(nodes.length);
+    expect(nodes).toHaveLength(40);
+  });
   it("keeps the full 166-cell island while reducing distant triangles by about 16x", () => {
     const segments = terrainLodSegments(166);
     const fullTriangles = (166 - 1) ** 2 * 2;
@@ -112,4 +124,3 @@ describe("terrain level of detail", () => {
     }
   });
 });
-

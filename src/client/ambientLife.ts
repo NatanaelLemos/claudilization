@@ -851,9 +851,11 @@ export function initAmbientLife(stage: Stage, deps: AmbientDeps): AmbientLife {
         Math.hypot(pose.x - camTarget.x, pose.z - camTarget.z) > AMBIENT_CAPS.seaCullRadius;
       craft.group.visible = !far;
       if (far) continue;
-      craft.group.position.set(pose.x, Math.sin(motionTime * 1.5 + craft.seed) * 0.09, pose.z);
+      const seaPose = stage.waterPose(pose.x, pose.z);
+      craft.group.position.set(pose.x, seaPose.height, pose.z);
       craft.group.rotation.y = pose.heading - Math.PI / 2;
-      craft.group.rotation.z = Math.sin(motionTime * 1.2 + craft.seed) * 0.04;
+      craft.group.rotation.x = seaPose.pitch;
+      craft.group.rotation.z = seaPose.roll + Math.sin(motionTime * 0.7 + craft.seed) * 0.008;
     }
 
     // the town sleeps at night, exactly like its settlers do
