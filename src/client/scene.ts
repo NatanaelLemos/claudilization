@@ -13,6 +13,7 @@ import {
   type RenderQuality,
 } from "./renderQuality";
 import { createWaterSurface } from "./waterSurface";
+import type { StampableTerrain } from "./waterDepthField";
 
 CameraControls.install({ THREE });
 
@@ -37,6 +38,9 @@ export interface Stage {
   worldTime(): number;
   /** A render-only camera offset. It is restored before controls update again. */
   setCameraShake(x: number, y: number, z: number, roll?: number): void;
+  /** Paint a built island's bathymetry into the sea — visual only, from the
+   * island's already generated terrain; shores, lagoons and foam follow it. */
+  stampWater(centerX: number, centerZ: number, seed: number, terrain: StampableTerrain): void;
   /** On-demand renderer diagnostics for benchmarks; never runs in the frame loop. */
   performanceSnapshot(): StagePerformanceSnapshot;
 }
@@ -218,6 +222,8 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
     (scene.background as THREE.Color).copy(skyC);
     (scene.fog as THREE.Fog).color.copy(skyC);
     toColor(oceanMat.color, rig.oceanColor);
+    // shallows, foam and sun glints breathe with the same day the lights obey
+    water.setDaylight(rig.dayness);
     starMat.opacity = rig.starOpacity;
 
     // the discs ride a far arc around whatever the camera watches; near the
@@ -366,6 +372,9 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
     setCameraShake(x, y, z, roll = 0) {
       shakeOffset.set(x, y, z);
       shakeRoll = roll;
+    },
+    stampWater(centerX, centerZ, seed, terrain) {
+      water.stampIsland(centerX, centerZ, seed, terrain);
     },
     performanceSnapshot() {
       let objects = 0;

@@ -580,6 +580,9 @@ export function createIslandGroup(
   group.userData.half = half;
   group.userData.palette = palette;
   group.userData.assetRoots = [resources];
+  // the water's bathymetry stamp re-reads this exact terrain — no second
+  // generateIsland, no extra RNG, the same tiles the island itself renders
+  group.userData.terrain = terrain;
   return group;
 }
 

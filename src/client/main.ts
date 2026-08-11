@@ -8,7 +8,7 @@ import * as THREE from "three";
 import { DEFAULT_BALANCE } from "../shared/balance";
 import { civAccented, shadeCivColor } from "../shared/civColor";
 import { CIVS } from "../shared/civs";
-import type { Boat, CivSpec, GameEvent, Island } from "../shared/types";
+import type { Boat, CivSpec, GameEvent, Island, IslandTerrain } from "../shared/types";
 import { initAmbientLife } from "./ambientLife";
 import { tickBoats, updateBoats } from "./boatsView";
 import {
@@ -132,6 +132,9 @@ function buildTerrain(view: IslandView): void {
   stage.scene.add(ground);
   view.group = ground;
   view.terrainReady = true;
+  // the sea learns this island's real shoreline: lagoon color, banked depth
+  // and coast-hugging foam all read the bathymetry stamped here
+  stage.stampWater(s.position.x, s.position.y, s.seed, ground.userData.terrain as IslandTerrain);
   if (s.ruins) setIslandMood(ground, true, false);
   // the world already told us what stands here — fill the fresh land in
   applySummaryVisuals(view, s);
