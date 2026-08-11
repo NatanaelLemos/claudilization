@@ -38,7 +38,7 @@ import { initPicking } from "./picking";
 import { startRenderBenchmark } from "./renderBenchmark";
 import { buildingRenderSignature } from "./structures";
 import { setWindowGlow } from "./structures";
-import { openingIslandId } from "./openingView";
+import { openingIslandId, townFraming, type TownFraming } from "./openingView";
 import { skyRig } from "./skyRig";
 import {
   buildTownEffects,
@@ -96,6 +96,16 @@ const terrainQueue = new Set<string>();
 let focusedId: string | undefined;
 let myIslandId: string | undefined;
 let openingRevealed = false;
+
+/** Frame the town, not the island: the landing shot follows the buildings the
+ * world has already told us about. Before terrain exists the half-size falls
+ * back to the world default, which is what the summary was generated with. */
+function viewFraming(view: IslandView): TownFraming {
+  const half =
+    (view.group.userData.half as number | undefined) ??
+    (view.summary.size ?? DEFAULT_BALANCE.islandSize) / 2;
+  return townFraming(view.summary.buildings, half);
+}
 
 /**
  * Register an island without paying for its terrain. The heavy work —
@@ -157,7 +167,7 @@ function buildTerrain(view: IslandView): void {
   if (view.island) applyIslandDetail(view, view.island);
   if (s.id === focusedId && !openingRevealed) {
     openingRevealed = true;
-    stage.establishAt(s.position.x, s.position.y);
+    stage.establishAt(s.position.x, s.position.y, viewFraming(view));
     requestAnimationFrame(() => worldCurtain.classList.add("ready"));
   }
 }
@@ -320,7 +330,9 @@ function focusIsland(id: string): void {
   stopChase();
   watchIsland(id);
   const view = views.get(id);
-  if (view) stage.flyTo(view.summary.position.x, view.summary.position.y);
+  if (view) {
+    stage.flyTo(view.summary.position.x, view.summary.position.y, viewFraming(view));
+  }
 }
 
 // the sun belongs to the world, not to whichever island is on screen: the sky
@@ -395,7 +407,9 @@ net.onIsland = (island: Island) => {
       stopChase();
       const port = arrivedAt ? views.get(arrivedAt) : undefined;
       if (port && arrivedAt !== focusedId) focusIsland(arrivedAt!);
-      else if (port) stage.flyTo(port.summary.position.x, port.summary.position.y);
+      else if (port) {
+        stage.flyTo(port.summary.position.x, port.summary.position.y, viewFraming(port));
+      }
     }
   }
   if (island.id === myIslandId) {

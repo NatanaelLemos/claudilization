@@ -12,6 +12,7 @@ import {
   ShadowRefreshBudget,
   type RenderQuality,
 } from "./renderQuality";
+import { landingShot, type TownFraming } from "./openingView";
 import { createWaterSurface, type WaterSwellPose } from "./waterSurface";
 import type { StampableTerrain } from "./waterDepthField";
 
@@ -19,15 +20,16 @@ CameraControls.install({ THREE });
 
 const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+
 export interface Stage {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
   controls: CameraControls;
   /** Accessibility preference shared with transient world effects. */
   reducedMotion: boolean;
-  flyTo(x: number, z: number): void;
+  flyTo(x: number, z: number, framing?: TownFraming): void;
   /** First-load reveal: begin above the whole island, then settle into play. */
-  establishAt(x: number, z: number): void;
+  establishAt(x: number, z: number, framing?: TownFraming): void;
   onFrame(fn: (dt: number) => void): void;
   /** anchor the sky to the world's clock; it free-runs between world frames */
   setWorldClock(worldSeconds: number, daySeconds: number, daylightShare?: number): void;
@@ -397,34 +399,20 @@ export function createStage(canvas: HTMLCanvasElement, clock: SkyClock = skyCloc
     camera,
     controls,
     reducedMotion: REDUCED_MOTION,
-    flyTo(x, z) {
+    flyTo(x, z, framing) {
       // approach from due south — every landing faces true north (-Z)
       const mobile = window.innerWidth <= 640;
-      void controls.setLookAt(
-        x,
-        ART_DIRECTION.camera.landing.y + (mobile ? 12 : 0),
-        z + ART_DIRECTION.camera.landing.z + (mobile ? 18 : 0),
-        x,
-        0,
-        z,
-        !REDUCED_MOTION,
-      );
+      const [tx, ty, tz, ax, az] = landingShot(x, z, mobile, framing);
+      void controls.setLookAt(tx, ty, tz, ax, 0, az, !REDUCED_MOTION);
     },
-    establishAt(x, z) {
+    establishAt(x, z, framing) {
       const mobile = window.innerWidth <= 640;
       const highY = mobile ? 150 : 132;
       const highZ = mobile ? 196 : 180;
-      void controls.setLookAt(x, highY, z + highZ, x, 0, z, false).then(() =>
-        controls.setLookAt(
-          x,
-          ART_DIRECTION.camera.landing.y + (mobile ? 12 : 0),
-          z + ART_DIRECTION.camera.landing.z + (mobile ? 18 : 0),
-          x,
-          0,
-          z,
-          !REDUCED_MOTION,
-        ),
-      );
+      const [tx, ty, tz, ax, az] = landingShot(x, z, mobile, framing);
+      void controls
+        .setLookAt(x, highY, z + highZ, x, 0, z, false)
+        .then(() => controls.setLookAt(tx, ty, tz, ax, 0, az, !REDUCED_MOTION));
     },
     onFrame(fn) {
       frameFns.push(fn);
