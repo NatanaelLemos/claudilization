@@ -175,6 +175,7 @@ Git. Postgres contract tests are skipped unless an isolated
 
 ## Build log
 
+- 2026-08-11 — One-empty-island spawn law shipped in Fly v35: a new wild island rises only when zero empty islands wait on the map (maxWildPerHome retired); live at https://claudilization.com.
 - 2026-08-11 — Scroll World beauty pass shipped (terrain relief, groves, per-island palette, footpaths, working yards, tilt-shift post, contact blobs) in Fly v33; 28/28 scenarios, knip/audit clean; live at https://claudilization.com.
 - 2026-08-10 — Structure-aware building spacing, demand-gated construction, and procedural animated clay water shipped; live at https://claudilization.com.
 - 2026-08-10 — Miniature clay-diorama art direction shipped across terrain, structures, settlers, vegetation, craft, catastrophes, lighting, and responsive HUD in Fly v31; live at https://claudilization.com.
