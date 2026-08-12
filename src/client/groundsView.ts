@@ -1,32 +1,24 @@
 import * as THREE from "three";
 import { hashString, mulberry32 } from "../shared/rng";
 import { buildingSpec } from "../shared/buildings";
-import {
-  buildingFacing,
-  doorPoint,
-  nearestStreet,
-  townPlan,
-  type TownPlan,
-} from "../shared/townPlan";
+import { buildingFacing, townPlan, type TownPlan } from "../shared/townPlan";
 import type { Building, CivSpec, IslandTerrain } from "../shared/types";
 import { CLAY_PALETTE, clayMaterial, islandPalette } from "./artDirection";
 import { clayPigment, roofInstanceTint } from "./structures";
 
 export const GROUNDS_GROUP = "island-grounds";
-/** Paths and yards hide beyond this range — they are street-level detail. */
+/** Yards hide beyond this range — they are street-level detail. */
 export const GROUNDS_DISTANCE = 340;
-/** A settlement never renders more than this many path stones. */
-export const MAX_PATH_STONES = 900;
 
 /**
  * The single biggest "hand-built diorama" lever: buildings stop floating in
- * a lawn. Completed buildings are joined by soft clay stepping-stone
- * footpaths (a minimum spanning tree, so the street network reads as one
- * settlement), and every building gets a small working yard — crates,
- * barrels, field rows, fences, drying racks, market awnings — chosen by what
- * the building does. Everything is deterministic from building ids and
- * instanced per prop shape, so a dense city adds a handful of draws, not a
- * handful per house.
+ * a lawn. Every building gets a small working yard — crates, barrels, field
+ * rows, fences, drying racks, market awnings — chosen by what the building
+ * does. Everything is deterministic from building ids and instanced per prop
+ * shape, so a dense city adds a handful of draws, not a handful per house.
+ *
+ * The street network itself moved out to `roadsView`: stepping stones became
+ * paved roads, one merged ribbon for the whole town.
  */
 
 export interface GroundsOptions {
@@ -127,34 +119,6 @@ export function yardKind(type: string): YardKind {
   return "none";
 }
 
-/** Minimum spanning tree over completed buildings — the street skeleton. */
-export function pathEdges(points: { x: number; y: number }[]): [number, number][] {
-  if (points.length < 2) return [];
-  const edges: [number, number][] = [];
-  const inTree = new Set<number>([0]);
-  const dist = points.map((p) => Math.hypot(p.x - points[0]!.x, p.y - points[0]!.y));
-  const from = points.map(() => 0);
-  while (inTree.size < points.length) {
-    let best = -1;
-    for (let i = 0; i < points.length; i++) {
-      if (inTree.has(i)) continue;
-      if (best === -1 || dist[i]! < dist[best]!) best = i;
-    }
-    if (best === -1) break;
-    inTree.add(best);
-    edges.push([from[best]!, best]);
-    for (let i = 0; i < points.length; i++) {
-      if (inTree.has(i)) continue;
-      const d = Math.hypot(points[i]!.x - points[best]!.x, points[i]!.y - points[best]!.y);
-      if (d < dist[i]!) {
-        dist[i] = d;
-        from[i] = best;
-      }
-    }
-  }
-  return edges;
-}
-
 export function buildGroundsGroup({
   buildings,
   civ,
@@ -178,62 +142,6 @@ export function buildGroundsGroup({
   const facings = complete.map((b) =>
     plan && terrain ? buildingFacing(plan, terrain, b) : undefined,
   );
-
-  // ── footpaths ────────────────────────────────────────────────────────────
-  // With a town plan the network runs door-to-door and each stone leans into
-  // the street skeleton, so the footpaths *reinforce* the avenues the placer
-  // built along instead of cutting across them.
-  const points = complete.map((b, i) => {
-    const facing = facings[i];
-    return facing === undefined ? { x: b.pos.x, y: b.pos.y } : doorPoint(b.pos, facing);
-  });
-  let stones = 0;
-  for (const [a, b] of pathEdges(points)) {
-    if (stones >= MAX_PATH_STONES) break;
-    const start = points[a]!;
-    const end = points[b]!;
-    const length = Math.hypot(end.x - start.x, end.y - start.y);
-    const steps = Math.max(1, Math.round(length / 0.85));
-    const wobble = mulberry32(hashString(`${complete[a]!.id}|${complete[b]!.id}|path`));
-    for (let i = 1; i < steps; i++) {
-      if (stones >= MAX_PATH_STONES) break;
-      const t = i / steps;
-      // a gentle deterministic S-curve so streets read laid, not ruled
-      const sway = Math.sin(t * Math.PI) * (wobble() - 0.5) * 1.4;
-      const dx = (end.x - start.x) / length;
-      const dy = (end.y - start.y) / length;
-      let px = start.x + (end.x - start.x) * t - dy * sway;
-      let py = start.y + (end.y - start.y) * t + dx * sway;
-      if (plan) {
-        // stones drift onto the nearby avenue — the MST bundles along it
-        const street = nearestStreet(plan, px, py);
-        if (street && street.distance > 0.001 && street.distance < 3) {
-          const pull = 0.6 * (1 - street.distance / 3);
-          px += (street.point.x - px) * pull;
-          py += (street.point.y - py) * pull;
-        }
-      }
-      // leave a clear mouth at each doorstep instead of poking through walls
-      if (
-        Math.hypot(px - start.x, py - start.y) < 1.1 ||
-        Math.hypot(px - end.x, py - end.y) < 1.1
-      ) {
-        continue;
-      }
-      const ground = heightAt(px, py);
-      if (ground < 0.12) continue; // paths never wade into the sea
-      props.push({
-        shape: "stone",
-        x: px - half,
-        y: ground + 0.05,
-        z: py - half,
-        rotY: wobble() * Math.PI,
-        s: 0.75 + wobble() * 0.5,
-        color: wobble() < 0.5 ? soil : soilDark,
-      });
-      stones += 1;
-    }
-  }
 
   // ── yards ────────────────────────────────────────────────────────────────
   const trim = civ.architecture.trim;

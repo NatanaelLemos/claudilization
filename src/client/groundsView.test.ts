@@ -8,8 +8,6 @@ import {
   buildGroundsGroup,
   disposeGroundsGroup,
   GROUNDS_GROUP,
-  MAX_PATH_STONES,
-  pathEdges,
   yardKind,
 } from "./groundsView";
 
@@ -34,32 +32,6 @@ function instanceTotal(group: THREE.Group): number {
   });
   return total;
 }
-
-describe("footpath network", () => {
-  it("spans every completed building exactly once", () => {
-    const points = [
-      { x: 0, y: 0 },
-      { x: 10, y: 0 },
-      { x: 10, y: 10 },
-      { x: 30, y: 5 },
-      { x: 4, y: 22 },
-    ];
-    const edges = pathEdges(points);
-    expect(edges).toHaveLength(points.length - 1);
-    const connected = new Set([0]);
-    for (const [a, b] of edges) {
-      expect(connected.has(a) || connected.has(b)).toBe(true);
-      connected.add(a);
-      connected.add(b);
-    }
-    expect(connected.size).toBe(points.length);
-  });
-
-  it("returns no edges for a lone building", () => {
-    expect(pathEdges([{ x: 3, y: 3 }])).toEqual([]);
-    expect(pathEdges([])).toEqual([]);
-  });
-});
 
 describe("yard vocabulary", () => {
   it("assigns a working yard from what the building does", () => {
@@ -137,30 +109,6 @@ describe("grounds group", () => {
       half: 48,
     });
     expect(instanceTotal(flooded)).toBe(0);
-  });
-
-  it("caps the street network for enormous cities", () => {
-    const buildings = Array.from({ length: 300 }, (_, i) =>
-      building(`b${i}`, "townhouse", 4 + (i % 20) * 8, 4 + Math.floor(i / 20) * 10),
-    );
-    const group = buildGroundsGroup({
-      buildings,
-      civ,
-      islandSeed: 7,
-      heightAt: flatGround,
-      half: 90,
-    });
-    let stones = 0;
-    group.traverse((o) => {
-      const mesh = o as THREE.InstancedMesh;
-      if (!mesh.isInstancedMesh) return;
-      const params = (mesh.geometry as THREE.CylinderGeometry).parameters as
-        | { radiusTop?: number }
-        | undefined;
-      if (params?.radiusTop === 0.34) stones += mesh.count;
-    });
-    expect(stones).toBeLessThanOrEqual(MAX_PATH_STONES);
-    expect(stones).toBeGreaterThan(0);
   });
 
   it("keeps props out of the island-sized shadow pass at map range", () => {

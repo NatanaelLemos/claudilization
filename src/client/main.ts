@@ -41,6 +41,12 @@ import { setWindowGlow } from "./structures";
 import { openingIslandId, townFraming, type TownFraming } from "./openingView";
 import { skyRig } from "./skyRig";
 import {
+  buildRoadsGroup,
+  disposeRoadsGroup,
+  ROADS_DISTANCE,
+  ROADS_GROUP,
+} from "./roadsView";
+import {
   buildTownEffects,
   disposeTownEffects,
   tickTownEffects,
@@ -225,6 +231,7 @@ function rebuildBuildings(
   view.buildingIds = signature;
   disposeTownEffects(view.buildings);
   disposeGroundsGroup(view.buildings);
+  disposeRoadsGroup(view.buildings);
   disposeBuildingBatch(view.buildings);
   const heightAt = view.group.userData.heightAt as (x: number, y: number) => number;
   const half = view.group.userData.half as number;
@@ -256,9 +263,20 @@ function rebuildBuildings(
       }),
     );
   }
-  // the settlement's street layer: clay footpaths between finished buildings
-  // and a small working yard per building — same lifecycle as the batch
+  // the settlement's street layer: the age's own paved network joining every
+  // finished building through the plaza, and a small working yard per
+  // building — same lifecycle as the batch
   if (enhanced) {
+    view.buildings.add(
+      buildRoadsGroup({
+        buildings,
+        age,
+        islandSeed: view.summary.seed,
+        heightAt,
+        half,
+        terrain,
+      }),
+    );
     view.buildings.add(
       buildGroundsGroup({
         buildings,
@@ -475,6 +493,10 @@ stage.onFrame((dt) => {
     if (decorFine) decorFine.visible = distance <= DECOR_FINE_DISTANCE;
     const grounds = view.buildings.getObjectByName(GROUNDS_GROUP);
     if (grounds) grounds.visible = distance <= GROUNDS_DISTANCE;
+    // one merged ribbon, so the network can hold out to map height where it
+    // is the thing that makes a scatter of roofs read as a town
+    const roads = view.buildings.getObjectByName(ROADS_GROUP);
+    if (roads) roads.visible = distance <= ROADS_DISTANCE;
     const effects = view.buildings.getObjectByName(TOWN_EFFECTS_GROUP);
     if (effects) effects.visible = distance <= GROUNDS_DISTANCE;
   }
