@@ -1,0 +1,7521 @@
+[
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b2701",
+  "type": "hut",
+  "district": "housing",
+  "spec": {
+   "type": "hut",
+   "age": "stone",
+   "cost": {
+    "wood": 20
+   },
+   "buildSeconds": 30,
+   "houses": 2
+  },
+  "age": "iron",
+  "x": 82,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 0,
+  "street": 5.25,
+  "shore": 63,
+  "faults": [
+   "squats the founding plaza"
+  ],
+  "role": "houses 2",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b2702",
+  "type": "hut",
+  "district": "housing",
+  "spec": {
+   "type": "hut",
+   "age": "stone",
+   "cost": {
+    "wood": 20
+   },
+   "buildSeconds": 30,
+   "houses": 2
+  },
+  "age": "iron",
+  "x": 86,
+  "y": 85,
+  "tile": "grass",
+  "dPlaza": 5,
+  "street": 0.34550783038139343,
+  "shore": 64,
+  "faults": [],
+  "role": "houses 2",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b2713",
+  "type": "hut",
+  "district": "housing",
+  "spec": {
+   "type": "hut",
+   "age": "stone",
+   "cost": {
+    "wood": 20
+   },
+   "buildSeconds": 30,
+   "houses": 2
+  },
+  "age": "iron",
+  "x": 81,
+  "y": 87,
+  "tile": "grass",
+  "dPlaza": 5.099019513592785,
+  "street": 2.497722864151001,
+  "shore": 63,
+  "faults": [],
+  "role": "houses 2",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b2714",
+  "type": "hut",
+  "district": "housing",
+  "spec": {
+   "type": "hut",
+   "age": "stone",
+   "cost": {
+    "wood": 20
+   },
+   "buildSeconds": 30,
+   "houses": 2
+  },
+  "age": "iron",
+  "x": 86,
+  "y": 79,
+  "tile": "grass",
+  "dPlaza": 5,
+  "street": 0.8802476525306702,
+  "shore": 63,
+  "faults": [],
+  "role": "houses 2",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b2952",
+  "type": "longhouse",
+  "district": "housing",
+  "spec": {
+   "type": "longhouse",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "stone": 10
+   },
+   "buildSeconds": 55,
+   "houses": 4
+  },
+  "age": "iron",
+  "x": 77,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 5,
+  "street": 1.399999976158142,
+  "shore": 58,
+  "faults": [],
+  "role": "houses 4",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b2996",
+  "type": "farm",
+  "district": "farmland",
+  "spec": {
+   "type": "farm",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 50,
+   "foodPerDay": 8
+  },
+  "age": "iron",
+  "x": 81,
+  "y": 77,
+  "tile": "grass",
+  "dPlaza": 5.099019513592785,
+  "street": 1.3100937604904175,
+  "shore": 62,
+  "faults": [
+   "farmland 5 from plaza — the belt is ~27"
+  ],
+  "role": "+8 food/day",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b3026",
+  "type": "dock",
+  "district": "harbor",
+  "spec": {
+   "type": "dock",
+   "age": "bronze",
+   "cost": {
+    "wood": 60,
+    "stone": 30
+   },
+   "buildSeconds": 60
+  },
+  "age": "iron",
+  "x": 20,
+  "y": 82,
+  "tile": "sand",
+  "dPlaza": 62,
+  "street": 999,
+  "shore": 1,
+  "faults": [],
+  "role": "voyages need it",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b3058",
+  "type": "longhouse",
+  "district": "housing",
+  "spec": {
+   "type": "longhouse",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "stone": 10
+   },
+   "buildSeconds": 55,
+   "houses": 4
+  },
+  "age": "iron",
+  "x": 90,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 8,
+  "street": 1.600000023841858,
+  "shore": 61,
+  "faults": [],
+  "role": "houses 4",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b3081",
+  "type": "longhouse",
+  "district": "housing",
+  "spec": {
+   "type": "longhouse",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "stone": 10
+   },
+   "buildSeconds": 55,
+   "houses": 4
+  },
+  "age": "iron",
+  "x": 76,
+  "y": 87,
+  "tile": "grass",
+  "dPlaza": 7.810249675906656,
+  "street": 0.47552454471588135,
+  "shore": 58,
+  "faults": [],
+  "role": "houses 4",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b3110",
+  "type": "farm",
+  "district": "farmland",
+  "spec": {
+   "type": "farm",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 50,
+   "foodPerDay": 8
+  },
+  "age": "iron",
+  "x": 85,
+  "y": 90,
+  "tile": "grass",
+  "dPlaza": 8.54400374531753,
+  "street": 2.2449169158935547,
+  "shore": 61,
+  "faults": [
+   "farmland 9 from plaza — the belt is ~27"
+  ],
+  "role": "+8 food/day",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b3132",
+  "type": "palisade",
+  "district": "defense",
+  "spec": {
+   "type": "palisade",
+   "age": "stone",
+   "cost": {
+    "wood": 35
+   },
+   "buildSeconds": 40
+  },
+  "age": "iron",
+  "x": 85,
+  "y": 74,
+  "tile": "grass",
+  "dPlaza": 8.54400374531753,
+  "street": 0.9642333984375,
+  "shore": 58,
+  "faults": [
+   "wall 58 tiles inland — the perimeter law wants ~2.5"
+  ],
+  "role": "covers the \"safe\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b3154",
+  "type": "dancing-ground",
+  "district": "service",
+  "spec": {
+   "type": "dancing-ground",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 10
+   },
+   "buildSeconds": 25,
+   "joy": 3
+  },
+  "age": "iron",
+  "x": 90,
+  "y": 88,
+  "tile": "grass",
+  "dPlaza": 10,
+  "street": 0.5334659218788147,
+  "shore": 60,
+  "faults": [],
+  "role": "+3 joy",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b3179",
+  "type": "tin-mine",
+  "district": "industry",
+  "spec": {
+   "type": "tin-mine",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 20
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 74,
+  "y": 78,
+  "tile": "grass",
+  "dPlaza": 8.94427190999916,
+  "street": 2.546751022338867,
+  "shore": 55,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b3208",
+  "type": "shaman-tent",
+  "district": "workshop",
+  "spec": {
+   "type": "shaman-tent",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "food": 10
+   },
+   "buildSeconds": 30
+  },
+  "age": "iron",
+  "x": 90,
+  "y": 76,
+  "tile": "grass",
+  "dPlaza": 10,
+  "street": 1.6864169836044312,
+  "shore": 59,
+  "faults": [],
+  "role": "covers the \"inspired\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b3233",
+  "type": "toolmaker",
+  "district": "workshop",
+  "spec": {
+   "type": "toolmaker",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 15
+   },
+   "buildSeconds": 35
+  },
+  "age": "iron",
+  "x": 72,
+  "y": 83,
+  "tile": "grass",
+  "dPlaza": 10.04987562112089,
+  "street": 3.7363083362579346,
+  "shore": 53,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b3265",
+  "type": "elder-lodge",
+  "district": "civic",
+  "spec": {
+   "type": "elder-lodge",
+   "age": "stone",
+   "cost": {
+    "wood": 30
+   },
+   "buildSeconds": 45,
+   "houses": 3
+  },
+  "age": "iron",
+  "x": 78,
+  "y": 92,
+  "tile": "grass",
+  "dPlaza": 10.77032961426901,
+  "street": 4.996287822723389,
+  "shore": 59,
+  "faults": [],
+  "role": "houses 3",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b3295",
+  "type": "smokehouse",
+  "district": "workshop",
+  "spec": {
+   "type": "smokehouse",
+   "age": "stone",
+   "cost": {
+    "wood": 25,
+    "stone": 5
+   },
+   "buildSeconds": 35
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 85,
+  "tile": "grass",
+  "dPlaza": 12.36931687685298,
+  "street": 4.265744209289551,
+  "shore": 56,
+  "faults": [],
+  "role": "covers the \"warm\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b3330",
+  "type": "granary",
+  "district": "storehouse",
+  "spec": {
+   "type": "granary",
+   "age": "stone",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 40
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 79,
+  "tile": "grass",
+  "dPlaza": 12.36931687685298,
+  "street": 2.9125590324401855,
+  "shore": 56,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b3355",
+  "type": "trading-post",
+  "district": "service",
+  "spec": {
+   "type": "trading-post",
+   "age": "bronze",
+   "cost": {
+    "wood": 45,
+    "copper": 5
+   },
+   "buildSeconds": 55
+  },
+  "age": "iron",
+  "x": 89,
+  "y": 93,
+  "tile": "grass",
+  "dPlaza": 13.038404810405298,
+  "street": 4.959183216094971,
+  "shore": 57,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b3387",
+  "type": "campfire",
+  "district": "service",
+  "spec": {
+   "type": "campfire",
+   "age": "stone",
+   "cost": {
+    "wood": 10,
+    "stone": 5
+   },
+   "buildSeconds": 15
+  },
+  "age": "iron",
+  "x": 82,
+  "y": 95,
+  "tile": "grass",
+  "dPlaza": 13,
+  "street": 7.748469352722168,
+  "shore": 56,
+  "faults": [
+   "off the street skeleton (7.7 tiles)",
+   "duplicate service — warm is already answered by the smokehouse"
+  ],
+  "role": "\"warm\" already covered by smokehouse",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b3420",
+  "type": "livestock-pen",
+  "district": "farmland",
+  "spec": {
+   "type": "livestock-pen",
+   "age": "bronze",
+   "cost": {
+    "wood": 40,
+    "food": 15
+   },
+   "buildSeconds": 55,
+   "foodPerDay": 6
+  },
+  "age": "iron",
+  "x": 71,
+  "y": 88,
+  "tile": "grass",
+  "dPlaza": 12.529964086141668,
+  "street": 1.716099500656128,
+  "shore": 54,
+  "faults": [
+   "farmland 13 from plaza — the belt is ~27"
+  ],
+  "role": "+6 food/day",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b3623",
+  "type": "garden",
+  "district": "service",
+  "spec": {
+   "type": "garden",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 40,
+   "joy": 4
+  },
+  "age": "iron",
+  "x": 89,
+  "y": 71,
+  "tile": "grass",
+  "dPlaza": 13.038404810405298,
+  "street": 3.926368474960327,
+  "shore": 55,
+  "faults": [],
+  "role": "+4 joy",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b4501",
+  "type": "pottery-workshop",
+  "district": "workshop",
+  "spec": {
+   "type": "pottery-workshop",
+   "age": "bronze",
+   "cost": {
+    "wood": 25,
+    "stone": 15
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 69,
+  "y": 79,
+  "tile": "grass",
+  "dPlaza": 13.341664064126334,
+  "street": 6.941699504852295,
+  "shore": 50,
+  "faults": [
+   "off the street skeleton (6.9 tiles)",
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b5289",
+  "type": "weaver",
+  "district": "workshop",
+  "spec": {
+   "type": "weaver",
+   "age": "bronze",
+   "cost": {
+    "wood": 30
+   },
+   "buildSeconds": 45
+  },
+  "age": "iron",
+  "x": 73,
+  "y": 93,
+  "tile": "grass",
+  "dPlaza": 14.212670403551897,
+  "street": 3.5372276306152344,
+  "shore": 57,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b6069",
+  "type": "drying-rack",
+  "district": "workshop",
+  "spec": {
+   "type": "drying-rack",
+   "age": "stone",
+   "cost": {
+    "wood": 12
+   },
+   "buildSeconds": 20
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 91,
+  "tile": "grass",
+  "dPlaza": 15,
+  "street": 0.20201994478702545,
+  "shore": 56,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b6741",
+  "type": "hide-tanner",
+  "district": "workshop",
+  "spec": {
+   "type": "hide-tanner",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 5
+   },
+   "buildSeconds": 30
+  },
+  "age": "iron",
+  "x": 85,
+  "y": 68,
+  "tile": "grass",
+  "dPlaza": 14.317821063276352,
+  "street": 0.7856469750404358,
+  "shore": 52,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b7334",
+  "type": "storyteller-circle",
+  "district": "service",
+  "spec": {
+   "type": "storyteller-circle",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 10
+   },
+   "buildSeconds": 25
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 73,
+  "tile": "grass",
+  "dPlaza": 15,
+  "street": 2.5039966106414795,
+  "shore": 54,
+  "faults": [],
+  "role": "covers the \"learned\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b8425",
+  "type": "chariot-works",
+  "district": "workshop",
+  "spec": {
+   "type": "chariot-works",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "copper": 15
+   },
+   "buildSeconds": 70
+  },
+  "age": "iron",
+  "x": 98,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 16,
+  "street": 7.371119022369385,
+  "shore": 53,
+  "faults": [
+   "off the street skeleton (7.4 tiles)",
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b8498",
+  "type": "shrine",
+  "district": "civic",
+  "spec": {
+   "type": "shrine",
+   "age": "bronze",
+   "cost": {
+    "stone": 35,
+    "copper": 10
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 77,
+  "y": 97,
+  "tile": "grass",
+  "dPlaza": 15.811388300841898,
+  "street": 9.123294830322266,
+  "shore": 54,
+  "faults": [
+   "civic building 16 tiles from the plaza it should ring",
+   "off the street skeleton (9.1 tiles)",
+   "duplicate service — inspired is already answered by the shaman-tent"
+  ],
+  "role": "\"inspired\" already covered by shaman-tent",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b8559",
+  "type": "burial-mound",
+  "district": "civic",
+  "spec": {
+   "type": "burial-mound",
+   "age": "stone",
+   "cost": {
+    "stone": 25
+   },
+   "buildSeconds": 35
+  },
+  "age": "iron",
+  "x": 67,
+  "y": 84,
+  "tile": "grass",
+  "dPlaza": 15.132745950421555,
+  "street": 7.2940754890441895,
+  "shore": 48,
+  "faults": [
+   "civic building 15 tiles from the plaza it should ring",
+   "off the street skeleton (7.3 tiles)",
+   "duplicate service — inspired is already answered by the shaman-tent"
+  ],
+  "role": "\"inspired\" already covered by shaman-tent",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b8622",
+  "type": "fishing-hut",
+  "district": "harbor",
+  "spec": {
+   "type": "fishing-hut",
+   "age": "stone",
+   "cost": {
+    "wood": 18
+   },
+   "buildSeconds": 25
+  },
+  "age": "iron",
+  "x": 20,
+  "y": 79,
+  "tile": "sand",
+  "dPlaza": 62.07253821135398,
+  "street": 999,
+  "shore": 1,
+  "faults": [],
+  "role": "shore food",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b8680",
+  "type": "bronze-forge",
+  "district": "workshop",
+  "spec": {
+   "type": "bronze-forge",
+   "age": "bronze",
+   "cost": {
+    "copper": 20,
+    "tin": 10,
+    "stone": 20
+   },
+   "buildSeconds": 60
+  },
+  "age": "iron",
+  "x": 86,
+  "y": 98,
+  "tile": "grass",
+  "dPlaza": 16.492422502470642,
+  "street": 10.5914306640625,
+  "shore": 53,
+  "faults": [
+   "off the street skeleton (10.6 tiles)",
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b8757",
+  "type": "kiln",
+  "district": "workshop",
+  "spec": {
+   "type": "kiln",
+   "age": "bronze",
+   "cost": {
+    "stone": 30,
+    "wood": 10
+   },
+   "buildSeconds": 45
+  },
+  "age": "iron",
+  "x": 98,
+  "y": 88,
+  "tile": "grass",
+  "dPlaza": 17.08800749063506,
+  "street": 5.023557186126709,
+  "shore": 52,
+  "faults": [
+   "duplicate service — warm is already answered by the smokehouse"
+  ],
+  "role": "\"warm\" already covered by smokehouse",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b8824",
+  "type": "stone-circle",
+  "district": "civic",
+  "spec": {
+   "type": "stone-circle",
+   "age": "stone",
+   "cost": {
+    "stone": 40
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 98,
+  "y": 76,
+  "tile": "grass",
+  "dPlaza": 17.08800749063506,
+  "street": 2.09482479095459,
+  "shore": 51,
+  "faults": [
+   "civic building 17 tiles from the plaza it should ring",
+   "duplicate service — inspired is already answered by the shaman-tent"
+  ],
+  "role": "\"inspired\" already covered by shaman-tent",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b8862",
+  "type": "bronze-armory",
+  "district": "workshop",
+  "spec": {
+   "type": "bronze-armory",
+   "age": "bronze",
+   "cost": {
+    "copper": 25,
+    "tin": 15
+   },
+   "buildSeconds": 65
+  },
+  "age": "iron",
+  "x": 93,
+  "y": 96,
+  "tile": "grass",
+  "dPlaza": 17.804493814764854,
+  "street": 4.14312219619751,
+  "shore": 54,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b8897",
+  "type": "bathhouse",
+  "district": "service",
+  "spec": {
+   "type": "bathhouse",
+   "age": "bronze",
+   "cost": {
+    "stone": 40,
+    "copper": 10
+   },
+   "buildSeconds": 60
+  },
+  "age": "iron",
+  "x": 68,
+  "y": 92,
+  "tile": "grass",
+  "dPlaza": 17.204650534085253,
+  "street": 0.5966527462005615,
+  "shore": 53,
+  "faults": [
+   "service building 17 tiles from the plaza it should ring",
+   "duplicate service — warm is already answered by the smokehouse"
+  ],
+  "role": "\"warm\" already covered by smokehouse",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b8935",
+  "type": "brewery",
+  "district": "workshop",
+  "spec": {
+   "type": "brewery",
+   "age": "bronze",
+   "cost": {
+    "wood": 35,
+    "food": 20
+   },
+   "buildSeconds": 45
+  },
+  "age": "iron",
+  "x": 81,
+  "y": 100,
+  "tile": "grass",
+  "dPlaza": 18.027756377319946,
+  "street": 999,
+  "shore": 52,
+  "faults": [
+   "off the street skeleton (8+ tiles)",
+   "duplicate service — warm is already answered by the smokehouse"
+  ],
+  "role": "\"warm\" already covered by smokehouse",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b8973",
+  "type": "flint-knapper",
+  "district": "workshop",
+  "spec": {
+   "type": "flint-knapper",
+   "age": "stone",
+   "cost": {
+    "stone": 20
+   },
+   "buildSeconds": 30
+  },
+  "age": "iron",
+  "x": 93,
+  "y": 68,
+  "tile": "grass",
+  "dPlaza": 17.804493814764854,
+  "street": 7.00214147567749,
+  "shore": 53,
+  "faults": [
+   "off the street skeleton (7.0 tiles)",
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-2674",
+  "id": "island-2674-b9011",
+  "type": "copper-mine",
+  "district": "industry",
+  "spec": {
+   "type": "copper-mine",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 20
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 66,
+  "y": 75,
+  "tile": "grass",
+  "dPlaza": 17.46424919657298,
+  "street": 999,
+  "shore": 47,
+  "faults": [
+   "off the street skeleton (8+ tiles)",
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b8920",
+  "type": "manor",
+  "district": "housing",
+  "spec": {
+   "type": "manor",
+   "age": "medieval",
+   "cost": {
+    "wood": 80,
+    "stone": 60
+   },
+   "buildSeconds": 140,
+   "houses": 8
+  },
+  "age": "iron",
+  "x": 82,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 0,
+  "street": 5.25,
+  "shore": 67,
+  "faults": [
+   "squats the founding plaza"
+  ],
+  "role": "houses 8",
+  "eraGap": -2
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b8955",
+  "type": "farm",
+  "district": "farmland",
+  "spec": {
+   "type": "farm",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 50,
+   "foodPerDay": 8
+  },
+  "age": "iron",
+  "x": 86,
+  "y": 85,
+  "tile": "grass",
+  "dPlaza": 5,
+  "street": 0.4069850444793701,
+  "shore": 64,
+  "faults": [
+   "farmland 5 from plaza — the belt is ~27"
+  ],
+  "role": "+8 food/day",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b8994",
+  "type": "dock",
+  "district": "harbor",
+  "spec": {
+   "type": "dock",
+   "age": "bronze",
+   "cost": {
+    "wood": 60,
+    "stone": 30
+   },
+   "buildSeconds": 60
+  },
+  "age": "iron",
+  "x": 110,
+  "y": 136,
+  "tile": "sand",
+  "dPlaza": 60.82762530298219,
+  "street": 999,
+  "shore": 1,
+  "faults": [],
+  "role": "voyages need it",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9034",
+  "type": "drying-rack",
+  "district": "workshop",
+  "spec": {
+   "type": "drying-rack",
+   "age": "stone",
+   "cost": {
+    "wood": 12
+   },
+   "buildSeconds": 20
+  },
+  "age": "iron",
+  "x": 81,
+  "y": 87,
+  "tile": "grass",
+  "dPlaza": 5.099019513592785,
+  "street": 0.6856437921524048,
+  "shore": 63,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9077",
+  "type": "fishing-hut",
+  "district": "harbor",
+  "spec": {
+   "type": "fishing-hut",
+   "age": "stone",
+   "cost": {
+    "wood": 18
+   },
+   "buildSeconds": 25
+  },
+  "age": "iron",
+  "x": 113,
+  "y": 135,
+  "tile": "sand",
+  "dPlaza": 61.40032573203501,
+  "street": 999,
+  "shore": 1,
+  "faults": [],
+  "role": "shore food",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9118",
+  "type": "smokehouse",
+  "district": "workshop",
+  "spec": {
+   "type": "smokehouse",
+   "age": "stone",
+   "cost": {
+    "wood": 25,
+    "stone": 5
+   },
+   "buildSeconds": 35
+  },
+  "age": "iron",
+  "x": 86,
+  "y": 79,
+  "tile": "grass",
+  "dPlaza": 5,
+  "street": 0.326515257358551,
+  "shore": 67,
+  "faults": [],
+  "role": "covers the \"warm\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9153",
+  "type": "granary",
+  "district": "storehouse",
+  "spec": {
+   "type": "granary",
+   "age": "stone",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 40
+  },
+  "age": "iron",
+  "x": 77,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 5,
+  "street": 1.004327416419983,
+  "shore": 62,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9189",
+  "type": "flint-knapper",
+  "district": "workshop",
+  "spec": {
+   "type": "flint-knapper",
+   "age": "stone",
+   "cost": {
+    "stone": 20
+   },
+   "buildSeconds": 30
+  },
+  "age": "iron",
+  "x": 81,
+  "y": 77,
+  "tile": "grass",
+  "dPlaza": 5.099019513592785,
+  "street": 1.3100937604904175,
+  "shore": 65,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9228",
+  "type": "toolmaker",
+  "district": "workshop",
+  "spec": {
+   "type": "toolmaker",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 15
+   },
+   "buildSeconds": 35
+  },
+  "age": "iron",
+  "x": 90,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 8,
+  "street": 1.600000023841858,
+  "shore": 63,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9258",
+  "type": "longhouse",
+  "district": "housing",
+  "spec": {
+   "type": "longhouse",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "stone": 10
+   },
+   "buildSeconds": 55,
+   "houses": 4
+  },
+  "age": "iron",
+  "x": 85,
+  "y": 90,
+  "tile": "grass",
+  "dPlaza": 8.54400374531753,
+  "street": 2.2449169158935547,
+  "shore": 59,
+  "faults": [],
+  "role": "houses 4",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9295",
+  "type": "storyteller-circle",
+  "district": "service",
+  "spec": {
+   "type": "storyteller-circle",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 10
+   },
+   "buildSeconds": 25
+  },
+  "age": "iron",
+  "x": 76,
+  "y": 77,
+  "tile": "grass",
+  "dPlaza": 7.810249675906656,
+  "street": 1.4184480905532837,
+  "shore": 61,
+  "faults": [],
+  "role": "covers the \"learned\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9329",
+  "type": "elder-lodge",
+  "district": "civic",
+  "spec": {
+   "type": "elder-lodge",
+   "age": "stone",
+   "cost": {
+    "wood": 30
+   },
+   "buildSeconds": 45,
+   "houses": 3
+  },
+  "age": "iron",
+  "x": 76,
+  "y": 88,
+  "tile": "grass",
+  "dPlaza": 8.485281374238571,
+  "street": 0.881139874458313,
+  "shore": 61,
+  "faults": [],
+  "role": "houses 3",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9392",
+  "type": "livestock-pen",
+  "district": "farmland",
+  "spec": {
+   "type": "livestock-pen",
+   "age": "bronze",
+   "cost": {
+    "wood": 40,
+    "food": 15
+   },
+   "buildSeconds": 55,
+   "foodPerDay": 6
+  },
+  "age": "iron",
+  "x": 85,
+  "y": 74,
+  "tile": "grass",
+  "dPlaza": 8.54400374531753,
+  "street": 2.063915967941284,
+  "shore": 62,
+  "faults": [
+   "farmland 9 from plaza — the belt is ~27"
+  ],
+  "role": "+6 food/day",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9425",
+  "type": "dancing-ground",
+  "district": "service",
+  "spec": {
+   "type": "dancing-ground",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 10
+   },
+   "buildSeconds": 25,
+   "joy": 3
+  },
+  "age": "iron",
+  "x": 90,
+  "y": 88,
+  "tile": "grass",
+  "dPlaza": 10,
+  "street": 0.6820738315582275,
+  "shore": 60,
+  "faults": [],
+  "role": "+3 joy",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9457",
+  "type": "burial-mound",
+  "district": "civic",
+  "spec": {
+   "type": "burial-mound",
+   "age": "stone",
+   "cost": {
+    "stone": 25
+   },
+   "buildSeconds": 35
+  },
+  "age": "iron",
+  "x": 80,
+  "y": 92,
+  "tile": "grass",
+  "dPlaza": 10.19803902718557,
+  "street": 1.3226292133331299,
+  "shore": 58,
+  "faults": [],
+  "role": "covers the \"inspired\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9488",
+  "type": "campfire",
+  "district": "service",
+  "spec": {
+   "type": "campfire",
+   "age": "stone",
+   "cost": {
+    "wood": 10,
+    "stone": 5
+   },
+   "buildSeconds": 15
+  },
+  "age": "iron",
+  "x": 90,
+  "y": 76,
+  "tile": "grass",
+  "dPlaza": 10,
+  "street": 0.48450765013694763,
+  "shore": 62,
+  "faults": [
+   "duplicate service — warm is already answered by the smokehouse"
+  ],
+  "role": "\"warm\" already covered by smokehouse",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9523",
+  "type": "hut",
+  "district": "housing",
+  "spec": {
+   "type": "hut",
+   "age": "stone",
+   "cost": {
+    "wood": 20
+   },
+   "buildSeconds": 30,
+   "houses": 2
+  },
+  "age": "iron",
+  "x": 72,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 10,
+  "street": 1.419338583946228,
+  "shore": 57,
+  "faults": [],
+  "role": "houses 2",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9560",
+  "type": "trading-post",
+  "district": "service",
+  "spec": {
+   "type": "trading-post",
+   "age": "bronze",
+   "cost": {
+    "wood": 45,
+    "copper": 5
+   },
+   "buildSeconds": 55
+  },
+  "age": "iron",
+  "x": 80,
+  "y": 72,
+  "tile": "grass",
+  "dPlaza": 10.19803902718557,
+  "street": 3.273413896560669,
+  "shore": 61,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9587",
+  "type": "shrine",
+  "district": "civic",
+  "spec": {
+   "type": "shrine",
+   "age": "bronze",
+   "cost": {
+    "stone": 35,
+    "copper": 10
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 85,
+  "tile": "grass",
+  "dPlaza": 12.36931687685298,
+  "street": 5.521030426025391,
+  "shore": 58,
+  "faults": [
+   "duplicate service — inspired is already answered by the burial-mound"
+  ],
+  "role": "\"inspired\" already covered by burial-mound",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9613",
+  "type": "pottery-workshop",
+  "district": "workshop",
+  "spec": {
+   "type": "pottery-workshop",
+   "age": "bronze",
+   "cost": {
+    "wood": 25,
+    "stone": 15
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 79,
+  "tile": "grass",
+  "dPlaza": 12.36931687685298,
+  "street": 4.329616546630859,
+  "shore": 59,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9638",
+  "type": "tin-mine",
+  "district": "industry",
+  "spec": {
+   "type": "tin-mine",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 20
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 71,
+  "y": 87,
+  "tile": "grass",
+  "dPlaza": 12.08304597359457,
+  "street": 5.185099124908447,
+  "shore": 56,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9664",
+  "type": "copper-mine",
+  "district": "industry",
+  "spec": {
+   "type": "copper-mine",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 20
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 89,
+  "y": 93,
+  "tile": "grass",
+  "dPlaza": 13.038404810405298,
+  "street": 3.837275505065918,
+  "shore": 55,
+  "faults": [
+   "16 tiles from the nearest copper vein",
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9692",
+  "type": "bronze-armory",
+  "district": "workshop",
+  "spec": {
+   "type": "bronze-armory",
+   "age": "bronze",
+   "cost": {
+    "copper": 25,
+    "tin": 15
+   },
+   "buildSeconds": 65
+  },
+  "age": "iron",
+  "x": 84,
+  "y": 95,
+  "tile": "grass",
+  "dPlaza": 13.152946437965904,
+  "street": 6.069149494171143,
+  "shore": 54,
+  "faults": [
+   "off the street skeleton (6.1 tiles)",
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9715",
+  "type": "hide-tanner",
+  "district": "workshop",
+  "spec": {
+   "type": "hide-tanner",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 5
+   },
+   "buildSeconds": 30
+  },
+  "age": "iron",
+  "x": 71,
+  "y": 77,
+  "tile": "grass",
+  "dPlaza": 12.08304597359457,
+  "street": 3.62760591506958,
+  "shore": 56,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9769",
+  "type": "kiln",
+  "district": "workshop",
+  "spec": {
+   "type": "kiln",
+   "age": "bronze",
+   "cost": {
+    "stone": 30,
+    "wood": 10
+   },
+   "buildSeconds": 45
+  },
+  "age": "iron",
+  "x": 75,
+  "y": 72,
+  "tile": "grass",
+  "dPlaza": 12.206555615733702,
+  "street": 5.832742214202881,
+  "shore": 60,
+  "faults": [
+   "duplicate service — warm is already answered by the smokehouse"
+  ],
+  "role": "\"warm\" already covered by smokehouse",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9796",
+  "type": "weaver",
+  "district": "workshop",
+  "spec": {
+   "type": "weaver",
+   "age": "bronze",
+   "cost": {
+    "wood": 30
+   },
+   "buildSeconds": 45
+  },
+  "age": "iron",
+  "x": 75,
+  "y": 93,
+  "tile": "grass",
+  "dPlaza": 13.038404810405298,
+  "street": 1.7859816551208496,
+  "shore": 57,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9820",
+  "type": "bronze-forge",
+  "district": "workshop",
+  "spec": {
+   "type": "bronze-forge",
+   "age": "bronze",
+   "cost": {
+    "copper": 20,
+    "tin": 10,
+    "stone": 20
+   },
+   "buildSeconds": 60
+  },
+  "age": "iron",
+  "x": 89,
+  "y": 71,
+  "tile": "grass",
+  "dPlaza": 13.038404810405298,
+  "street": 5.120738983154297,
+  "shore": 59,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9849",
+  "type": "bathhouse",
+  "district": "service",
+  "spec": {
+   "type": "bathhouse",
+   "age": "bronze",
+   "cost": {
+    "stone": 40,
+    "copper": 10
+   },
+   "buildSeconds": 60
+  },
+  "age": "iron",
+  "x": 84,
+  "y": 69,
+  "tile": "grass",
+  "dPlaza": 13.152946437965904,
+  "street": 0.7648013830184937,
+  "shore": 57,
+  "faults": [
+   "duplicate service — warm is already answered by the smokehouse"
+  ],
+  "role": "\"warm\" already covered by smokehouse",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9877",
+  "type": "chariot-works",
+  "district": "workshop",
+  "spec": {
+   "type": "chariot-works",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "copper": 15
+   },
+   "buildSeconds": 70
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 91,
+  "tile": "grass",
+  "dPlaza": 15,
+  "street": 0.9804405570030212,
+  "shore": 55,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9906",
+  "type": "garden",
+  "district": "service",
+  "spec": {
+   "type": "garden",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 40,
+   "joy": 4
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 73,
+  "tile": "grass",
+  "dPlaza": 15,
+  "street": 0.6685105562210083,
+  "shore": 57,
+  "faults": [],
+  "role": "+4 joy",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9929",
+  "type": "palisade",
+  "district": "defense",
+  "spec": {
+   "type": "palisade",
+   "age": "stone",
+   "cost": {
+    "wood": 35
+   },
+   "buildSeconds": 40
+  },
+  "age": "iron",
+  "x": 79,
+  "y": 97,
+  "tile": "grass",
+  "dPlaza": 15.297058540778355,
+  "street": 1.974897861480713,
+  "shore": 53,
+  "faults": [
+   "wall 53 tiles inland — the perimeter law wants ~2.5"
+  ],
+  "role": "covers the \"safe\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9948",
+  "type": "brewery",
+  "district": "workshop",
+  "spec": {
+   "type": "brewery",
+   "age": "bronze",
+   "cost": {
+    "wood": 35,
+    "food": 20
+   },
+   "buildSeconds": 45
+  },
+  "age": "iron",
+  "x": 67,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 15,
+  "street": 1.5792359113693237,
+  "shore": 52,
+  "faults": [
+   "duplicate service — warm is already answered by the smokehouse"
+  ],
+  "role": "\"warm\" already covered by smokehouse",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8745",
+  "id": "island-8745-b9978",
+  "type": "shaman-tent",
+  "district": "workshop",
+  "spec": {
+   "type": "shaman-tent",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "food": 10
+   },
+   "buildSeconds": 30
+  },
+  "age": "iron",
+  "x": 98,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 16,
+  "street": 9.077646255493164,
+  "shore": 55,
+  "faults": [
+   "off the street skeleton (9.1 tiles)",
+   "duplicate service — inspired is already answered by the burial-mound"
+  ],
+  "role": "\"inspired\" already covered by burial-mound",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9120",
+  "type": "manor",
+  "district": "housing",
+  "spec": {
+   "type": "manor",
+   "age": "medieval",
+   "cost": {
+    "wood": 80,
+    "stone": 60
+   },
+   "buildSeconds": 140,
+   "houses": 8
+  },
+  "age": "iron",
+  "x": 82,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 0,
+  "street": 5.229035377502441,
+  "shore": 66,
+  "faults": [
+   "squats the founding plaza"
+  ],
+  "role": "houses 8",
+  "eraGap": -2
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9156",
+  "type": "farm",
+  "district": "farmland",
+  "spec": {
+   "type": "farm",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 50,
+   "foodPerDay": 8
+  },
+  "age": "iron",
+  "x": 86,
+  "y": 85,
+  "tile": "grass",
+  "dPlaza": 5,
+  "street": 0.655626654624939,
+  "shore": 65,
+  "faults": [
+   "farmland 5 from plaza — the belt is ~27"
+  ],
+  "role": "+8 food/day",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9191",
+  "type": "dock",
+  "district": "harbor",
+  "spec": {
+   "type": "dock",
+   "age": "bronze",
+   "cost": {
+    "wood": 60,
+    "stone": 30
+   },
+   "buildSeconds": 60
+  },
+  "age": "iron",
+  "x": 135,
+  "y": 118,
+  "tile": "sand",
+  "dPlaza": 64.07027391856538,
+  "street": 999,
+  "shore": 1,
+  "faults": [],
+  "role": "voyages need it",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9230",
+  "type": "garden",
+  "district": "service",
+  "spec": {
+   "type": "garden",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 40,
+   "joy": 4
+  },
+  "age": "iron",
+  "x": 81,
+  "y": 87,
+  "tile": "grass",
+  "dPlaza": 5.099019513592785,
+  "street": 1.3100937604904175,
+  "shore": 63,
+  "faults": [],
+  "role": "+4 joy",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9261",
+  "type": "longhouse",
+  "district": "housing",
+  "spec": {
+   "type": "longhouse",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "stone": 10
+   },
+   "buildSeconds": 55,
+   "houses": 4
+  },
+  "age": "iron",
+  "x": 86,
+  "y": 79,
+  "tile": "grass",
+  "dPlaza": 5,
+  "street": 1.410042405128479,
+  "shore": 66,
+  "faults": [],
+  "role": "houses 4",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9299",
+  "type": "watermill",
+  "district": "farmland",
+  "spec": {
+   "type": "watermill",
+   "age": "medieval",
+   "cost": {
+    "wood": 70,
+    "stone": 40
+   },
+   "buildSeconds": 110
+  },
+  "age": "iron",
+  "x": 77,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 5,
+  "street": 1.1648156642913818,
+  "shore": 61,
+  "faults": [
+   "farmland 5 from plaza — the belt is ~27",
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": -2
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9331",
+  "type": "granary",
+  "district": "storehouse",
+  "spec": {
+   "type": "granary",
+   "age": "stone",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 40
+  },
+  "age": "iron",
+  "x": 81,
+  "y": 77,
+  "tile": "grass",
+  "dPlaza": 5.099019513592785,
+  "street": 1.3100937604904175,
+  "shore": 65,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9360",
+  "type": "fishing-hut",
+  "district": "harbor",
+  "spec": {
+   "type": "fishing-hut",
+   "age": "stone",
+   "cost": {
+    "wood": 18
+   },
+   "buildSeconds": 25
+  },
+  "age": "iron",
+  "x": 133,
+  "y": 122,
+  "tile": "sand",
+  "dPlaza": 64.81512169239521,
+  "street": 999,
+  "shore": 1,
+  "faults": [],
+  "role": "shore food",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9394",
+  "type": "brewery",
+  "district": "workshop",
+  "spec": {
+   "type": "brewery",
+   "age": "bronze",
+   "cost": {
+    "wood": 35,
+    "food": 20
+   },
+   "buildSeconds": 45
+  },
+  "age": "iron",
+  "x": 76,
+  "y": 87,
+  "tile": "grass",
+  "dPlaza": 7.810249675906656,
+  "street": 0.9557768702507019,
+  "shore": 59,
+  "faults": [],
+  "role": "covers the \"warm\" need",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9428",
+  "type": "copper-mine",
+  "district": "industry",
+  "spec": {
+   "type": "copper-mine",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 20
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 85,
+  "y": 90,
+  "tile": "grass",
+  "dPlaza": 8.54400374531753,
+  "street": 1.949657678604126,
+  "shore": 60,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9459",
+  "type": "storyteller-circle",
+  "district": "service",
+  "spec": {
+   "type": "storyteller-circle",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 10
+   },
+   "buildSeconds": 25
+  },
+  "age": "iron",
+  "x": 76,
+  "y": 77,
+  "tile": "grass",
+  "dPlaza": 7.810249675906656,
+  "street": 1.4184480905532837,
+  "shore": 62,
+  "faults": [],
+  "role": "covers the \"learned\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9491",
+  "type": "hut",
+  "district": "housing",
+  "spec": {
+   "type": "hut",
+   "age": "stone",
+   "cost": {
+    "wood": 20
+   },
+   "buildSeconds": 30,
+   "houses": 2
+  },
+  "age": "iron",
+  "x": 85,
+  "y": 74,
+  "tile": "grass",
+  "dPlaza": 8.54400374531753,
+  "street": 1.6374167203903198,
+  "shore": 62,
+  "faults": [],
+  "role": "houses 2",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9526",
+  "type": "drying-rack",
+  "district": "workshop",
+  "spec": {
+   "type": "drying-rack",
+   "age": "stone",
+   "cost": {
+    "wood": 12
+   },
+   "buildSeconds": 20
+  },
+  "age": "iron",
+  "x": 91,
+  "y": 80,
+  "tile": "grass",
+  "dPlaza": 9.219544457292889,
+  "street": 1.4000219106674194,
+  "shore": 61,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9563",
+  "type": "weaver",
+  "district": "workshop",
+  "spec": {
+   "type": "weaver",
+   "age": "bronze",
+   "cost": {
+    "wood": 30
+   },
+   "buildSeconds": 45
+  },
+  "age": "iron",
+  "x": 80,
+  "y": 92,
+  "tile": "grass",
+  "dPlaza": 10.19803902718557,
+  "street": 2.8448619842529297,
+  "shore": 58,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9641",
+  "type": "burial-mound",
+  "district": "civic",
+  "spec": {
+   "type": "burial-mound",
+   "age": "stone",
+   "cost": {
+    "stone": 25
+   },
+   "buildSeconds": 35
+  },
+  "age": "iron",
+  "x": 72,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 10,
+  "street": 2.2619497776031494,
+  "shore": 56,
+  "faults": [],
+  "role": "covers the \"inspired\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9666",
+  "type": "palisade",
+  "district": "defense",
+  "spec": {
+   "type": "palisade",
+   "age": "stone",
+   "cost": {
+    "wood": 35
+   },
+   "buildSeconds": 40
+  },
+  "age": "iron",
+  "x": 90,
+  "y": 75,
+  "tile": "grass",
+  "dPlaza": 10.63014581273465,
+  "street": 3.6364455223083496,
+  "shore": 61,
+  "faults": [
+   "wall 61 tiles inland — the perimeter law wants ~2.5"
+  ],
+  "role": "covers the \"safe\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9694",
+  "type": "flint-knapper",
+  "district": "workshop",
+  "spec": {
+   "type": "flint-knapper",
+   "age": "stone",
+   "cost": {
+    "stone": 20
+   },
+   "buildSeconds": 30
+  },
+  "age": "iron",
+  "x": 80,
+  "y": 72,
+  "tile": "grass",
+  "dPlaza": 10.19803902718557,
+  "street": 3.3405747413635254,
+  "shore": 60,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9717",
+  "type": "kiln",
+  "district": "workshop",
+  "spec": {
+   "type": "kiln",
+   "age": "bronze",
+   "cost": {
+    "stone": 30,
+    "wood": 10
+   },
+   "buildSeconds": 45
+  },
+  "age": "iron",
+  "x": 75,
+  "y": 92,
+  "tile": "grass",
+  "dPlaza": 12.206555615733702,
+  "street": 1.830541968345642,
+  "shore": 57,
+  "faults": [
+   "duplicate service — warm is already answered by the brewery"
+  ],
+  "role": "\"warm\" already covered by brewery",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9744",
+  "type": "tin-mine",
+  "district": "industry",
+  "spec": {
+   "type": "tin-mine",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 20
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 71,
+  "y": 87,
+  "tile": "grass",
+  "dPlaza": 12.08304597359457,
+  "street": 4.614360332489014,
+  "shore": 54,
+  "faults": [
+   "19 tiles from the nearest tin vein",
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9772",
+  "type": "chariot-works",
+  "district": "workshop",
+  "spec": {
+   "type": "chariot-works",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "copper": 15
+   },
+   "buildSeconds": 70
+  },
+  "age": "iron",
+  "x": 84,
+  "y": 95,
+  "tile": "grass",
+  "dPlaza": 13.152946437965904,
+  "street": 1.7617437839508057,
+  "shore": 55,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9799",
+  "type": "trading-post",
+  "district": "service",
+  "spec": {
+   "type": "trading-post",
+   "age": "bronze",
+   "cost": {
+    "wood": 45,
+    "copper": 5
+   },
+   "buildSeconds": 55
+  },
+  "age": "iron",
+  "x": 71,
+  "y": 77,
+  "tile": "grass",
+  "dPlaza": 12.08304597359457,
+  "street": 2.47170352935791,
+  "shore": 57,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9822",
+  "type": "shaman-tent",
+  "district": "workshop",
+  "spec": {
+   "type": "shaman-tent",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "food": 10
+   },
+   "buildSeconds": 30
+  },
+  "age": "iron",
+  "x": 75,
+  "y": 72,
+  "tile": "grass",
+  "dPlaza": 12.206555615733702,
+  "street": 5.832742214202881,
+  "shore": 59,
+  "faults": [
+   "duplicate service — inspired is already answered by the burial-mound"
+  ],
+  "role": "\"inspired\" already covered by burial-mound",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9851",
+  "type": "bronze-forge",
+  "district": "workshop",
+  "spec": {
+   "type": "bronze-forge",
+   "age": "bronze",
+   "cost": {
+    "copper": 20,
+    "tin": 10,
+    "stone": 20
+   },
+   "buildSeconds": 60
+  },
+  "age": "iron",
+  "x": 84,
+  "y": 69,
+  "tile": "grass",
+  "dPlaza": 13.152946437965904,
+  "street": 0.8234528303146362,
+  "shore": 57,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9880",
+  "type": "bronze-armory",
+  "district": "workshop",
+  "spec": {
+   "type": "bronze-armory",
+   "age": "bronze",
+   "cost": {
+    "copper": 25,
+    "tin": 15
+   },
+   "buildSeconds": 65
+  },
+  "age": "iron",
+  "x": 89,
+  "y": 70,
+  "tile": "grass",
+  "dPlaza": 13.892443989449806,
+  "street": 5.730642795562744,
+  "shore": 57,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9908",
+  "type": "dancing-ground",
+  "district": "service",
+  "spec": {
+   "type": "dancing-ground",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 10
+   },
+   "buildSeconds": 25,
+   "joy": 3
+  },
+  "age": "iron",
+  "x": 95,
+  "y": 76,
+  "tile": "grass",
+  "dPlaza": 14.317821063276352,
+  "street": 0.5473630428314209,
+  "shore": 56,
+  "faults": [],
+  "role": "+3 joy",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9931",
+  "type": "pottery-workshop",
+  "district": "workshop",
+  "spec": {
+   "type": "pottery-workshop",
+   "age": "bronze",
+   "cost": {
+    "wood": 25,
+    "stone": 15
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 79,
+  "y": 97,
+  "tile": "grass",
+  "dPlaza": 15.297058540778355,
+  "street": 2.3903896808624268,
+  "shore": 53,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9951",
+  "type": "hide-tanner",
+  "district": "workshop",
+  "spec": {
+   "type": "hide-tanner",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 5
+   },
+   "buildSeconds": 30
+  },
+  "age": "iron",
+  "x": 67,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 15,
+  "street": 3.3676939010620117,
+  "shore": 51,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b9979",
+  "type": "campfire",
+  "district": "service",
+  "spec": {
+   "type": "campfire",
+   "age": "stone",
+   "cost": {
+    "wood": 10,
+    "stone": 5
+   },
+   "buildSeconds": 15
+  },
+  "age": "iron",
+  "x": 70,
+  "y": 92,
+  "tile": "grass",
+  "dPlaza": 15.620499351813312,
+  "street": 1.9282337427139282,
+  "shore": 55,
+  "faults": [
+   "service building 16 tiles from the plaza it should ring",
+   "duplicate service — warm is already answered by the brewery"
+  ],
+  "role": "\"warm\" already covered by brewery",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b10007",
+  "type": "smokehouse",
+  "district": "workshop",
+  "spec": {
+   "type": "smokehouse",
+   "age": "stone",
+   "cost": {
+    "wood": 25,
+    "stone": 5
+   },
+   "buildSeconds": 35
+  },
+  "age": "iron",
+  "x": 79,
+  "y": 67,
+  "tile": "grass",
+  "dPlaza": 15.297058540778355,
+  "street": 4.202897071838379,
+  "shore": 55,
+  "faults": [
+   "duplicate service — warm is already answered by the brewery"
+  ],
+  "role": "\"warm\" already covered by brewery",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b10030",
+  "type": "bathhouse",
+  "district": "service",
+  "spec": {
+   "type": "bathhouse",
+   "age": "bronze",
+   "cost": {
+    "stone": 40,
+    "copper": 10
+   },
+   "buildSeconds": 60
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 71,
+  "tile": "grass",
+  "dPlaza": 16.278820596099706,
+  "street": 5.5465168952941895,
+  "shore": 56,
+  "faults": [
+   "service building 16 tiles from the plaza it should ring",
+   "duplicate service — warm is already answered by the brewery"
+  ],
+  "role": "\"warm\" already covered by brewery",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b10049",
+  "type": "toolmaker",
+  "district": "workshop",
+  "spec": {
+   "type": "toolmaker",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 15
+   },
+   "buildSeconds": 35
+  },
+  "age": "iron",
+  "x": 70,
+  "y": 72,
+  "tile": "grass",
+  "dPlaza": 15.620499351813312,
+  "street": 7.105891227722168,
+  "shore": 56,
+  "faults": [
+   "off the street skeleton (7.1 tiles)",
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b10065",
+  "type": "livestock-pen",
+  "district": "farmland",
+  "spec": {
+   "type": "livestock-pen",
+   "age": "bronze",
+   "cost": {
+    "wood": 40,
+    "food": 15
+   },
+   "buildSeconds": 55,
+   "foodPerDay": 6
+  },
+  "age": "iron",
+  "x": 74,
+  "y": 97,
+  "tile": "grass",
+  "dPlaza": 17,
+  "street": 4.427351474761963,
+  "shore": 52,
+  "faults": [],
+  "role": "+6 food/day",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b10081",
+  "type": "shrine",
+  "district": "civic",
+  "spec": {
+   "type": "shrine",
+   "age": "bronze",
+   "cost": {
+    "stone": 35,
+    "copper": 10
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 66,
+  "y": 87,
+  "tile": "grass",
+  "dPlaza": 16.76305461424021,
+  "street": 8.270867347717285,
+  "shore": 49,
+  "faults": [
+   "civic building 17 tiles from the plaza it should ring",
+   "off the street skeleton (8.3 tiles)",
+   "duplicate service — inspired is already answered by the burial-mound"
+  ],
+  "role": "\"inspired\" already covered by burial-mound",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8921",
+  "id": "island-8921-b10098",
+  "type": "elder-lodge",
+  "district": "civic",
+  "spec": {
+   "type": "elder-lodge",
+   "age": "stone",
+   "cost": {
+    "wood": 30
+   },
+   "buildSeconds": 45,
+   "houses": 3
+  },
+  "age": "iron",
+  "x": 66,
+  "y": 77,
+  "tile": "grass",
+  "dPlaza": 16.76305461424021,
+  "street": 1.3620092868804932,
+  "shore": 52,
+  "faults": [
+   "civic building 17 tiles from the plaza it should ring"
+  ],
+  "role": "houses 3",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9157",
+  "type": "longhouse",
+  "district": "housing",
+  "spec": {
+   "type": "longhouse",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "stone": 10
+   },
+   "buildSeconds": 55,
+   "houses": 4
+  },
+  "age": "iron",
+  "x": 82,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 0,
+  "street": 5.25,
+  "shore": 68,
+  "faults": [
+   "squats the founding plaza"
+  ],
+  "role": "houses 4",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9193",
+  "type": "farm",
+  "district": "farmland",
+  "spec": {
+   "type": "farm",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 50,
+   "foodPerDay": 8
+  },
+  "age": "iron",
+  "x": 86,
+  "y": 85,
+  "tile": "grass",
+  "dPlaza": 5,
+  "street": 0.3123297393321991,
+  "shore": 66,
+  "faults": [
+   "farmland 5 from plaza — the belt is ~27"
+  ],
+  "role": "+8 food/day",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9231",
+  "type": "dock",
+  "district": "harbor",
+  "spec": {
+   "type": "dock",
+   "age": "bronze",
+   "cost": {
+    "wood": 60,
+    "stone": 30
+   },
+   "buildSeconds": 60
+  },
+  "age": "iron",
+  "x": 146,
+  "y": 70,
+  "tile": "sand",
+  "dPlaza": 65.11528238439882,
+  "street": 999,
+  "shore": 1,
+  "faults": [],
+  "role": "voyages need it",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9262",
+  "type": "kiln",
+  "district": "workshop",
+  "spec": {
+   "type": "kiln",
+   "age": "bronze",
+   "cost": {
+    "stone": 30,
+    "wood": 10
+   },
+   "buildSeconds": 45
+  },
+  "age": "iron",
+  "x": 81,
+  "y": 87,
+  "tile": "grass",
+  "dPlaza": 5.099019513592785,
+  "street": 1.3100937604904175,
+  "shore": 64,
+  "faults": [],
+  "role": "covers the \"warm\" need",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9300",
+  "type": "palisade",
+  "district": "defense",
+  "spec": {
+   "type": "palisade",
+   "age": "stone",
+   "cost": {
+    "wood": 35
+   },
+   "buildSeconds": 40
+  },
+  "age": "iron",
+  "x": 86,
+  "y": 79,
+  "tile": "grass",
+  "dPlaza": 5,
+  "street": 1.2181304693222046,
+  "shore": 64,
+  "faults": [
+   "wall 64 tiles inland — the perimeter law wants ~2.5"
+  ],
+  "role": "covers the \"safe\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9332",
+  "type": "dancing-ground",
+  "district": "service",
+  "spec": {
+   "type": "dancing-ground",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 10
+   },
+   "buildSeconds": 25,
+   "joy": 3
+  },
+  "age": "iron",
+  "x": 77,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 5,
+  "street": 1.399999976158142,
+  "shore": 63,
+  "faults": [],
+  "role": "+3 joy",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9362",
+  "type": "longhouse",
+  "district": "housing",
+  "spec": {
+   "type": "longhouse",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "stone": 10
+   },
+   "buildSeconds": 55,
+   "houses": 4
+  },
+  "age": "iron",
+  "x": 81,
+  "y": 77,
+  "tile": "grass",
+  "dPlaza": 5.099019513592785,
+  "street": 0.31399786472320557,
+  "shore": 65,
+  "faults": [],
+  "role": "houses 4",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9396",
+  "type": "burial-mound",
+  "district": "civic",
+  "spec": {
+   "type": "burial-mound",
+   "age": "stone",
+   "cost": {
+    "stone": 25
+   },
+   "buildSeconds": 35
+  },
+  "age": "iron",
+  "x": 90,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 8,
+  "street": 1.600000023841858,
+  "shore": 61,
+  "faults": [],
+  "role": "covers the \"inspired\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9429",
+  "type": "weaver",
+  "district": "workshop",
+  "spec": {
+   "type": "weaver",
+   "age": "bronze",
+   "cost": {
+    "wood": 30
+   },
+   "buildSeconds": 45
+  },
+  "age": "iron",
+  "x": 76,
+  "y": 87,
+  "tile": "grass",
+  "dPlaza": 7.810249675906656,
+  "street": 1.4184480905532837,
+  "shore": 62,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9461",
+  "type": "campfire",
+  "district": "service",
+  "spec": {
+   "type": "campfire",
+   "age": "stone",
+   "cost": {
+    "wood": 10,
+    "stone": 5
+   },
+   "buildSeconds": 15
+  },
+  "age": "iron",
+  "x": 85,
+  "y": 90,
+  "tile": "grass",
+  "dPlaza": 8.54400374531753,
+  "street": 0.8640923500061035,
+  "shore": 61,
+  "faults": [
+   "duplicate service — warm is already answered by the kiln"
+  ],
+  "role": "\"warm\" already covered by kiln",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9493",
+  "type": "elder-lodge",
+  "district": "civic",
+  "spec": {
+   "type": "elder-lodge",
+   "age": "stone",
+   "cost": {
+    "wood": 30
+   },
+   "buildSeconds": 45,
+   "houses": 3
+  },
+  "age": "iron",
+  "x": 76,
+  "y": 77,
+  "tile": "grass",
+  "dPlaza": 7.810249675906656,
+  "street": 1.4184480905532837,
+  "shore": 61,
+  "faults": [],
+  "role": "houses 3",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9527",
+  "type": "hide-tanner",
+  "district": "workshop",
+  "spec": {
+   "type": "hide-tanner",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 5
+   },
+   "buildSeconds": 30
+  },
+  "age": "iron",
+  "x": 85,
+  "y": 74,
+  "tile": "grass",
+  "dPlaza": 8.54400374531753,
+  "street": 2.2449169158935547,
+  "shore": 62,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9564",
+  "type": "storyteller-circle",
+  "district": "service",
+  "spec": {
+   "type": "storyteller-circle",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 10
+   },
+   "buildSeconds": 25
+  },
+  "age": "iron",
+  "x": 90,
+  "y": 88,
+  "tile": "grass",
+  "dPlaza": 10,
+  "street": 0.4464990198612213,
+  "shore": 62,
+  "faults": [],
+  "role": "covers the \"learned\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9590",
+  "type": "hut",
+  "district": "housing",
+  "spec": {
+   "type": "hut",
+   "age": "stone",
+   "cost": {
+    "wood": 20
+   },
+   "buildSeconds": 30,
+   "houses": 2
+  },
+  "age": "iron",
+  "x": 80,
+  "y": 92,
+  "tile": "grass",
+  "dPlaza": 10.19803902718557,
+  "street": 3.8042991161346436,
+  "shore": 59,
+  "faults": [],
+  "role": "houses 2",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9616",
+  "type": "granary",
+  "district": "storehouse",
+  "spec": {
+   "type": "granary",
+   "age": "stone",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 40
+  },
+  "age": "iron",
+  "x": 90,
+  "y": 76,
+  "tile": "grass",
+  "dPlaza": 10,
+  "street": 2.3690719604492188,
+  "shore": 60,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9643",
+  "type": "garden",
+  "district": "service",
+  "spec": {
+   "type": "garden",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 40,
+   "joy": 4
+  },
+  "age": "iron",
+  "x": 72,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 10,
+  "street": 2.288267135620117,
+  "shore": 58,
+  "faults": [],
+  "role": "+4 joy",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9667",
+  "type": "fishing-hut",
+  "district": "harbor",
+  "spec": {
+   "type": "fishing-hut",
+   "age": "stone",
+   "cost": {
+    "wood": 18
+   },
+   "buildSeconds": 25
+  },
+  "age": "iron",
+  "x": 140,
+  "y": 53,
+  "tile": "sand",
+  "dPlaza": 64.8459713474939,
+  "street": 8.105993270874023,
+  "shore": 1,
+  "faults": [],
+  "role": "shore food",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9718",
+  "type": "pottery-workshop",
+  "district": "workshop",
+  "spec": {
+   "type": "pottery-workshop",
+   "age": "bronze",
+   "cost": {
+    "wood": 25,
+    "stone": 15
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 80,
+  "y": 72,
+  "tile": "grass",
+  "dPlaza": 10.19803902718557,
+  "street": 0.5465154647827148,
+  "shore": 60,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9745",
+  "type": "drying-rack",
+  "district": "workshop",
+  "spec": {
+   "type": "drying-rack",
+   "age": "stone",
+   "cost": {
+    "wood": 12
+   },
+   "buildSeconds": 20
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 85,
+  "tile": "grass",
+  "dPlaza": 12.36931687685298,
+  "street": 5.22096586227417,
+  "shore": 58,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9774",
+  "type": "toolmaker",
+  "district": "workshop",
+  "spec": {
+   "type": "toolmaker",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 15
+   },
+   "buildSeconds": 35
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 79,
+  "tile": "grass",
+  "dPlaza": 12.36931687685298,
+  "street": 2.108173131942749,
+  "shore": 56,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9800",
+  "type": "brewery",
+  "district": "workshop",
+  "spec": {
+   "type": "brewery",
+   "age": "bronze",
+   "cost": {
+    "wood": 35,
+    "food": 20
+   },
+   "buildSeconds": 45
+  },
+  "age": "iron",
+  "x": 75,
+  "y": 92,
+  "tile": "grass",
+  "dPlaza": 12.206555615733702,
+  "street": 5.832742214202881,
+  "shore": 58,
+  "faults": [
+   "duplicate service — warm is already answered by the kiln"
+  ],
+  "role": "\"warm\" already covered by kiln",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9823",
+  "type": "shaman-tent",
+  "district": "workshop",
+  "spec": {
+   "type": "shaman-tent",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "food": 10
+   },
+   "buildSeconds": 30
+  },
+  "age": "iron",
+  "x": 71,
+  "y": 87,
+  "tile": "grass",
+  "dPlaza": 12.08304597359457,
+  "street": 0.665066659450531,
+  "shore": 57,
+  "faults": [
+   "duplicate service — inspired is already answered by the burial-mound"
+  ],
+  "role": "\"inspired\" already covered by burial-mound",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9852",
+  "type": "stone-circle",
+  "district": "civic",
+  "spec": {
+   "type": "stone-circle",
+   "age": "stone",
+   "cost": {
+    "stone": 40
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 89,
+  "y": 93,
+  "tile": "grass",
+  "dPlaza": 13.038404810405298,
+  "street": 3.758561372756958,
+  "shore": 57,
+  "faults": [
+   "duplicate service — inspired is already answered by the burial-mound"
+  ],
+  "role": "\"inspired\" already covered by burial-mound",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9881",
+  "type": "bronze-armory",
+  "district": "workshop",
+  "spec": {
+   "type": "bronze-armory",
+   "age": "bronze",
+   "cost": {
+    "copper": 25,
+    "tin": 15
+   },
+   "buildSeconds": 65
+  },
+  "age": "iron",
+  "x": 84,
+  "y": 95,
+  "tile": "grass",
+  "dPlaza": 13.152946437965904,
+  "street": 1.634473443031311,
+  "shore": 56,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9909",
+  "type": "bronze-forge",
+  "district": "workshop",
+  "spec": {
+   "type": "bronze-forge",
+   "age": "bronze",
+   "cost": {
+    "copper": 20,
+    "tin": 10,
+    "stone": 20
+   },
+   "buildSeconds": 60
+  },
+  "age": "iron",
+  "x": 71,
+  "y": 77,
+  "tile": "grass",
+  "dPlaza": 12.08304597359457,
+  "street": 2.8000333309173584,
+  "shore": 56,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9932",
+  "type": "livestock-pen",
+  "district": "farmland",
+  "spec": {
+   "type": "livestock-pen",
+   "age": "bronze",
+   "cost": {
+    "wood": 40,
+    "food": 15
+   },
+   "buildSeconds": 55,
+   "foodPerDay": 6
+  },
+  "age": "iron",
+  "x": 75,
+  "y": 72,
+  "tile": "grass",
+  "dPlaza": 12.206555615733702,
+  "street": 5.529164791107178,
+  "shore": 59,
+  "faults": [
+   "farmland 12 from plaza — the belt is ~27"
+  ],
+  "role": "+6 food/day",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9952",
+  "type": "shrine",
+  "district": "civic",
+  "spec": {
+   "type": "shrine",
+   "age": "bronze",
+   "cost": {
+    "stone": 35,
+    "copper": 10
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 89,
+  "y": 71,
+  "tile": "grass",
+  "dPlaza": 13.038404810405298,
+  "street": 6.709205627441406,
+  "shore": 58,
+  "faults": [
+   "off the street skeleton (6.7 tiles)",
+   "duplicate service — inspired is already answered by the burial-mound"
+  ],
+  "role": "\"inspired\" already covered by burial-mound",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b9981",
+  "type": "tin-mine",
+  "district": "industry",
+  "spec": {
+   "type": "tin-mine",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 20
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 84,
+  "y": 69,
+  "tile": "grass",
+  "dPlaza": 13.152946437965904,
+  "street": 3.32798433303833,
+  "shore": 57,
+  "faults": [
+   "25 tiles from the nearest tin vein",
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b10008",
+  "type": "trading-post",
+  "district": "service",
+  "spec": {
+   "type": "trading-post",
+   "age": "bronze",
+   "cost": {
+    "wood": 45,
+    "copper": 5
+   },
+   "buildSeconds": 55
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 91,
+  "tile": "grass",
+  "dPlaza": 15,
+  "street": 0.6065760850906372,
+  "shore": 57,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b10032",
+  "type": "longhouse",
+  "district": "housing",
+  "spec": {
+   "type": "longhouse",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "stone": 10
+   },
+   "buildSeconds": 55,
+   "houses": 4
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 73,
+  "tile": "grass",
+  "dPlaza": 15,
+  "street": 3.5172057151794434,
+  "shore": 55,
+  "faults": [],
+  "role": "houses 4",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b10050",
+  "type": "bathhouse",
+  "district": "service",
+  "spec": {
+   "type": "bathhouse",
+   "age": "bronze",
+   "cost": {
+    "stone": 40,
+    "copper": 10
+   },
+   "buildSeconds": 60
+  },
+  "age": "iron",
+  "x": 79,
+  "y": 97,
+  "tile": "grass",
+  "dPlaza": 15.297058540778355,
+  "street": 6.971382141113281,
+  "shore": 54,
+  "faults": [
+   "service building 15 tiles from the plaza it should ring",
+   "off the street skeleton (7.0 tiles)",
+   "duplicate service — warm is already answered by the kiln"
+  ],
+  "role": "\"warm\" already covered by kiln",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b10066",
+  "type": "flint-knapper",
+  "district": "workshop",
+  "spec": {
+   "type": "flint-knapper",
+   "age": "stone",
+   "cost": {
+    "stone": 20
+   },
+   "buildSeconds": 30
+  },
+  "age": "iron",
+  "x": 67,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 15,
+  "street": 1.967589259147644,
+  "shore": 53,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b10082",
+  "type": "copper-mine",
+  "district": "industry",
+  "spec": {
+   "type": "copper-mine",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 20
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 98,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 16,
+  "street": 6.407953262329102,
+  "shore": 53,
+  "faults": [
+   "15 tiles from the nearest copper vein",
+   "off the street skeleton (6.4 tiles)",
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b10100",
+  "type": "chariot-works",
+  "district": "workshop",
+  "spec": {
+   "type": "chariot-works",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "copper": 15
+   },
+   "buildSeconds": 70
+  },
+  "age": "iron",
+  "x": 70,
+  "y": 92,
+  "tile": "grass",
+  "dPlaza": 15.620499351813312,
+  "street": 3.7285852432250977,
+  "shore": 56,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-8996",
+  "id": "island-8996-b10117",
+  "type": "smokehouse",
+  "district": "workshop",
+  "spec": {
+   "type": "smokehouse",
+   "age": "stone",
+   "cost": {
+    "wood": 25,
+    "stone": 5
+   },
+   "buildSeconds": 35
+  },
+  "age": "iron",
+  "x": 79,
+  "y": 67,
+  "tile": "grass",
+  "dPlaza": 15.297058540778355,
+  "street": 1.860921025276184,
+  "shore": 55,
+  "faults": [
+   "duplicate service — warm is already answered by the kiln"
+  ],
+  "role": "\"warm\" already covered by kiln",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9194",
+  "type": "longhouse",
+  "district": "housing",
+  "spec": {
+   "type": "longhouse",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "stone": 10
+   },
+   "buildSeconds": 55,
+   "houses": 4
+  },
+  "age": "iron",
+  "x": 80,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 0,
+  "street": 5.25,
+  "shore": 63,
+  "faults": [
+   "squats the founding plaza"
+  ],
+  "role": "houses 4",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9232",
+  "type": "longhouse",
+  "district": "housing",
+  "spec": {
+   "type": "longhouse",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "stone": 10
+   },
+   "buildSeconds": 55,
+   "houses": 4
+  },
+  "age": "iron",
+  "x": 81,
+  "y": 87,
+  "tile": "grass",
+  "dPlaza": 5.099019513592785,
+  "street": 0.19172845780849457,
+  "shore": 64,
+  "faults": [],
+  "role": "houses 4",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9263",
+  "type": "farm",
+  "district": "farmland",
+  "spec": {
+   "type": "farm",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 50,
+   "foodPerDay": 8
+  },
+  "age": "iron",
+  "x": 79,
+  "y": 77,
+  "tile": "grass",
+  "dPlaza": 5.099019513592785,
+  "street": 1.3100937604904175,
+  "shore": 62,
+  "faults": [
+   "farmland 5 from plaza — the belt is ~27"
+  ],
+  "role": "+8 food/day",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9301",
+  "type": "dock",
+  "district": "harbor",
+  "spec": {
+   "type": "dock",
+   "age": "bronze",
+   "cost": {
+    "wood": 60,
+    "stone": 30
+   },
+   "buildSeconds": 60
+  },
+  "age": "iron",
+  "x": 19,
+  "y": 85,
+  "tile": "sand",
+  "dPlaza": 61.07372593840988,
+  "street": 999,
+  "shore": 1,
+  "faults": [],
+  "role": "voyages need it",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9333",
+  "type": "kiln",
+  "district": "workshop",
+  "spec": {
+   "type": "kiln",
+   "age": "bronze",
+   "cost": {
+    "stone": 30,
+    "wood": 10
+   },
+   "buildSeconds": 45
+  },
+  "age": "iron",
+  "x": 76,
+  "y": 85,
+  "tile": "grass",
+  "dPlaza": 5,
+  "street": 1.410042405128479,
+  "shore": 58,
+  "faults": [],
+  "role": "covers the \"warm\" need",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9364",
+  "type": "weaver",
+  "district": "workshop",
+  "spec": {
+   "type": "weaver",
+   "age": "bronze",
+   "cost": {
+    "wood": 30
+   },
+   "buildSeconds": 45
+  },
+  "age": "iron",
+  "x": 75,
+  "y": 80,
+  "tile": "grass",
+  "dPlaza": 5.385164807134505,
+  "street": 0.2974313497543335,
+  "shore": 58,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9397",
+  "type": "drying-rack",
+  "district": "workshop",
+  "spec": {
+   "type": "drying-rack",
+   "age": "stone",
+   "cost": {
+    "wood": 12
+   },
+   "buildSeconds": 20
+  },
+  "age": "iron",
+  "x": 85,
+  "y": 90,
+  "tile": "grass",
+  "dPlaza": 9.433981132056603,
+  "street": 1.922224521636963,
+  "shore": 62,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9431",
+  "type": "longhouse",
+  "district": "housing",
+  "spec": {
+   "type": "longhouse",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "stone": 10
+   },
+   "buildSeconds": 55,
+   "houses": 4
+  },
+  "age": "iron",
+  "x": 90,
+  "y": 88,
+  "tile": "grass",
+  "dPlaza": 11.6619037896906,
+  "street": 6.723004341125488,
+  "shore": 63,
+  "faults": [
+   "off the street skeleton (6.7 tiles)"
+  ],
+  "role": "houses 4",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9462",
+  "type": "garden",
+  "district": "service",
+  "spec": {
+   "type": "garden",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 40,
+   "joy": 4
+  },
+  "age": "iron",
+  "x": 77,
+  "y": 90,
+  "tile": "grass",
+  "dPlaza": 8.54400374531753,
+  "street": 2.2449169158935547,
+  "shore": 61,
+  "faults": [],
+  "role": "+4 joy",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9494",
+  "type": "hide-tanner",
+  "district": "workshop",
+  "spec": {
+   "type": "hide-tanner",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 5
+   },
+   "buildSeconds": 30
+  },
+  "age": "iron",
+  "x": 81,
+  "y": 93,
+  "tile": "grass",
+  "dPlaza": 11.045361017187261,
+  "street": 3.123807668685913,
+  "shore": 59,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9528",
+  "type": "hut",
+  "district": "housing",
+  "spec": {
+   "type": "hut",
+   "age": "stone",
+   "cost": {
+    "wood": 20
+   },
+   "buildSeconds": 30,
+   "houses": 2
+  },
+  "age": "iron",
+  "x": 75,
+  "y": 74,
+  "tile": "grass",
+  "dPlaza": 9.433981132056603,
+  "street": 3.1515438556671143,
+  "shore": 58,
+  "faults": [],
+  "role": "houses 2",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9565",
+  "type": "pottery-workshop",
+  "district": "workshop",
+  "spec": {
+   "type": "pottery-workshop",
+   "age": "bronze",
+   "cost": {
+    "wood": 25,
+    "stone": 15
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 71,
+  "y": 83,
+  "tile": "grass",
+  "dPlaza": 9.055385138137417,
+  "street": 1.4195282459259033,
+  "shore": 54,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9591",
+  "type": "fishing-hut",
+  "district": "harbor",
+  "spec": {
+   "type": "fishing-hut",
+   "age": "stone",
+   "cost": {
+    "wood": 18
+   },
+   "buildSeconds": 25
+  },
+  "age": "iron",
+  "x": 18,
+  "y": 82,
+  "tile": "sand",
+  "dPlaza": 62,
+  "street": 999,
+  "shore": 1,
+  "faults": [],
+  "role": "shore food",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9618",
+  "type": "flint-knapper",
+  "district": "workshop",
+  "spec": {
+   "type": "flint-knapper",
+   "age": "stone",
+   "cost": {
+    "stone": 20
+   },
+   "buildSeconds": 30
+  },
+  "age": "iron",
+  "x": 72,
+  "y": 88,
+  "tile": "grass",
+  "dPlaza": 10,
+  "street": 3.590512990951538,
+  "shore": 55,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9645",
+  "type": "campfire",
+  "district": "service",
+  "spec": {
+   "type": "campfire",
+   "age": "stone",
+   "cost": {
+    "wood": 10,
+    "stone": 5
+   },
+   "buildSeconds": 15
+  },
+  "age": "iron",
+  "x": 89,
+  "y": 93,
+  "tile": "grass",
+  "dPlaza": 14.212670403551897,
+  "street": 2.046941041946411,
+  "shore": 59,
+  "faults": [
+   "duplicate service — warm is already answered by the kiln"
+  ],
+  "role": "\"warm\" already covered by kiln",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9668",
+  "type": "shaman-tent",
+  "district": "workshop",
+  "spec": {
+   "type": "shaman-tent",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "food": 10
+   },
+   "buildSeconds": 30
+  },
+  "age": "iron",
+  "x": 91,
+  "y": 73,
+  "tile": "grass",
+  "dPlaza": 14.212670403551897,
+  "street": 999,
+  "shore": 57,
+  "faults": [
+   "off the street skeleton (8+ tiles)"
+  ],
+  "role": "covers the \"inspired\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9696",
+  "type": "elder-lodge",
+  "district": "civic",
+  "spec": {
+   "type": "elder-lodge",
+   "age": "stone",
+   "cost": {
+    "wood": 30
+   },
+   "buildSeconds": 45,
+   "houses": 3
+  },
+  "age": "iron",
+  "x": 71,
+  "y": 77,
+  "tile": "grass",
+  "dPlaza": 10.295630140987,
+  "street": 0.7896509170532227,
+  "shore": 54,
+  "faults": [],
+  "role": "houses 3",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9719",
+  "type": "brewery",
+  "district": "workshop",
+  "spec": {
+   "type": "brewery",
+   "age": "bronze",
+   "cost": {
+    "wood": 35,
+    "food": 20
+   },
+   "buildSeconds": 45
+  },
+  "age": "iron",
+  "x": 95,
+  "y": 87,
+  "tile": "grass",
+  "dPlaza": 15.811388300841898,
+  "street": 9.670827865600586,
+  "shore": 58,
+  "faults": [
+   "off the street skeleton (9.7 tiles)",
+   "duplicate service — warm is already answered by the kiln"
+  ],
+  "role": "\"warm\" already covered by kiln",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9747",
+  "type": "smokehouse",
+  "district": "workshop",
+  "spec": {
+   "type": "smokehouse",
+   "age": "stone",
+   "cost": {
+    "wood": 25,
+    "stone": 5
+   },
+   "buildSeconds": 35
+  },
+  "age": "iron",
+  "x": 85,
+  "y": 96,
+  "tile": "grass",
+  "dPlaza": 14.866068747318506,
+  "street": 2.6020359992980957,
+  "shore": 56,
+  "faults": [
+   "duplicate service — warm is already answered by the kiln"
+  ],
+  "role": "\"warm\" already covered by kiln",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9776",
+  "type": "bathhouse",
+  "district": "service",
+  "spec": {
+   "type": "bathhouse",
+   "age": "bronze",
+   "cost": {
+    "stone": 40,
+    "copper": 10
+   },
+   "buildSeconds": 60
+  },
+  "age": "iron",
+  "x": 76,
+  "y": 95,
+  "tile": "grass",
+  "dPlaza": 13.601470508735444,
+  "street": 7.234564304351807,
+  "shore": 58,
+  "faults": [
+   "off the street skeleton (7.2 tiles)",
+   "duplicate service — warm is already answered by the kiln"
+  ],
+  "role": "\"warm\" already covered by kiln",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9802",
+  "type": "bronze-forge",
+  "district": "workshop",
+  "spec": {
+   "type": "bronze-forge",
+   "age": "bronze",
+   "cost": {
+    "copper": 20,
+    "tin": 10,
+    "stone": 20
+   },
+   "buildSeconds": 60
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 92,
+  "tile": "grass",
+  "dPlaza": 17.204650534085253,
+  "street": 4.550527095794678,
+  "shore": 58,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9824",
+  "type": "copper-mine",
+  "district": "industry",
+  "spec": {
+   "type": "copper-mine",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 20
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 76,
+  "y": 69,
+  "tile": "grass",
+  "dPlaza": 13.601470508735444,
+  "street": 7.234564304351807,
+  "shore": 55,
+  "faults": [
+   "off the street skeleton (7.2 tiles)",
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9855",
+  "type": "farm",
+  "district": "farmland",
+  "spec": {
+   "type": "farm",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 50,
+   "foodPerDay": 8
+  },
+  "age": "iron",
+  "x": 88,
+  "y": 68,
+  "tile": "grass",
+  "dPlaza": 16.1245154965971,
+  "street": 999,
+  "shore": 53,
+  "faults": [
+   "off the street skeleton (8+ tiles)"
+  ],
+  "role": "+8 food/day",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9882",
+  "type": "burial-mound",
+  "district": "civic",
+  "spec": {
+   "type": "burial-mound",
+   "age": "stone",
+   "cost": {
+    "stone": 25
+   },
+   "buildSeconds": 35
+  },
+  "age": "iron",
+  "x": 71,
+  "y": 93,
+  "tile": "grass",
+  "dPlaza": 14.212670403551897,
+  "street": 7.7314772605896,
+  "shore": 55,
+  "faults": [
+   "off the street skeleton (7.7 tiles)",
+   "duplicate service — inspired is already answered by the shaman-tent"
+  ],
+  "role": "\"inspired\" already covered by shaman-tent",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9911",
+  "type": "toolmaker",
+  "district": "workshop",
+  "spec": {
+   "type": "toolmaker",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 15
+   },
+   "buildSeconds": 35
+  },
+  "age": "iron",
+  "x": 67,
+  "y": 80,
+  "tile": "grass",
+  "dPlaza": 13.152946437965904,
+  "street": 3.7843565940856934,
+  "shore": 50,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9934",
+  "type": "dancing-ground",
+  "district": "service",
+  "spec": {
+   "type": "dancing-ground",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 10
+   },
+   "buildSeconds": 25,
+   "joy": 3
+  },
+  "age": "iron",
+  "x": 80,
+  "y": 98,
+  "tile": "grass",
+  "dPlaza": 16,
+  "street": 7.397094249725342,
+  "shore": 54,
+  "faults": [
+   "service building 16 tiles from the plaza it should ring",
+   "off the street skeleton (7.4 tiles)"
+  ],
+  "role": "+3 joy",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9955",
+  "type": "palisade",
+  "district": "defense",
+  "spec": {
+   "type": "palisade",
+   "age": "stone",
+   "cost": {
+    "wood": 35
+   },
+   "buildSeconds": 40
+  },
+  "age": "iron",
+  "x": 67,
+  "y": 86,
+  "tile": "grass",
+  "dPlaza": 13.601470508735444,
+  "street": 0.46004417538642883,
+  "shore": 50,
+  "faults": [
+   "wall 50 tiles inland — the perimeter law wants ~2.5"
+  ],
+  "role": "covers the \"safe\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b9983",
+  "type": "stone-circle",
+  "district": "civic",
+  "spec": {
+   "type": "stone-circle",
+   "age": "stone",
+   "cost": {
+    "stone": 40
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 96,
+  "y": 74,
+  "tile": "grass",
+  "dPlaza": 17.88854381999832,
+  "street": 999,
+  "shore": 57,
+  "faults": [
+   "civic building 18 tiles from the plaza it should ring",
+   "off the street skeleton (8+ tiles)",
+   "duplicate service — inspired is already answered by the shaman-tent"
+  ],
+  "role": "\"inspired\" already covered by shaman-tent",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b10010",
+  "type": "chariot-works",
+  "district": "workshop",
+  "spec": {
+   "type": "chariot-works",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "copper": 15
+   },
+   "buildSeconds": 70
+  },
+  "age": "iron",
+  "x": 71,
+  "y": 71,
+  "tile": "grass",
+  "dPlaza": 14.212670403551897,
+  "street": 5.841046333312988,
+  "shore": 53,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b10033",
+  "type": "shrine",
+  "district": "civic",
+  "spec": {
+   "type": "shrine",
+   "age": "bronze",
+   "cost": {
+    "stone": 35,
+    "copper": 10
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 90,
+  "y": 98,
+  "tile": "grass",
+  "dPlaza": 18.867962264113206,
+  "street": 2.4138269424438477,
+  "shore": 54,
+  "faults": [
+   "civic building 19 tiles from the plaza it should ring",
+   "duplicate service — inspired is already answered by the shaman-tent"
+  ],
+  "role": "\"inspired\" already covered by shaman-tent",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b10051",
+  "type": "trading-post",
+  "district": "service",
+  "spec": {
+   "type": "trading-post",
+   "age": "bronze",
+   "cost": {
+    "wood": 45,
+    "copper": 5
+   },
+   "buildSeconds": 55
+  },
+  "age": "iron",
+  "x": 100,
+  "y": 84,
+  "tile": "grass",
+  "dPlaza": 20.09975124224178,
+  "street": 999,
+  "shore": 53,
+  "faults": [
+   "service building 20 tiles from the plaza it should ring",
+   "off the street skeleton (8+ tiles)",
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b10067",
+  "type": "tin-mine",
+  "district": "industry",
+  "spec": {
+   "type": "tin-mine",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 20
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 67,
+  "y": 74,
+  "tile": "grass",
+  "dPlaza": 15.264337522473749,
+  "street": 1.065643072128296,
+  "shore": 50,
+  "faults": [
+   "14 tiles from the nearest tin vein",
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b10083",
+  "type": "storyteller-circle",
+  "district": "service",
+  "spec": {
+   "type": "storyteller-circle",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 10
+   },
+   "buildSeconds": 25
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 69,
+  "tile": "grass",
+  "dPlaza": 19.1049731745428,
+  "street": 999,
+  "shore": 53,
+  "faults": [
+   "service building 19 tiles from the plaza it should ring",
+   "off the street skeleton (8+ tiles)"
+  ],
+  "role": "covers the \"learned\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b10101",
+  "type": "livestock-pen",
+  "district": "farmland",
+  "spec": {
+   "type": "livestock-pen",
+   "age": "bronze",
+   "cost": {
+    "wood": 40,
+    "food": 15
+   },
+   "buildSeconds": 55,
+   "foodPerDay": 6
+  },
+  "age": "iron",
+  "x": 99,
+  "y": 90,
+  "tile": "grass",
+  "dPlaza": 20.6155281280883,
+  "street": 7.932649612426758,
+  "shore": 54,
+  "faults": [
+   "off the street skeleton (7.9 tiles)"
+  ],
+  "role": "+6 food/day",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b10119",
+  "type": "bronze-armory",
+  "district": "workshop",
+  "spec": {
+   "type": "bronze-armory",
+   "age": "bronze",
+   "cost": {
+    "copper": 25,
+    "tin": 15
+   },
+   "buildSeconds": 65
+  },
+  "age": "iron",
+  "x": 66,
+  "y": 91,
+  "tile": "grass",
+  "dPlaza": 16.64331697709324,
+  "street": 3.867614984512329,
+  "shore": 50,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9083",
+  "id": "island-9083-b10131",
+  "type": "granary",
+  "district": "storehouse",
+  "spec": {
+   "type": "granary",
+   "age": "stone",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 40
+  },
+  "age": "iron",
+  "x": 84,
+  "y": 101,
+  "tile": "grass",
+  "dPlaza": 19.4164878389476,
+  "street": 7.439083099365234,
+  "shore": 51,
+  "faults": [
+   "off the street skeleton (7.4 tiles)",
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9264",
+  "type": "longhouse",
+  "district": "housing",
+  "spec": {
+   "type": "longhouse",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "stone": 10
+   },
+   "buildSeconds": 55,
+   "houses": 4
+  },
+  "age": "iron",
+  "x": 82,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 0,
+  "street": 5.25,
+  "shore": 69,
+  "faults": [
+   "squats the founding plaza"
+  ],
+  "role": "houses 4",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9302",
+  "type": "longhouse",
+  "district": "housing",
+  "spec": {
+   "type": "longhouse",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "stone": 10
+   },
+   "buildSeconds": 55,
+   "houses": 4
+  },
+  "age": "iron",
+  "x": 86,
+  "y": 85,
+  "tile": "grass",
+  "dPlaza": 5,
+  "street": 1.0661511421203613,
+  "shore": 67,
+  "faults": [],
+  "role": "houses 4",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9335",
+  "type": "farm",
+  "district": "farmland",
+  "spec": {
+   "type": "farm",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 50,
+   "foodPerDay": 8
+  },
+  "age": "iron",
+  "x": 81,
+  "y": 87,
+  "tile": "grass",
+  "dPlaza": 5.099019513592785,
+  "street": 0.3138224482536316,
+  "shore": 64,
+  "faults": [
+   "farmland 5 from plaza — the belt is ~27"
+  ],
+  "role": "+8 food/day",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9365",
+  "type": "dock",
+  "district": "harbor",
+  "spec": {
+   "type": "dock",
+   "age": "bronze",
+   "cost": {
+    "wood": 60,
+    "stone": 30
+   },
+   "buildSeconds": 60
+  },
+  "age": "iron",
+  "x": 38,
+  "y": 130,
+  "tile": "sand",
+  "dPlaza": 65.11528238439882,
+  "street": 999,
+  "shore": 1,
+  "faults": [],
+  "role": "voyages need it",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9398",
+  "type": "fishing-hut",
+  "district": "harbor",
+  "spec": {
+   "type": "fishing-hut",
+   "age": "stone",
+   "cost": {
+    "wood": 18
+   },
+   "buildSeconds": 25
+  },
+  "age": "iron",
+  "x": 35,
+  "y": 127,
+  "tile": "sand",
+  "dPlaza": 65.06919393998976,
+  "street": 7.456070423126221,
+  "shore": 1,
+  "faults": [],
+  "role": "shore food",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9433",
+  "type": "longhouse",
+  "district": "housing",
+  "spec": {
+   "type": "longhouse",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "stone": 10
+   },
+   "buildSeconds": 55,
+   "houses": 4
+  },
+  "age": "iron",
+  "x": 86,
+  "y": 79,
+  "tile": "grass",
+  "dPlaza": 5,
+  "street": 0.37368351221084595,
+  "shore": 67,
+  "faults": [],
+  "role": "houses 4",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9464",
+  "type": "copper-mine",
+  "district": "industry",
+  "spec": {
+   "type": "copper-mine",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 20
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 77,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 5,
+  "street": 0.9984056949615479,
+  "shore": 67,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9495",
+  "type": "kiln",
+  "district": "workshop",
+  "spec": {
+   "type": "kiln",
+   "age": "bronze",
+   "cost": {
+    "stone": 30,
+    "wood": 10
+   },
+   "buildSeconds": 45
+  },
+  "age": "iron",
+  "x": 81,
+  "y": 77,
+  "tile": "grass",
+  "dPlaza": 5.099019513592785,
+  "street": 1.3100937604904175,
+  "shore": 65,
+  "faults": [],
+  "role": "covers the \"warm\" need",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9529",
+  "type": "toolmaker",
+  "district": "workshop",
+  "spec": {
+   "type": "toolmaker",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 15
+   },
+   "buildSeconds": 35
+  },
+  "age": "iron",
+  "x": 90,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 8,
+  "street": 1.600000023841858,
+  "shore": 64,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9567",
+  "type": "stone-circle",
+  "district": "civic",
+  "spec": {
+   "type": "stone-circle",
+   "age": "stone",
+   "cost": {
+    "stone": 40
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 76,
+  "y": 87,
+  "tile": "grass",
+  "dPlaza": 7.810249675906656,
+  "street": 1.4184480905532837,
+  "shore": 63,
+  "faults": [],
+  "role": "covers the \"inspired\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9592",
+  "type": "shaman-tent",
+  "district": "workshop",
+  "spec": {
+   "type": "shaman-tent",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "food": 10
+   },
+   "buildSeconds": 30
+  },
+  "age": "iron",
+  "x": 85,
+  "y": 90,
+  "tile": "grass",
+  "dPlaza": 8.54400374531753,
+  "street": 2.2449169158935547,
+  "shore": 62,
+  "faults": [
+   "duplicate service — inspired is already answered by the stone-circle"
+  ],
+  "role": "\"inspired\" already covered by stone-circle",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9619",
+  "type": "livestock-pen",
+  "district": "farmland",
+  "spec": {
+   "type": "livestock-pen",
+   "age": "bronze",
+   "cost": {
+    "wood": 40,
+    "food": 15
+   },
+   "buildSeconds": 55,
+   "foodPerDay": 6
+  },
+  "age": "iron",
+  "x": 76,
+  "y": 77,
+  "tile": "grass",
+  "dPlaza": 7.810249675906656,
+  "street": 0.9870080947875977,
+  "shore": 64,
+  "faults": [
+   "farmland 8 from plaza — the belt is ~27"
+  ],
+  "role": "+6 food/day",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9646",
+  "type": "pottery-workshop",
+  "district": "workshop",
+  "spec": {
+   "type": "pottery-workshop",
+   "age": "bronze",
+   "cost": {
+    "wood": 25,
+    "stone": 15
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 85,
+  "y": 74,
+  "tile": "grass",
+  "dPlaza": 8.54400374531753,
+  "street": 0.9244040250778198,
+  "shore": 62,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9669",
+  "type": "weaver",
+  "district": "workshop",
+  "spec": {
+   "type": "weaver",
+   "age": "bronze",
+   "cost": {
+    "wood": 30
+   },
+   "buildSeconds": 45
+  },
+  "age": "iron",
+  "x": 90,
+  "y": 88,
+  "tile": "grass",
+  "dPlaza": 10,
+  "street": 1.8032665252685547,
+  "shore": 64,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9698",
+  "type": "palisade",
+  "district": "defense",
+  "spec": {
+   "type": "palisade",
+   "age": "stone",
+   "cost": {
+    "wood": 35
+   },
+   "buildSeconds": 40
+  },
+  "age": "iron",
+  "x": 80,
+  "y": 92,
+  "tile": "grass",
+  "dPlaza": 10.19803902718557,
+  "street": 0.023853786289691925,
+  "shore": 58,
+  "faults": [
+   "wall 58 tiles inland — the perimeter law wants ~2.5"
+  ],
+  "role": "covers the \"safe\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9721",
+  "type": "longhouse",
+  "district": "housing",
+  "spec": {
+   "type": "longhouse",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "stone": 10
+   },
+   "buildSeconds": 55,
+   "houses": 4
+  },
+  "age": "iron",
+  "x": 90,
+  "y": 76,
+  "tile": "grass",
+  "dPlaza": 10,
+  "street": 0.6030845046043396,
+  "shore": 63,
+  "faults": [],
+  "role": "houses 4",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9749",
+  "type": "bathhouse",
+  "district": "service",
+  "spec": {
+   "type": "bathhouse",
+   "age": "bronze",
+   "cost": {
+    "stone": 40,
+    "copper": 10
+   },
+   "buildSeconds": 60
+  },
+  "age": "iron",
+  "x": 72,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 10,
+  "street": 1.9263367652893066,
+  "shore": 62,
+  "faults": [
+   "duplicate service — warm is already answered by the kiln"
+  ],
+  "role": "\"warm\" already covered by kiln",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9777",
+  "type": "chariot-works",
+  "district": "workshop",
+  "spec": {
+   "type": "chariot-works",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "copper": 15
+   },
+   "buildSeconds": 70
+  },
+  "age": "iron",
+  "x": 80,
+  "y": 72,
+  "tile": "grass",
+  "dPlaza": 10.19803902718557,
+  "street": 3.8042991161346436,
+  "shore": 60,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9803",
+  "type": "trading-post",
+  "district": "service",
+  "spec": {
+   "type": "trading-post",
+   "age": "bronze",
+   "cost": {
+    "wood": 45,
+    "copper": 5
+   },
+   "buildSeconds": 55
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 85,
+  "tile": "grass",
+  "dPlaza": 12.36931687685298,
+  "street": 5.972124099731445,
+  "shore": 60,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9827",
+  "type": "granary",
+  "district": "storehouse",
+  "spec": {
+   "type": "granary",
+   "age": "stone",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 40
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 79,
+  "tile": "grass",
+  "dPlaza": 12.36931687685298,
+  "street": 5.423813819885254,
+  "shore": 60,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9858",
+  "type": "bronze-armory",
+  "district": "workshop",
+  "spec": {
+   "type": "bronze-armory",
+   "age": "bronze",
+   "cost": {
+    "copper": 25,
+    "tin": 15
+   },
+   "buildSeconds": 65
+  },
+  "age": "iron",
+  "x": 75,
+  "y": 92,
+  "tile": "grass",
+  "dPlaza": 12.206555615733702,
+  "street": 3.603848934173584,
+  "shore": 58,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9884",
+  "type": "dancing-ground",
+  "district": "service",
+  "spec": {
+   "type": "dancing-ground",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 10
+   },
+   "buildSeconds": 25,
+   "joy": 3
+  },
+  "age": "iron",
+  "x": 71,
+  "y": 87,
+  "tile": "grass",
+  "dPlaza": 12.08304597359457,
+  "street": 2.8553898334503174,
+  "shore": 60,
+  "faults": [],
+  "role": "+3 joy",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9913",
+  "type": "flint-knapper",
+  "district": "workshop",
+  "spec": {
+   "type": "flint-knapper",
+   "age": "stone",
+   "cost": {
+    "stone": 20
+   },
+   "buildSeconds": 30
+  },
+  "age": "iron",
+  "x": 89,
+  "y": 93,
+  "tile": "grass",
+  "dPlaza": 13.038404810405298,
+  "street": 2.8399953842163086,
+  "shore": 59,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9936",
+  "type": "drying-rack",
+  "district": "workshop",
+  "spec": {
+   "type": "drying-rack",
+   "age": "stone",
+   "cost": {
+    "wood": 12
+   },
+   "buildSeconds": 20
+  },
+  "age": "iron",
+  "x": 84,
+  "y": 95,
+  "tile": "grass",
+  "dPlaza": 13.152946437965904,
+  "street": 4.976146221160889,
+  "shore": 56,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9958",
+  "type": "hut",
+  "district": "housing",
+  "spec": {
+   "type": "hut",
+   "age": "stone",
+   "cost": {
+    "wood": 20
+   },
+   "buildSeconds": 30,
+   "houses": 2
+  },
+  "age": "iron",
+  "x": 71,
+  "y": 77,
+  "tile": "grass",
+  "dPlaza": 12.08304597359457,
+  "street": 1.7645211219787598,
+  "shore": 61,
+  "faults": [],
+  "role": "houses 2",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b9986",
+  "type": "garden",
+  "district": "service",
+  "spec": {
+   "type": "garden",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 40,
+   "joy": 4
+  },
+  "age": "iron",
+  "x": 75,
+  "y": 72,
+  "tile": "grass",
+  "dPlaza": 12.206555615733702,
+  "street": 4.669022560119629,
+  "shore": 59,
+  "faults": [],
+  "role": "+4 joy",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b10013",
+  "type": "smokehouse",
+  "district": "workshop",
+  "spec": {
+   "type": "smokehouse",
+   "age": "stone",
+   "cost": {
+    "wood": 25,
+    "stone": 5
+   },
+   "buildSeconds": 35
+  },
+  "age": "iron",
+  "x": 89,
+  "y": 71,
+  "tile": "grass",
+  "dPlaza": 13.038404810405298,
+  "street": 3.8603570461273193,
+  "shore": 59,
+  "faults": [
+   "duplicate service — warm is already answered by the kiln"
+  ],
+  "role": "\"warm\" already covered by kiln",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b10036",
+  "type": "farm",
+  "district": "farmland",
+  "spec": {
+   "type": "farm",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 50,
+   "foodPerDay": 8
+  },
+  "age": "iron",
+  "x": 84,
+  "y": 69,
+  "tile": "grass",
+  "dPlaza": 13.152946437965904,
+  "street": 1.5343939065933228,
+  "shore": 57,
+  "faults": [
+   "farmland 13 from plaza — the belt is ~27"
+  ],
+  "role": "+8 food/day",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b10052",
+  "type": "campfire",
+  "district": "service",
+  "spec": {
+   "type": "campfire",
+   "age": "stone",
+   "cost": {
+    "wood": 10,
+    "stone": 5
+   },
+   "buildSeconds": 15
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 91,
+  "tile": "grass",
+  "dPlaza": 15,
+  "street": 1.7664673328399658,
+  "shore": 60,
+  "faults": [
+   "duplicate service — warm is already answered by the kiln"
+  ],
+  "role": "\"warm\" already covered by kiln",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b10069",
+  "type": "brewery",
+  "district": "workshop",
+  "spec": {
+   "type": "brewery",
+   "age": "bronze",
+   "cost": {
+    "wood": 35,
+    "food": 20
+   },
+   "buildSeconds": 45
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 73,
+  "tile": "grass",
+  "dPlaza": 15,
+  "street": 0.857154905796051,
+  "shore": 59,
+  "faults": [
+   "duplicate service — warm is already answered by the kiln"
+  ],
+  "role": "\"warm\" already covered by kiln",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b10084",
+  "type": "tin-mine",
+  "district": "industry",
+  "spec": {
+   "type": "tin-mine",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 20
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 79,
+  "y": 97,
+  "tile": "grass",
+  "dPlaza": 15.297058540778355,
+  "street": 2.8179097175598145,
+  "shore": 53,
+  "faults": [
+   "13 tiles from the nearest tin vein",
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b10103",
+  "type": "bronze-forge",
+  "district": "workshop",
+  "spec": {
+   "type": "bronze-forge",
+   "age": "bronze",
+   "cost": {
+    "copper": 20,
+    "tin": 10,
+    "stone": 20
+   },
+   "buildSeconds": 60
+  },
+  "age": "iron",
+  "x": 67,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 15,
+  "street": 2.864328622817993,
+  "shore": 57,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b10120",
+  "type": "shrine",
+  "district": "civic",
+  "spec": {
+   "type": "shrine",
+   "age": "bronze",
+   "cost": {
+    "stone": 35,
+    "copper": 10
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 98,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 16,
+  "street": 10.291143417358398,
+  "shore": 56,
+  "faults": [
+   "civic building 16 tiles from the plaza it should ring",
+   "off the street skeleton (10.3 tiles)",
+   "duplicate service — inspired is already answered by the stone-circle"
+  ],
+  "role": "\"inspired\" already covered by stone-circle",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b10133",
+  "type": "hide-tanner",
+  "district": "workshop",
+  "spec": {
+   "type": "hide-tanner",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 5
+   },
+   "buildSeconds": 30
+  },
+  "age": "iron",
+  "x": 70,
+  "y": 92,
+  "tile": "grass",
+  "dPlaza": 15.620499351813312,
+  "street": 6.334019660949707,
+  "shore": 58,
+  "faults": [
+   "off the street skeleton (6.3 tiles)",
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b10148",
+  "type": "burial-mound",
+  "district": "civic",
+  "spec": {
+   "type": "burial-mound",
+   "age": "stone",
+   "cost": {
+    "stone": 25
+   },
+   "buildSeconds": 35
+  },
+  "age": "iron",
+  "x": 79,
+  "y": 67,
+  "tile": "grass",
+  "dPlaza": 15.297058540778355,
+  "street": 6.914215087890625,
+  "shore": 55,
+  "faults": [
+   "civic building 15 tiles from the plaza it should ring",
+   "off the street skeleton (6.9 tiles)",
+   "duplicate service — inspired is already answered by the stone-circle"
+  ],
+  "role": "\"inspired\" already covered by stone-circle",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b10163",
+  "type": "elder-lodge",
+  "district": "civic",
+  "spec": {
+   "type": "elder-lodge",
+   "age": "stone",
+   "cost": {
+    "wood": 30
+   },
+   "buildSeconds": 45,
+   "houses": 3
+  },
+  "age": "iron",
+  "x": 70,
+  "y": 72,
+  "tile": "grass",
+  "dPlaza": 15.620499351813312,
+  "street": 1.9891891479492188,
+  "shore": 58,
+  "faults": [
+   "civic building 16 tiles from the plaza it should ring"
+  ],
+  "role": "houses 3",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9158",
+  "id": "island-9158-b10178",
+  "type": "storyteller-circle",
+  "district": "service",
+  "spec": {
+   "type": "storyteller-circle",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 10
+   },
+   "buildSeconds": 25
+  },
+  "age": "iron",
+  "x": 98,
+  "y": 88,
+  "tile": "grass",
+  "dPlaza": 17.08800749063506,
+  "street": 6.556583404541016,
+  "shore": 56,
+  "faults": [
+   "service building 17 tiles from the plaza it should ring",
+   "off the street skeleton (6.6 tiles)"
+  ],
+  "role": "covers the \"learned\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b9366",
+  "type": "longhouse",
+  "district": "housing",
+  "spec": {
+   "type": "longhouse",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "stone": 10
+   },
+   "buildSeconds": 55,
+   "houses": 4
+  },
+  "age": "iron",
+  "x": 82,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 0,
+  "street": 5.25,
+  "shore": 67,
+  "faults": [
+   "squats the founding plaza"
+  ],
+  "role": "houses 4",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b9399",
+  "type": "farm",
+  "district": "farmland",
+  "spec": {
+   "type": "farm",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 50,
+   "foodPerDay": 8
+  },
+  "age": "iron",
+  "x": 86,
+  "y": 85,
+  "tile": "grass",
+  "dPlaza": 5,
+  "street": 0.2507176697254181,
+  "shore": 65,
+  "faults": [
+   "farmland 5 from plaza — the belt is ~27"
+  ],
+  "role": "+8 food/day",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b9434",
+  "type": "dock",
+  "district": "harbor",
+  "spec": {
+   "type": "dock",
+   "age": "bronze",
+   "cost": {
+    "wood": 60,
+    "stone": 30
+   },
+   "buildSeconds": 60
+  },
+  "age": "iron",
+  "x": 139,
+  "y": 57,
+  "tile": "sand",
+  "dPlaza": 62.24146527838174,
+  "street": 999,
+  "shore": 1,
+  "faults": [],
+  "role": "voyages need it",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b9465",
+  "type": "dancing-ground",
+  "district": "service",
+  "spec": {
+   "type": "dancing-ground",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 10
+   },
+   "buildSeconds": 25,
+   "joy": 3
+  },
+  "age": "iron",
+  "x": 81,
+  "y": 87,
+  "tile": "grass",
+  "dPlaza": 5.099019513592785,
+  "street": 0.7341018319129944,
+  "shore": 65,
+  "faults": [],
+  "role": "+3 joy",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b9496",
+  "type": "livestock-pen",
+  "district": "farmland",
+  "spec": {
+   "type": "livestock-pen",
+   "age": "bronze",
+   "cost": {
+    "wood": 40,
+    "food": 15
+   },
+   "buildSeconds": 55,
+   "foodPerDay": 6
+  },
+  "age": "iron",
+  "x": 86,
+  "y": 79,
+  "tile": "grass",
+  "dPlaza": 5,
+  "street": 1.410042405128479,
+  "shore": 62,
+  "faults": [
+   "farmland 5 from plaza — the belt is ~27"
+  ],
+  "role": "+6 food/day",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b9530",
+  "type": "granary",
+  "district": "storehouse",
+  "spec": {
+   "type": "granary",
+   "age": "stone",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 40
+  },
+  "age": "iron",
+  "x": 77,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 5,
+  "street": 1.399999976158142,
+  "shore": 63,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b9568",
+  "type": "hut",
+  "district": "housing",
+  "spec": {
+   "type": "hut",
+   "age": "stone",
+   "cost": {
+    "wood": 20
+   },
+   "buildSeconds": 30,
+   "houses": 2
+  },
+  "age": "iron",
+  "x": 81,
+  "y": 77,
+  "tile": "grass",
+  "dPlaza": 5.099019513592785,
+  "street": 0.85658198595047,
+  "shore": 65,
+  "faults": [],
+  "role": "houses 2",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b9593",
+  "type": "palisade",
+  "district": "defense",
+  "spec": {
+   "type": "palisade",
+   "age": "stone",
+   "cost": {
+    "wood": 35
+   },
+   "buildSeconds": 40
+  },
+  "age": "iron",
+  "x": 90,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 8,
+  "street": 1.600000023841858,
+  "shore": 59,
+  "faults": [
+   "wall 59 tiles inland — the perimeter law wants ~2.5"
+  ],
+  "role": "covers the \"safe\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b9620",
+  "type": "campfire",
+  "district": "service",
+  "spec": {
+   "type": "campfire",
+   "age": "stone",
+   "cost": {
+    "wood": 10,
+    "stone": 5
+   },
+   "buildSeconds": 15
+  },
+  "age": "iron",
+  "x": 76,
+  "y": 87,
+  "tile": "grass",
+  "dPlaza": 7.810249675906656,
+  "street": 0.5965299606323242,
+  "shore": 61,
+  "faults": [],
+  "role": "covers the \"warm\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b9647",
+  "type": "garden",
+  "district": "service",
+  "spec": {
+   "type": "garden",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 40,
+   "joy": 4
+  },
+  "age": "iron",
+  "x": 85,
+  "y": 90,
+  "tile": "grass",
+  "dPlaza": 8.54400374531753,
+  "street": 2.2449169158935547,
+  "shore": 63,
+  "faults": [],
+  "role": "+4 joy",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b9670",
+  "type": "brewery",
+  "district": "workshop",
+  "spec": {
+   "type": "brewery",
+   "age": "bronze",
+   "cost": {
+    "wood": 35,
+    "food": 20
+   },
+   "buildSeconds": 45
+  },
+  "age": "iron",
+  "x": 76,
+  "y": 77,
+  "tile": "grass",
+  "dPlaza": 7.810249675906656,
+  "street": 1.1795625686645508,
+  "shore": 63,
+  "faults": [
+   "duplicate service — warm is already answered by the campfire"
+  ],
+  "role": "\"warm\" already covered by campfire",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b9700",
+  "type": "fishing-hut",
+  "district": "harbor",
+  "spec": {
+   "type": "fishing-hut",
+   "age": "stone",
+   "cost": {
+    "wood": 18
+   },
+   "buildSeconds": 25
+  },
+  "age": "iron",
+  "x": 141,
+  "y": 60,
+  "tile": "sand",
+  "dPlaza": 62.96824596572466,
+  "street": 999,
+  "shore": 1,
+  "faults": [],
+  "role": "shore food",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b9723",
+  "type": "pottery-workshop",
+  "district": "workshop",
+  "spec": {
+   "type": "pottery-workshop",
+   "age": "bronze",
+   "cost": {
+    "wood": 25,
+    "stone": 15
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 85,
+  "y": 74,
+  "tile": "grass",
+  "dPlaza": 8.54400374531753,
+  "street": 2.2449169158935547,
+  "shore": 61,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b9750",
+  "type": "toolmaker",
+  "district": "workshop",
+  "spec": {
+   "type": "toolmaker",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 15
+   },
+   "buildSeconds": 35
+  },
+  "age": "iron",
+  "x": 90,
+  "y": 88,
+  "tile": "grass",
+  "dPlaza": 10,
+  "street": 0.2527907192707062,
+  "shore": 61,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b9779",
+  "type": "weaver",
+  "district": "workshop",
+  "spec": {
+   "type": "weaver",
+   "age": "bronze",
+   "cost": {
+    "wood": 30
+   },
+   "buildSeconds": 45
+  },
+  "age": "iron",
+  "x": 80,
+  "y": 92,
+  "tile": "grass",
+  "dPlaza": 10.19803902718557,
+  "street": 1.4205591678619385,
+  "shore": 59,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b9804",
+  "type": "stone-circle",
+  "district": "civic",
+  "spec": {
+   "type": "stone-circle",
+   "age": "stone",
+   "cost": {
+    "stone": 40
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 90,
+  "y": 76,
+  "tile": "grass",
+  "dPlaza": 10,
+  "street": 3.607830286026001,
+  "shore": 57,
+  "faults": [],
+  "role": "covers the \"inspired\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b9828",
+  "type": "smokehouse",
+  "district": "workshop",
+  "spec": {
+   "type": "smokehouse",
+   "age": "stone",
+   "cost": {
+    "wood": 25,
+    "stone": 5
+   },
+   "buildSeconds": 35
+  },
+  "age": "iron",
+  "x": 72,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 10,
+  "street": 3.5999999046325684,
+  "shore": 58,
+  "faults": [
+   "duplicate service — warm is already answered by the campfire"
+  ],
+  "role": "\"warm\" already covered by campfire",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b9860",
+  "type": "longhouse",
+  "district": "housing",
+  "spec": {
+   "type": "longhouse",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "stone": 10
+   },
+   "buildSeconds": 55,
+   "houses": 4
+  },
+  "age": "iron",
+  "x": 80,
+  "y": 72,
+  "tile": "grass",
+  "dPlaza": 10.19803902718557,
+  "street": 1.6669559478759766,
+  "shore": 60,
+  "faults": [],
+  "role": "houses 4",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b9886",
+  "type": "shaman-tent",
+  "district": "workshop",
+  "spec": {
+   "type": "shaman-tent",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "food": 10
+   },
+   "buildSeconds": 30
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 85,
+  "tile": "grass",
+  "dPlaza": 12.36931687685298,
+  "street": 4.8435797691345215,
+  "shore": 57,
+  "faults": [
+   "duplicate service — inspired is already answered by the stone-circle"
+  ],
+  "role": "\"inspired\" already covered by stone-circle",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b9914",
+  "type": "hide-tanner",
+  "district": "workshop",
+  "spec": {
+   "type": "hide-tanner",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 5
+   },
+   "buildSeconds": 30
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 79,
+  "tile": "grass",
+  "dPlaza": 12.36931687685298,
+  "street": 0.5813976526260376,
+  "shore": 54,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b9937",
+  "type": "tin-mine",
+  "district": "industry",
+  "spec": {
+   "type": "tin-mine",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 20
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 75,
+  "y": 92,
+  "tile": "grass",
+  "dPlaza": 12.206555615733702,
+  "street": 2.3452768325805664,
+  "shore": 58,
+  "faults": [
+   "13 tiles from the nearest tin vein",
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b9960",
+  "type": "drying-rack",
+  "district": "workshop",
+  "spec": {
+   "type": "drying-rack",
+   "age": "stone",
+   "cost": {
+    "wood": 12
+   },
+   "buildSeconds": 20
+  },
+  "age": "iron",
+  "x": 71,
+  "y": 87,
+  "tile": "grass",
+  "dPlaza": 12.08304597359457,
+  "street": 4.081713676452637,
+  "shore": 56,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b9988",
+  "type": "storyteller-circle",
+  "district": "service",
+  "spec": {
+   "type": "storyteller-circle",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 10
+   },
+   "buildSeconds": 25
+  },
+  "age": "iron",
+  "x": 89,
+  "y": 93,
+  "tile": "grass",
+  "dPlaza": 13.038404810405298,
+  "street": 4.585916519165039,
+  "shore": 60,
+  "faults": [],
+  "role": "covers the \"learned\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b10014",
+  "type": "flint-knapper",
+  "district": "workshop",
+  "spec": {
+   "type": "flint-knapper",
+   "age": "stone",
+   "cost": {
+    "stone": 20
+   },
+   "buildSeconds": 30
+  },
+  "age": "iron",
+  "x": 84,
+  "y": 95,
+  "tile": "grass",
+  "dPlaza": 13.152946437965904,
+  "street": 6.179599761962891,
+  "shore": 58,
+  "faults": [
+   "off the street skeleton (6.2 tiles)",
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b10054",
+  "type": "longhouse",
+  "district": "housing",
+  "spec": {
+   "type": "longhouse",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "stone": 10
+   },
+   "buildSeconds": 55,
+   "houses": 4
+  },
+  "age": "iron",
+  "x": 71,
+  "y": 77,
+  "tile": "grass",
+  "dPlaza": 12.08304597359457,
+  "street": 4.421315670013428,
+  "shore": 58,
+  "faults": [],
+  "role": "houses 4",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b10070",
+  "type": "copper-mine",
+  "district": "industry",
+  "spec": {
+   "type": "copper-mine",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 20
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 75,
+  "y": 72,
+  "tile": "grass",
+  "dPlaza": 12.206555615733702,
+  "street": 2.025392532348633,
+  "shore": 60,
+  "faults": [
+   "31 tiles from the nearest copper vein",
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b10085",
+  "type": "elder-lodge",
+  "district": "civic",
+  "spec": {
+   "type": "elder-lodge",
+   "age": "stone",
+   "cost": {
+    "wood": 30
+   },
+   "buildSeconds": 45,
+   "houses": 3
+  },
+  "age": "iron",
+  "x": 89,
+  "y": 71,
+  "tile": "grass",
+  "dPlaza": 13.038404810405298,
+  "street": 6.709205627441406,
+  "shore": 57,
+  "faults": [
+   "off the street skeleton (6.7 tiles)"
+  ],
+  "role": "houses 3",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b10104",
+  "type": "bronze-armory",
+  "district": "workshop",
+  "spec": {
+   "type": "bronze-armory",
+   "age": "bronze",
+   "cost": {
+    "copper": 25,
+    "tin": 15
+   },
+   "buildSeconds": 65
+  },
+  "age": "iron",
+  "x": 84,
+  "y": 69,
+  "tile": "grass",
+  "dPlaza": 13.152946437965904,
+  "street": 2.450171947479248,
+  "shore": 56,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b10122",
+  "type": "bronze-forge",
+  "district": "workshop",
+  "spec": {
+   "type": "bronze-forge",
+   "age": "bronze",
+   "cost": {
+    "copper": 20,
+    "tin": 10,
+    "stone": 20
+   },
+   "buildSeconds": 60
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 91,
+  "tile": "grass",
+  "dPlaza": 15,
+  "street": 0.256186306476593,
+  "shore": 57,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b10135",
+  "type": "bathhouse",
+  "district": "service",
+  "spec": {
+   "type": "bathhouse",
+   "age": "bronze",
+   "cost": {
+    "stone": 40,
+    "copper": 10
+   },
+   "buildSeconds": 60
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 73,
+  "tile": "grass",
+  "dPlaza": 15,
+  "street": 6.312872886657715,
+  "shore": 52,
+  "faults": [
+   "off the street skeleton (6.3 tiles)",
+   "duplicate service — warm is already answered by the campfire"
+  ],
+  "role": "\"warm\" already covered by campfire",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b10149",
+  "type": "trading-post",
+  "district": "service",
+  "spec": {
+   "type": "trading-post",
+   "age": "bronze",
+   "cost": {
+    "wood": 45,
+    "copper": 5
+   },
+   "buildSeconds": 55
+  },
+  "age": "iron",
+  "x": 79,
+  "y": 97,
+  "tile": "grass",
+  "dPlaza": 15.297058540778355,
+  "street": 2.12126088142395,
+  "shore": 54,
+  "faults": [
+   "service building 15 tiles from the plaza it should ring",
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b10165",
+  "type": "burial-mound",
+  "district": "civic",
+  "spec": {
+   "type": "burial-mound",
+   "age": "stone",
+   "cost": {
+    "stone": 25
+   },
+   "buildSeconds": 35
+  },
+  "age": "iron",
+  "x": 67,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 15,
+  "street": 8.600000381469727,
+  "shore": 53,
+  "faults": [
+   "off the street skeleton (8.6 tiles)",
+   "duplicate service — inspired is already answered by the stone-circle"
+  ],
+  "role": "\"inspired\" already covered by stone-circle",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b10180",
+  "type": "shrine",
+  "district": "civic",
+  "spec": {
+   "type": "shrine",
+   "age": "bronze",
+   "cost": {
+    "stone": 35,
+    "copper": 10
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 98,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 16,
+  "street": 3.3588521480560303,
+  "shore": 51,
+  "faults": [
+   "civic building 16 tiles from the plaza it should ring",
+   "duplicate service — inspired is already answered by the stone-circle"
+  ],
+  "role": "\"inspired\" already covered by stone-circle",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b10195",
+  "type": "kiln",
+  "district": "workshop",
+  "spec": {
+   "type": "kiln",
+   "age": "bronze",
+   "cost": {
+    "stone": 30,
+    "wood": 10
+   },
+   "buildSeconds": 45
+  },
+  "age": "iron",
+  "x": 70,
+  "y": 92,
+  "tile": "grass",
+  "dPlaza": 15.620499351813312,
+  "street": 1.2342681884765625,
+  "shore": 55,
+  "faults": [
+   "duplicate service — warm is already answered by the campfire"
+  ],
+  "role": "\"warm\" already covered by campfire",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9233",
+  "id": "island-9233-b10205",
+  "type": "chariot-works",
+  "district": "workshop",
+  "spec": {
+   "type": "chariot-works",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "copper": 15
+   },
+   "buildSeconds": 70
+  },
+  "age": "iron",
+  "x": 79,
+  "y": 67,
+  "tile": "grass",
+  "dPlaza": 15.297058540778355,
+  "street": 2.48948335647583,
+  "shore": 55,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b9466",
+  "type": "longhouse",
+  "district": "housing",
+  "spec": {
+   "type": "longhouse",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "stone": 10
+   },
+   "buildSeconds": 55,
+   "houses": 4
+  },
+  "age": "iron",
+  "x": 82,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 0,
+  "street": 5.229035377502441,
+  "shore": 68,
+  "faults": [
+   "squats the founding plaza"
+  ],
+  "role": "houses 4",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b9497",
+  "type": "farm",
+  "district": "farmland",
+  "spec": {
+   "type": "farm",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 50,
+   "foodPerDay": 8
+  },
+  "age": "iron",
+  "x": 86,
+  "y": 85,
+  "tile": "grass",
+  "dPlaza": 5,
+  "street": 1.410042405128479,
+  "shore": 66,
+  "faults": [
+   "farmland 5 from plaza — the belt is ~27"
+  ],
+  "role": "+8 food/day",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b9531",
+  "type": "dock",
+  "district": "harbor",
+  "spec": {
+   "type": "dock",
+   "age": "bronze",
+   "cost": {
+    "wood": 60,
+    "stone": 30
+   },
+   "buildSeconds": 60
+  },
+  "age": "iron",
+  "x": 144,
+  "y": 103,
+  "tile": "sand",
+  "dPlaza": 65.45991139621258,
+  "street": 999,
+  "shore": 1,
+  "faults": [],
+  "role": "voyages need it",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b9569",
+  "type": "kiln",
+  "district": "workshop",
+  "spec": {
+   "type": "kiln",
+   "age": "bronze",
+   "cost": {
+    "stone": 30,
+    "wood": 10
+   },
+   "buildSeconds": 45
+  },
+  "age": "iron",
+  "x": 81,
+  "y": 87,
+  "tile": "grass",
+  "dPlaza": 5.099019513592785,
+  "street": 0.15136325359344482,
+  "shore": 65,
+  "faults": [],
+  "role": "covers the \"warm\" need",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b9594",
+  "type": "drying-rack",
+  "district": "workshop",
+  "spec": {
+   "type": "drying-rack",
+   "age": "stone",
+   "cost": {
+    "wood": 12
+   },
+   "buildSeconds": 20
+  },
+  "age": "iron",
+  "x": 86,
+  "y": 79,
+  "tile": "grass",
+  "dPlaza": 5,
+  "street": 0.970753014087677,
+  "shore": 65,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b9621",
+  "type": "garden",
+  "district": "service",
+  "spec": {
+   "type": "garden",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 40,
+   "joy": 4
+  },
+  "age": "iron",
+  "x": 77,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 5,
+  "street": 1.2988888025283813,
+  "shore": 65,
+  "faults": [],
+  "role": "+4 joy",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b9649",
+  "type": "storyteller-circle",
+  "district": "service",
+  "spec": {
+   "type": "storyteller-circle",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 10
+   },
+   "buildSeconds": 25
+  },
+  "age": "iron",
+  "x": 81,
+  "y": 77,
+  "tile": "grass",
+  "dPlaza": 5.099019513592785,
+  "street": 0.5109432339668274,
+  "shore": 63,
+  "faults": [],
+  "role": "covers the \"learned\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b9672",
+  "type": "longhouse",
+  "district": "housing",
+  "spec": {
+   "type": "longhouse",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "stone": 10
+   },
+   "buildSeconds": 55,
+   "houses": 4
+  },
+  "age": "iron",
+  "x": 90,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 8,
+  "street": 1.600000023841858,
+  "shore": 62,
+  "faults": [],
+  "role": "houses 4",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b9701",
+  "type": "elder-lodge",
+  "district": "civic",
+  "spec": {
+   "type": "elder-lodge",
+   "age": "stone",
+   "cost": {
+    "wood": 30
+   },
+   "buildSeconds": 45,
+   "houses": 3
+  },
+  "age": "iron",
+  "x": 76,
+  "y": 87,
+  "tile": "grass",
+  "dPlaza": 7.810249675906656,
+  "street": 1.4184480905532837,
+  "shore": 64,
+  "faults": [],
+  "role": "houses 3",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b9724",
+  "type": "smokehouse",
+  "district": "workshop",
+  "spec": {
+   "type": "smokehouse",
+   "age": "stone",
+   "cost": {
+    "wood": 25,
+    "stone": 5
+   },
+   "buildSeconds": 35
+  },
+  "age": "iron",
+  "x": 85,
+  "y": 90,
+  "tile": "grass",
+  "dPlaza": 8.54400374531753,
+  "street": 2.2449169158935547,
+  "shore": 62,
+  "faults": [
+   "duplicate service — warm is already answered by the kiln"
+  ],
+  "role": "\"warm\" already covered by kiln",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b9751",
+  "type": "fishing-hut",
+  "district": "harbor",
+  "spec": {
+   "type": "fishing-hut",
+   "age": "stone",
+   "cost": {
+    "wood": 18
+   },
+   "buildSeconds": 25
+  },
+  "age": "iron",
+  "x": 145,
+  "y": 100,
+  "tile": "sand",
+  "dPlaza": 65.52098900352466,
+  "street": 999,
+  "shore": 1,
+  "faults": [],
+  "role": "shore food",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b9780",
+  "type": "hide-tanner",
+  "district": "workshop",
+  "spec": {
+   "type": "hide-tanner",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 5
+   },
+   "buildSeconds": 30
+  },
+  "age": "iron",
+  "x": 76,
+  "y": 77,
+  "tile": "grass",
+  "dPlaza": 7.810249675906656,
+  "street": 1.4184480905532837,
+  "shore": 62,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b9805",
+  "type": "burial-mound",
+  "district": "civic",
+  "spec": {
+   "type": "burial-mound",
+   "age": "stone",
+   "cost": {
+    "stone": 25
+   },
+   "buildSeconds": 35
+  },
+  "age": "iron",
+  "x": 85,
+  "y": 74,
+  "tile": "grass",
+  "dPlaza": 8.54400374531753,
+  "street": 2.2449169158935547,
+  "shore": 60,
+  "faults": [],
+  "role": "covers the \"inspired\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b9830",
+  "type": "campfire",
+  "district": "service",
+  "spec": {
+   "type": "campfire",
+   "age": "stone",
+   "cost": {
+    "wood": 10,
+    "stone": 5
+   },
+   "buildSeconds": 15
+  },
+  "age": "iron",
+  "x": 90,
+  "y": 88,
+  "tile": "grass",
+  "dPlaza": 10,
+  "street": 3.5080156326293945,
+  "shore": 61,
+  "faults": [
+   "duplicate service — warm is already answered by the kiln"
+  ],
+  "role": "\"warm\" already covered by kiln",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b9861",
+  "type": "flint-knapper",
+  "district": "workshop",
+  "spec": {
+   "type": "flint-knapper",
+   "age": "stone",
+   "cost": {
+    "stone": 20
+   },
+   "buildSeconds": 30
+  },
+  "age": "iron",
+  "x": 80,
+  "y": 92,
+  "tile": "grass",
+  "dPlaza": 10.19803902718557,
+  "street": 0.056141097098588943,
+  "shore": 60,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b9888",
+  "type": "shaman-tent",
+  "district": "workshop",
+  "spec": {
+   "type": "shaman-tent",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "food": 10
+   },
+   "buildSeconds": 30
+  },
+  "age": "iron",
+  "x": 90,
+  "y": 76,
+  "tile": "grass",
+  "dPlaza": 10,
+  "street": 2.5956060886383057,
+  "shore": 62,
+  "faults": [
+   "duplicate service — inspired is already answered by the burial-mound"
+  ],
+  "role": "\"inspired\" already covered by burial-mound",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b9915",
+  "type": "weaver",
+  "district": "workshop",
+  "spec": {
+   "type": "weaver",
+   "age": "bronze",
+   "cost": {
+    "wood": 30
+   },
+   "buildSeconds": 45
+  },
+  "age": "iron",
+  "x": 72,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 10,
+  "street": 2.5310518741607666,
+  "shore": 60,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b9938",
+  "type": "pottery-workshop",
+  "district": "workshop",
+  "spec": {
+   "type": "pottery-workshop",
+   "age": "bronze",
+   "cost": {
+    "wood": 25,
+    "stone": 15
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 80,
+  "y": 72,
+  "tile": "grass",
+  "dPlaza": 10.19803902718557,
+  "street": 0.9659602642059326,
+  "shore": 58,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b9962",
+  "type": "toolmaker",
+  "district": "workshop",
+  "spec": {
+   "type": "toolmaker",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 15
+   },
+   "buildSeconds": 35
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 85,
+  "tile": "grass",
+  "dPlaza": 12.36931687685298,
+  "street": 1.0024468898773193,
+  "shore": 58,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b9990",
+  "type": "copper-mine",
+  "district": "industry",
+  "spec": {
+   "type": "copper-mine",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 20
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 79,
+  "tile": "grass",
+  "dPlaza": 12.36931687685298,
+  "street": 1.5286664962768555,
+  "shore": 58,
+  "faults": [
+   "13 tiles from the nearest copper vein",
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b10015",
+  "type": "palisade",
+  "district": "defense",
+  "spec": {
+   "type": "palisade",
+   "age": "stone",
+   "cost": {
+    "wood": 35
+   },
+   "buildSeconds": 40
+  },
+  "age": "iron",
+  "x": 75,
+  "y": 92,
+  "tile": "grass",
+  "dPlaza": 12.206555615733702,
+  "street": 4.889564514160156,
+  "shore": 59,
+  "faults": [
+   "wall 59 tiles inland — the perimeter law wants ~2.5"
+  ],
+  "role": "covers the \"safe\" need",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b10071",
+  "type": "hut",
+  "district": "housing",
+  "spec": {
+   "type": "hut",
+   "age": "stone",
+   "cost": {
+    "wood": 20
+   },
+   "buildSeconds": 30,
+   "houses": 2
+  },
+  "age": "iron",
+  "x": 71,
+  "y": 87,
+  "tile": "grass",
+  "dPlaza": 12.08304597359457,
+  "street": 2.1660847663879395,
+  "shore": 59,
+  "faults": [],
+  "role": "houses 2",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b10087",
+  "type": "dancing-ground",
+  "district": "service",
+  "spec": {
+   "type": "dancing-ground",
+   "age": "stone",
+   "cost": {
+    "wood": 15,
+    "stone": 10
+   },
+   "buildSeconds": 25,
+   "joy": 3
+  },
+  "age": "iron",
+  "x": 89,
+  "y": 93,
+  "tile": "grass",
+  "dPlaza": 13.038404810405298,
+  "street": 6.709205627441406,
+  "shore": 59,
+  "faults": [
+   "off the street skeleton (6.7 tiles)"
+  ],
+  "role": "+3 joy",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b10106",
+  "type": "brewery",
+  "district": "workshop",
+  "spec": {
+   "type": "brewery",
+   "age": "bronze",
+   "cost": {
+    "wood": 35,
+    "food": 20
+   },
+   "buildSeconds": 45
+  },
+  "age": "iron",
+  "x": 84,
+  "y": 95,
+  "tile": "grass",
+  "dPlaza": 13.152946437965904,
+  "street": 4.554312229156494,
+  "shore": 57,
+  "faults": [
+   "duplicate service — warm is already answered by the kiln"
+  ],
+  "role": "\"warm\" already covered by kiln",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b10123",
+  "type": "bronze-armory",
+  "district": "workshop",
+  "spec": {
+   "type": "bronze-armory",
+   "age": "bronze",
+   "cost": {
+    "copper": 25,
+    "tin": 15
+   },
+   "buildSeconds": 65
+  },
+  "age": "iron",
+  "x": 71,
+  "y": 77,
+  "tile": "grass",
+  "dPlaza": 12.08304597359457,
+  "street": 1.0416120290756226,
+  "shore": 59,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b10136",
+  "type": "granary",
+  "district": "storehouse",
+  "spec": {
+   "type": "granary",
+   "age": "stone",
+   "cost": {
+    "wood": 30,
+    "stone": 10
+   },
+   "buildSeconds": 40
+  },
+  "age": "iron",
+  "x": 75,
+  "y": 72,
+  "tile": "grass",
+  "dPlaza": 12.206555615733702,
+  "street": 5.832742214202881,
+  "shore": 57,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 2
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b10150",
+  "type": "bathhouse",
+  "district": "service",
+  "spec": {
+   "type": "bathhouse",
+   "age": "bronze",
+   "cost": {
+    "stone": 40,
+    "copper": 10
+   },
+   "buildSeconds": 60
+  },
+  "age": "iron",
+  "x": 89,
+  "y": 71,
+  "tile": "grass",
+  "dPlaza": 13.038404810405298,
+  "street": 6.709205627441406,
+  "shore": 57,
+  "faults": [
+   "off the street skeleton (6.7 tiles)",
+   "duplicate service — warm is already answered by the kiln"
+  ],
+  "role": "\"warm\" already covered by kiln",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b10166",
+  "type": "chariot-works",
+  "district": "workshop",
+  "spec": {
+   "type": "chariot-works",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "copper": 15
+   },
+   "buildSeconds": 70
+  },
+  "age": "iron",
+  "x": 84,
+  "y": 69,
+  "tile": "grass",
+  "dPlaza": 13.152946437965904,
+  "street": 3.326347827911377,
+  "shore": 55,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b10182",
+  "type": "bronze-forge",
+  "district": "workshop",
+  "spec": {
+   "type": "bronze-forge",
+   "age": "bronze",
+   "cost": {
+    "copper": 20,
+    "tin": 10,
+    "stone": 20
+   },
+   "buildSeconds": 60
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 91,
+  "tile": "grass",
+  "dPlaza": 15,
+  "street": 4.890493869781494,
+  "shore": 56,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b10196",
+  "type": "livestock-pen",
+  "district": "farmland",
+  "spec": {
+   "type": "livestock-pen",
+   "age": "bronze",
+   "cost": {
+    "wood": 40,
+    "food": 15
+   },
+   "buildSeconds": 55,
+   "foodPerDay": 6
+  },
+  "age": "iron",
+  "x": 94,
+  "y": 73,
+  "tile": "grass",
+  "dPlaza": 15,
+  "street": 4.242644786834717,
+  "shore": 58,
+  "faults": [],
+  "role": "+6 food/day",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b10207",
+  "type": "longhouse",
+  "district": "housing",
+  "spec": {
+   "type": "longhouse",
+   "age": "bronze",
+   "cost": {
+    "wood": 50,
+    "stone": 10
+   },
+   "buildSeconds": 55,
+   "houses": 4
+  },
+  "age": "iron",
+  "x": 79,
+  "y": 97,
+  "tile": "grass",
+  "dPlaza": 15.297058540778355,
+  "street": 0.056771211326122284,
+  "shore": 55,
+  "faults": [],
+  "role": "houses 4",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b10223",
+  "type": "shrine",
+  "district": "civic",
+  "spec": {
+   "type": "shrine",
+   "age": "bronze",
+   "cost": {
+    "stone": 35,
+    "copper": 10
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 67,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 15,
+  "street": 3.7412426471710205,
+  "shore": 55,
+  "faults": [
+   "duplicate service — inspired is already answered by the burial-mound"
+  ],
+  "role": "\"inspired\" already covered by burial-mound",
+  "eraGap": 1
+ },
+ {
+  "isl": "island-9303",
+  "id": "island-9303-b10235",
+  "type": "tin-mine",
+  "district": "industry",
+  "spec": {
+   "type": "tin-mine",
+   "age": "bronze",
+   "cost": {
+    "wood": 30,
+    "stone": 20
+   },
+   "buildSeconds": 50
+  },
+  "age": "iron",
+  "x": 98,
+  "y": 82,
+  "tile": "grass",
+  "dPlaza": 16,
+  "street": 4.792995929718018,
+  "shore": 54,
+  "faults": [
+   "no mechanical role in the sim"
+  ],
+  "role": "no effect — decoration",
+  "eraGap": 1
+ }
+]

@@ -1,0 +1,505 @@
+[
+ {
+  "island": "island-2674",
+  "id": "island-2674-b3387",
+  "type": "campfire",
+  "pos": {
+   "x": 82,
+   "y": 95
+  },
+  "why": [
+   "off the street skeleton (7.7 tiles)",
+   "duplicate service — warm is already answered by the smokehouse"
+  ]
+ },
+ {
+  "island": "island-2674",
+  "id": "island-2674-b4501",
+  "type": "pottery-workshop",
+  "pos": {
+   "x": 69,
+   "y": 79
+  },
+  "why": [
+   "off the street skeleton (6.9 tiles)",
+   "no mechanical role in the sim"
+  ]
+ },
+ {
+  "island": "island-2674",
+  "id": "island-2674-b8425",
+  "type": "chariot-works",
+  "pos": {
+   "x": 98,
+   "y": 82
+  },
+  "why": [
+   "off the street skeleton (7.4 tiles)",
+   "no mechanical role in the sim"
+  ]
+ },
+ {
+  "island": "island-2674",
+  "id": "island-2674-b8498",
+  "type": "shrine",
+  "pos": {
+   "x": 77,
+   "y": 97
+  },
+  "why": [
+   "civic building 16 tiles from the plaza it should ring",
+   "off the street skeleton (9.1 tiles)",
+   "duplicate service — inspired is already answered by the shaman-tent"
+  ]
+ },
+ {
+  "island": "island-2674",
+  "id": "island-2674-b8559",
+  "type": "burial-mound",
+  "pos": {
+   "x": 67,
+   "y": 84
+  },
+  "why": [
+   "civic building 15 tiles from the plaza it should ring",
+   "off the street skeleton (7.3 tiles)",
+   "duplicate service — inspired is already answered by the shaman-tent"
+  ]
+ },
+ {
+  "island": "island-2674",
+  "id": "island-2674-b8680",
+  "type": "bronze-forge",
+  "pos": {
+   "x": 86,
+   "y": 98
+  },
+  "why": [
+   "off the street skeleton (10.6 tiles)",
+   "no mechanical role in the sim"
+  ]
+ },
+ {
+  "island": "island-2674",
+  "id": "island-2674-b8935",
+  "type": "brewery",
+  "pos": {
+   "x": 81,
+   "y": 100
+  },
+  "why": [
+   "off the street skeleton (8+ tiles)",
+   "duplicate service — warm is already answered by the smokehouse"
+  ]
+ },
+ {
+  "island": "island-2674",
+  "id": "island-2674-b8973",
+  "type": "flint-knapper",
+  "pos": {
+   "x": 93,
+   "y": 68
+  },
+  "why": [
+   "off the street skeleton (7.0 tiles)",
+   "no mechanical role in the sim"
+  ]
+ },
+ {
+  "island": "island-2674",
+  "id": "island-2674-b9011",
+  "type": "copper-mine",
+  "pos": {
+   "x": 66,
+   "y": 75
+  },
+  "why": [
+   "off the street skeleton (8+ tiles)",
+   "no mechanical role in the sim"
+  ]
+ },
+ {
+  "island": "island-8745",
+  "id": "island-8745-b9664",
+  "type": "copper-mine",
+  "pos": {
+   "x": 89,
+   "y": 93
+  },
+  "why": [
+   "16 tiles from the nearest copper vein",
+   "no mechanical role in the sim"
+  ]
+ },
+ {
+  "island": "island-8745",
+  "id": "island-8745-b9692",
+  "type": "bronze-armory",
+  "pos": {
+   "x": 84,
+   "y": 95
+  },
+  "why": [
+   "off the street skeleton (6.1 tiles)",
+   "no mechanical role in the sim"
+  ]
+ },
+ {
+  "island": "island-8745",
+  "id": "island-8745-b9978",
+  "type": "shaman-tent",
+  "pos": {
+   "x": 98,
+   "y": 82
+  },
+  "why": [
+   "off the street skeleton (9.1 tiles)",
+   "duplicate service — inspired is already answered by the burial-mound"
+  ]
+ },
+ {
+  "island": "island-8921",
+  "id": "island-8921-b9744",
+  "type": "tin-mine",
+  "pos": {
+   "x": 71,
+   "y": 87
+  },
+  "why": [
+   "19 tiles from the nearest tin vein",
+   "no mechanical role in the sim"
+  ]
+ },
+ {
+  "island": "island-8921",
+  "id": "island-8921-b10049",
+  "type": "toolmaker",
+  "pos": {
+   "x": 70,
+   "y": 72
+  },
+  "why": [
+   "off the street skeleton (7.1 tiles)",
+   "no mechanical role in the sim"
+  ]
+ },
+ {
+  "island": "island-8921",
+  "id": "island-8921-b10081",
+  "type": "shrine",
+  "pos": {
+   "x": 66,
+   "y": 87
+  },
+  "why": [
+   "civic building 17 tiles from the plaza it should ring",
+   "off the street skeleton (8.3 tiles)",
+   "duplicate service — inspired is already answered by the burial-mound"
+  ]
+ },
+ {
+  "island": "island-8996",
+  "id": "island-8996-b9952",
+  "type": "shrine",
+  "pos": {
+   "x": 89,
+   "y": 71
+  },
+  "why": [
+   "off the street skeleton (6.7 tiles)",
+   "duplicate service — inspired is already answered by the burial-mound"
+  ]
+ },
+ {
+  "island": "island-8996",
+  "id": "island-8996-b9981",
+  "type": "tin-mine",
+  "pos": {
+   "x": 84,
+   "y": 69
+  },
+  "why": [
+   "25 tiles from the nearest tin vein",
+   "no mechanical role in the sim"
+  ]
+ },
+ {
+  "island": "island-8996",
+  "id": "island-8996-b10050",
+  "type": "bathhouse",
+  "pos": {
+   "x": 79,
+   "y": 97
+  },
+  "why": [
+   "service building 15 tiles from the plaza it should ring",
+   "off the street skeleton (7.0 tiles)",
+   "duplicate service — warm is already answered by the kiln"
+  ]
+ },
+ {
+  "island": "island-8996",
+  "id": "island-8996-b10082",
+  "type": "copper-mine",
+  "pos": {
+   "x": 98,
+   "y": 82
+  },
+  "why": [
+   "15 tiles from the nearest copper vein",
+   "off the street skeleton (6.4 tiles)",
+   "no mechanical role in the sim"
+  ]
+ },
+ {
+  "island": "island-9083",
+  "id": "island-9083-b9719",
+  "type": "brewery",
+  "pos": {
+   "x": 95,
+   "y": 87
+  },
+  "why": [
+   "off the street skeleton (9.7 tiles)",
+   "duplicate service — warm is already answered by the kiln"
+  ]
+ },
+ {
+  "island": "island-9083",
+  "id": "island-9083-b9776",
+  "type": "bathhouse",
+  "pos": {
+   "x": 76,
+   "y": 95
+  },
+  "why": [
+   "off the street skeleton (7.2 tiles)",
+   "duplicate service — warm is already answered by the kiln"
+  ]
+ },
+ {
+  "island": "island-9083",
+  "id": "island-9083-b9824",
+  "type": "copper-mine",
+  "pos": {
+   "x": 76,
+   "y": 69
+  },
+  "why": [
+   "off the street skeleton (7.2 tiles)",
+   "no mechanical role in the sim"
+  ]
+ },
+ {
+  "island": "island-9083",
+  "id": "island-9083-b9882",
+  "type": "burial-mound",
+  "pos": {
+   "x": 71,
+   "y": 93
+  },
+  "why": [
+   "off the street skeleton (7.7 tiles)",
+   "duplicate service — inspired is already answered by the shaman-tent"
+  ]
+ },
+ {
+  "island": "island-9083",
+  "id": "island-9083-b9983",
+  "type": "stone-circle",
+  "pos": {
+   "x": 96,
+   "y": 74
+  },
+  "why": [
+   "civic building 18 tiles from the plaza it should ring",
+   "off the street skeleton (8+ tiles)",
+   "duplicate service — inspired is already answered by the shaman-tent"
+  ]
+ },
+ {
+  "island": "island-9083",
+  "id": "island-9083-b10051",
+  "type": "trading-post",
+  "pos": {
+   "x": 100,
+   "y": 84
+  },
+  "why": [
+   "service building 20 tiles from the plaza it should ring",
+   "off the street skeleton (8+ tiles)",
+   "no mechanical role in the sim"
+  ]
+ },
+ {
+  "island": "island-9083",
+  "id": "island-9083-b10067",
+  "type": "tin-mine",
+  "pos": {
+   "x": 67,
+   "y": 74
+  },
+  "why": [
+   "14 tiles from the nearest tin vein",
+   "no mechanical role in the sim"
+  ]
+ },
+ {
+  "island": "island-9083",
+  "id": "island-9083-b10131",
+  "type": "granary",
+  "pos": {
+   "x": 84,
+   "y": 101
+  },
+  "why": [
+   "off the street skeleton (7.4 tiles)",
+   "no mechanical role in the sim"
+  ]
+ },
+ {
+  "island": "island-9158",
+  "id": "island-9158-b10084",
+  "type": "tin-mine",
+  "pos": {
+   "x": 79,
+   "y": 97
+  },
+  "why": [
+   "13 tiles from the nearest tin vein",
+   "no mechanical role in the sim"
+  ]
+ },
+ {
+  "island": "island-9158",
+  "id": "island-9158-b10120",
+  "type": "shrine",
+  "pos": {
+   "x": 98,
+   "y": 82
+  },
+  "why": [
+   "civic building 16 tiles from the plaza it should ring",
+   "off the street skeleton (10.3 tiles)",
+   "duplicate service — inspired is already answered by the stone-circle"
+  ]
+ },
+ {
+  "island": "island-9158",
+  "id": "island-9158-b10133",
+  "type": "hide-tanner",
+  "pos": {
+   "x": 70,
+   "y": 92
+  },
+  "why": [
+   "off the street skeleton (6.3 tiles)",
+   "no mechanical role in the sim"
+  ]
+ },
+ {
+  "island": "island-9158",
+  "id": "island-9158-b10148",
+  "type": "burial-mound",
+  "pos": {
+   "x": 79,
+   "y": 67
+  },
+  "why": [
+   "civic building 15 tiles from the plaza it should ring",
+   "off the street skeleton (6.9 tiles)",
+   "duplicate service — inspired is already answered by the stone-circle"
+  ]
+ },
+ {
+  "island": "island-9233",
+  "id": "island-9233-b9937",
+  "type": "tin-mine",
+  "pos": {
+   "x": 75,
+   "y": 92
+  },
+  "why": [
+   "13 tiles from the nearest tin vein",
+   "no mechanical role in the sim"
+  ]
+ },
+ {
+  "island": "island-9233",
+  "id": "island-9233-b10014",
+  "type": "flint-knapper",
+  "pos": {
+   "x": 84,
+   "y": 95
+  },
+  "why": [
+   "off the street skeleton (6.2 tiles)",
+   "no mechanical role in the sim"
+  ]
+ },
+ {
+  "island": "island-9233",
+  "id": "island-9233-b10070",
+  "type": "copper-mine",
+  "pos": {
+   "x": 75,
+   "y": 72
+  },
+  "why": [
+   "31 tiles from the nearest copper vein",
+   "no mechanical role in the sim"
+  ]
+ },
+ {
+  "island": "island-9233",
+  "id": "island-9233-b10135",
+  "type": "bathhouse",
+  "pos": {
+   "x": 94,
+   "y": 73
+  },
+  "why": [
+   "off the street skeleton (6.3 tiles)",
+   "duplicate service — warm is already answered by the campfire"
+  ]
+ },
+ {
+  "island": "island-9233",
+  "id": "island-9233-b10165",
+  "type": "burial-mound",
+  "pos": {
+   "x": 67,
+   "y": 82
+  },
+  "why": [
+   "off the street skeleton (8.6 tiles)",
+   "duplicate service — inspired is already answered by the stone-circle"
+  ]
+ },
+ {
+  "island": "island-9303",
+  "id": "island-9303-b9990",
+  "type": "copper-mine",
+  "pos": {
+   "x": 94,
+   "y": 79
+  },
+  "why": [
+   "13 tiles from the nearest copper vein",
+   "no mechanical role in the sim"
+  ]
+ },
+ {
+  "island": "island-9303",
+  "id": "island-9303-b10150",
+  "type": "bathhouse",
+  "pos": {
+   "x": 89,
+   "y": 71
+  },
+  "why": [
+   "off the street skeleton (6.7 tiles)",
+   "duplicate service — warm is already answered by the kiln"
+  ]
+ }
+]
