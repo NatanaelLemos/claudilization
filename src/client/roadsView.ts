@@ -498,7 +498,9 @@ export function buildRoadsGroup({
           const b = previous + c + 1;
           const d = start + c;
           const e = start + c + 1;
-          indices.push(a, d, e, a, e, b);
+          // wound so the paving faces the sky: a ribbon with its back turned
+          // is front-face culled, and the town keeps a road nobody can see
+          indices.push(a, e, d, a, b, e);
         }
         segments += 1;
         if (segments >= MAX_ROAD_SEGMENTS) break;
@@ -544,8 +546,10 @@ export function buildRoadsGroup({
       const outerA = innerA + 1;
       const innerB = ringStart + j * 2;
       const outerB = innerB + 1;
-      indices.push(centre, innerA, innerB);
-      indices.push(innerA, outerA, outerB, innerA, outerB, innerB);
+      // the apron is wound sky-side too — the angle runs clockwise in world
+      // space, so the fan reverses to keep its face up
+      indices.push(centre, innerB, innerA);
+      indices.push(innerA, outerB, outerA, innerA, innerB, outerB);
     }
   }
 

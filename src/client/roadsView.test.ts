@@ -179,6 +179,57 @@ describe("the road mesh", () => {
     expect(meshes[0]!.geometry.getAttribute("color")).toBeTruthy();
   });
 
+  it("faces the sky — every triangle of it", () => {
+    // A ribbon wound the wrong way is a road nobody can see: front-face
+    // culling drops it and the town keeps its stepping-stone-less lawn.
+    const terrain = generateIsland(881, 96);
+    const plan = townPlan(terrain, 881);
+    const heightAt = (x: number, y: number) => {
+      const tile = terrain.tiles[Math.round(y) * terrain.size + Math.round(x)];
+      return tile ? Math.max(0, (tile.height - 0.2) * 7) : 0;
+    };
+    const group = buildRoadsGroup({
+      buildings: Array.from({ length: 20 }, (_, i) =>
+        building(
+          `b${i}`,
+          "hut",
+          plan.plaza.x + Math.cos(i * 1.9) * (5 + i * 0.8),
+          plan.plaza.y + Math.sin(i * 1.9) * (5 + i * 0.8),
+        ),
+      ),
+      age: "medieval",
+      islandSeed: 881,
+      heightAt,
+      half: terrain.size / 2,
+      terrain,
+    });
+    const mesh = roadMesh(group)!;
+    const position = mesh.geometry.getAttribute("position");
+    const index = mesh.geometry.getIndex()!;
+    const a = new THREE.Vector3();
+    const b = new THREE.Vector3();
+    const c = new THREE.Vector3();
+    const ab = new THREE.Vector3();
+    const ac = new THREE.Vector3();
+    const face = new THREE.Vector3();
+    let triangles = 0;
+    for (let i = 0; i < index.count; i += 3) {
+      a.fromBufferAttribute(position, index.getX(i));
+      b.fromBufferAttribute(position, index.getX(i + 1));
+      c.fromBufferAttribute(position, index.getX(i + 2));
+      ab.subVectors(b, a);
+      ac.subVectors(c, a);
+      face.crossVectors(ab, ac);
+      if (face.lengthSq() < 1e-10) continue; // a degenerate sliver has no side
+      expect(face.normalize().y).toBeGreaterThan(0.2);
+      triangles += 1;
+    }
+    expect(triangles).toBeGreaterThan(100);
+    // and the shaded normals agree with the geometry
+    const normal = mesh.geometry.getAttribute("normal");
+    for (let i = 0; i < normal.count; i++) expect(normal.getY(i)).toBeGreaterThan(0);
+  });
+
   it("reaches every building it serves", () => {
     const buildings = town(24);
     const group = buildRoadsGroup({
