@@ -31,6 +31,12 @@ const OrderSchema = z.discriminatedUnion("kind", [
     count: z.number().int().min(1).max(24).optional(),
   }),
   z.object({ kind: z.literal("disband"), creation: CreationRef }),
+  // ── unmaking: a town may tear down what no longer makes sense ────────────
+  z.object({
+    kind: z.literal("demolish"),
+    building: z.string().trim().min(1).max(64),
+    island: z.string().trim().min(1).max(128).optional(),
+  }),
 ]);
 
 const OrdersSchema = z.array(OrderSchema).max(MAX_ORDERS);

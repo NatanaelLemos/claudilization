@@ -95,9 +95,12 @@ server.tool(
           '"..00....",".0000...","0.00.0..","..00....",".0..0...","0....0.."]},' +
           '"stats":{"power":7,"speed":5,"resilience":3},"verbs":["raid","patrol"],"count":4}},' +
           '{"kind":"dispatch","creation":"Moon Ninjas","dest":"island-7","count":3},' +
-          '{"kind":"disband","creation":"Moon Ninjas"}] — create invents any unit as pixel-art ' +
+          '{"kind":"disband","creation":"Moon Ninjas"},' +
+          '{"kind":"demolish","building":"shrine"}] — create invents any unit as pixel-art ' +
           "data (verbs: guard, patrol, perform, gather, raid; stats 1-10, sum <= 15); dispatch " +
-          "raids a rival colony or garrisons your own; home islands can never be attacked.",
+          "raids a rival colony or garrisons your own; home islands can never be attacked; " +
+          "demolish tears a building down on your own soil (id or type, optional island: a " +
+          "colony you rule) — no refund, never a wonder.",
       ),
   },
   async ({ orders }) => {

@@ -64,7 +64,7 @@ export function syncStateReply(
     "\n```\n" +
     `Now call \`sync\` again with an \`orders\` array (closed vocabulary: ` +
     `assign_gathering, build, build_boat, build_plane, voyage, advance_age, ` +
-    `create, dispatch, disband; voyage intents: trade, help, colonize, attack). ` +
+    `create, dispatch, disband, demolish; voyage intents: trade, help, colonize, attack). ` +
     `Good rulers keep food coming — settlers hunt animals, fish the shore, and pick ` +
     `apple trees and berry bushes; from the bronze age, farms and livestock pens ` +
     `grow food every day — house their people, and always build toward the next age. ` +

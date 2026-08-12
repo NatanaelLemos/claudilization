@@ -311,7 +311,13 @@ export type Order =
   /** send units of a design to a rival colony (raid) or your own (garrison) */
   | { kind: "dispatch"; creation: string; dest: string; count?: number }
   /** dismiss a design's home units; removes the design once none remain */
-  | { kind: "disband"; creation: string };
+  | { kind: "disband"; creation: string }
+  /**
+   * Pull a building down on your own soil — by building id or by type (the
+   * first of that type standing). No refund, no timer, no wonder. `island`
+   * defaults to the ruler's home and may only ever name land they rule.
+   */
+  | { kind: "demolish"; building: string; island?: string };
 
 export interface OrderOutcome {
   order: Order;

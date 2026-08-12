@@ -75,6 +75,13 @@ export function gameRules() {
         count: "1-24, optional (all home units when omitted)",
       },
       disband: { kind: "disband", creation: "a design's id or exact name" },
+      demolish: {
+        kind: "demolish",
+        building: "a building id, or a type (the first of that type standing)",
+        island:
+          "optional — your home island by default; otherwise a colony your home rules. " +
+          "No refund, no timer; wonders are never torn down",
+      },
     },
     creations: {
       summary:

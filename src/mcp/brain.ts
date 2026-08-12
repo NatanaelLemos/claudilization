@@ -81,6 +81,8 @@ function decisionPrompt(doctrine: string, state: unknown): string {
     `- {"kind":"build_boat"}  |  {"kind":"build_plane"}`,
     `- {"kind":"voyage","dest":"<island id>","intent":"trade"|"help"|"colonize"|"attack"}`,
     `- {"kind":"advance_age"}`,
+    `- {"kind":"demolish","building":"<building id or type>"}  — tears it down on your own`,
+    `  soil (add "island":"<a colony you rule>" for a colony); no refund, never a wonder`,
     ``,
     `Keep the people fed, housed, and warm; put idle hands to work; build toward`,
     `the next age; trade with steady partners. Two or three orders is a full day's`,

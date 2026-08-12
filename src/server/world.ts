@@ -804,7 +804,66 @@ export class World {
         return this.applyDispatch(island, order);
       case "disband":
         return this.applyDisband(island, order);
+      case "demolish":
+        return this.applyDemolish(island, order);
     }
+  }
+
+  // ── unmaking ──────────────────────────────────────────────────────────────
+
+  /**
+   * A town may tear down what no longer makes sense. The razing is instant and
+   * total: no refund, no rubble timer, the ground simply comes free and every
+   * hand that was working that building is released.
+   *
+   * The soil law is the whole safety of it — a ruler may raze on their own
+   * home island and on the colonies that home rules, and nowhere else. No
+   * rival's colony, and never another player's founding island, whatever the
+   * payload claims. Wonders are refused: a monument is a world's memory, not
+   * a ruler's to unmake.
+   */
+  private applyDemolish(
+    home: Island,
+    order: Extract<Order, { kind: "demolish" }>,
+  ): OrderOutcome {
+    const target = order.island ? this.islandsMap.get(order.island) : home;
+    if (!target) return { order, ok: false, reason: "no such island" };
+    if (target.id !== home.id) {
+      // provenance decides, never the mutable kind: a founding island is only
+      // ever razed by its own ruler, and a colony only by the home that rules it
+      const ruled =
+        target.origin !== "home" && target.kind === "colony" && target.ownerId === home.id;
+      if (!ruled)
+        return { order, ok: false, reason: `${target.name} is not yours to raze` };
+    }
+    if (target.ruins) return { order, ok: false, reason: "the island is ruins" };
+
+    const ref = order.building.trim();
+    const building =
+      target.buildings.find((b) => b.id === ref) ??
+      target.buildings.find((b) => b.type === ref);
+    if (!building)
+      return { order, ok: false, reason: `no ${ref} stands on ${target.name}` };
+    if (buildingSpec(building.type)?.wonder)
+      return { order, ok: false, reason: "a wonder is never torn down" };
+
+    target.buildings = target.buildings.filter((b) => b.id !== building.id);
+    // no hand keeps working, or resting in, a building that is no longer there
+    for (const s of target.settlers) {
+      if (
+        (s.task.kind === "build" || s.task.kind === "relax") &&
+        s.task.buildingId === building.id
+      )
+        s.task = { kind: "idle" };
+      if (s.houseId === building.id) s.houseId = undefined;
+    }
+    this.deferred.push({
+      at: this.t,
+      type: "demolished",
+      islandId: target.id,
+      text: `The ${building.type} on ${target.name} is pulled down; the ground is clear again.`,
+    });
+    return { order, ok: true };
   }
 
   // ── player-invented creations ────────────────────────────────────────────
