@@ -175,6 +175,7 @@ Git. Postgres contract tests are skipped unless an isolated
 
 ## Build log
 
+- 2026-08-12 — Demolition shipped (`demolish` order: own soil only, no refund, never a wonder, replay-safe) and the building audit applied: 38 condemned buildings razed across 8 islands, 282 → 244, zero collateral; live at https://claudilization.com (`7bd4bfb`).
 - 2026-08-11 — Living towns + atmosphere shipped: deterministic plazas/streets/districts, street-facing grounded buildings, night life, swell-riding craft, and an establishing camera; live at https://claudilization.com.
 - 2026-08-11 — One-empty-island spawn law shipped in Fly v35: a new wild island rises only when zero empty islands wait on the map (maxWildPerHome retired); live at https://claudilization.com.
 - 2026-08-11 — Scroll World beauty pass shipped (terrain relief, groves, per-island palette, footpaths, working yards, tilt-shift post, contact blobs) in Fly v33; 28/28 scenarios, knip/audit clean; live at https://claudilization.com.
