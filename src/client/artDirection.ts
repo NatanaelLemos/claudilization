@@ -111,6 +111,7 @@ export type SettlerRole = "villager" | "farmer" | "forager" | "mason" | "builder
 export function settlerRole(task: SettlerTask): SettlerRole {
   switch (task.kind) {
     case "build":
+    case "work":
       return "builder";
     case "sail":
       return "sailor";

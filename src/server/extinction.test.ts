@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { World } from "./world";
 
-const FAST = { daySeconds: 10, daylightShare: 1 };
+// regen is off so cleared food sources stay cleared: this file tests the
+// starvation law itself, not the land's recovery
+const FAST = {
+  daySeconds: 10,
+  daylightShare: 1,
+  nodeRegenOrganicShare: 0,
+  nodeRegenMineralShare: 0,
+};
 
 function starveOut(w: World, islandId: string) {
   w.debugGrant(islandId, { stocks: { food: 0 }, clearFoodSources: true });

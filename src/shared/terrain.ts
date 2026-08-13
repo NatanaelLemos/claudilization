@@ -1,7 +1,55 @@
 import { createNoise2D } from "simplex-noise";
 import { DEFAULT_BALANCE } from "./balance";
 import { mulberry32 } from "./rng";
-import type { FoodSource, IslandTerrain, ResourceId, Tile, TileKind } from "./types";
+import type {
+  FoodSource,
+  IslandTerrain,
+  ResourceId,
+  ResourceNode,
+  Tile,
+  TileKind,
+} from "./types";
+
+/**
+ * How much a full node of each resource holds — the birth value at terrain
+ * generation and the ceiling regeneration grows back toward. One table, so
+ * the land's wealth and its recovery can never drift apart. Steel is only
+ * ever refined, never mined: no node, no capacity.
+ */
+export const NODE_CAPACITY: Record<ResourceId, number> = {
+  wood: 500,
+  stone: 400,
+  food: 500,
+  copper: 350,
+  tin: 320,
+  iron: 380,
+  steel: 0,
+  marble: 260,
+  gold: 200,
+  silver: 220,
+  preciousMetals: 150,
+  gems: 140,
+  coal: 400,
+  oil: 320,
+  gas: 300,
+  plutonium: 120,
+  antimatter: 90,
+};
+
+/** Wild food by flavor: the sea is richest, then herds, then trees. */
+export const FOOD_SOURCE_CAPACITY: Record<FoodSource, number> = {
+  fish: 500,
+  animals: 450,
+  "apple-trees": 350,
+  "berry-bushes": 300,
+};
+
+/** A node's full measure — food reads its flavor, everything else the table. */
+export function nodeCapacity(node: Pick<ResourceNode, "resource" | "source">): number {
+  if (node.resource === "food")
+    return FOOD_SOURCE_CAPACITY[node.source ?? "berry-bushes"];
+  return NODE_CAPACITY[node.resource];
+}
 
 const WATER = 0.2;
 const SAND = 0.28;
@@ -68,10 +116,10 @@ export function generateIsland(
     resource: ResourceId,
     from: Tile[],
     count: number,
-    remaining: number,
     source?: FoodSource,
   ) => {
     const pool = from.length > 0 ? from : land;
+    const remaining = source ? FOOD_SOURCE_CAPACITY[source] : NODE_CAPACITY[resource];
     for (let i = 0; i < count && nodes.length < land.length; i++) {
       let tile = pool[Math.floor(nodeRng() * pool.length)]!;
       for (let tries = 0; used.has(`${tile.x},${tile.y}`) && tries < 40; tries++) {
@@ -89,14 +137,14 @@ export function generateIsland(
   };
 
   const density = Math.max(3, Math.floor(land.length / 60));
-  place("wood", grass, density, 500);
-  place("stone", rock, Math.max(3, Math.floor(density / 2)), 400);
+  place("wood", grass, density);
+  place("stone", rock, Math.max(3, Math.floor(density / 2)));
   // wild food, one flavor per node: the sea is richest, then herds, then trees
   const perSource = Math.max(1, Math.floor(density / 4));
-  place("food", shore, perSource, 500, "fish");
-  place("food", grass, perSource, 450, "animals");
-  place("food", grass, perSource, 350, "apple-trees");
-  place("food", sandOrGrass, perSource, 300, "berry-bushes");
+  place("food", shore, perSource, "fish");
+  place("food", grass, perSource, "animals");
+  place("food", grass, perSource, "apple-trees");
+  place("food", sandOrGrass, perSource, "berry-bushes");
 
   // the deeper ages dig deeper: every island is born with its ores and
   // minerals already in the ground, waiting for an age that can work them.
@@ -105,19 +153,19 @@ export function generateIsland(
   const lode = Math.max(2, Math.floor(density / 8));
   const vein = Math.max(1, Math.floor(density / 16));
   const trace = Math.max(1, Math.floor(density / 24));
-  place("copper", rock, lode, 350);
-  place("tin", rock, lode, 320);
-  place("iron", rock, lode, 380);
-  place("marble", rock, vein, 260);
-  place("gold", rock, vein, 200);
-  place("silver", rock, vein, 220);
-  place("preciousMetals", rock, trace, 150);
-  place("gems", rock, trace, 140);
-  place("coal", rock, lode, 400);
-  place("oil", sandOrGrass, vein, 320);
-  place("gas", sandOrGrass, vein, 300);
-  place("plutonium", rock, trace, 120);
-  place("antimatter", rock, trace, 90);
+  place("copper", rock, lode);
+  place("tin", rock, lode);
+  place("iron", rock, lode);
+  place("marble", rock, vein);
+  place("gold", rock, vein);
+  place("silver", rock, vein);
+  place("preciousMetals", rock, trace);
+  place("gems", rock, trace);
+  place("coal", rock, lode);
+  place("oil", sandOrGrass, vein);
+  place("gas", sandOrGrass, vein);
+  place("plutonium", rock, trace);
+  place("antimatter", rock, trace);
 
   return { size, tiles, nodes };
 }

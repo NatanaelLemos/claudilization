@@ -17,9 +17,6 @@ function duration(seconds: number): string {
   return `${minutes}:${String(safe % 60).padStart(2, "0")}`;
 }
 
-function intervalLabel(seconds: number): string {
-  return seconds % 60 === 0 ? `${seconds / 60} minutes` : duration(seconds);
-}
 
 /** Pure display model so reconnect/countdown behavior is testable without a DOM. */
 export function catastropheView(
@@ -44,7 +41,7 @@ export function catastropheView(
     title: `Global catastrophe in ${duration(remaining)}`,
     detail: warning
       ? "Impact is imminent — every island and player will be affected"
-      : `One world event every ${intervalLabel(status.intervalSeconds)}`,
+      : "The world keeps no schedule — strikes fall an hour, five, or a day apart",
   };
 }
 

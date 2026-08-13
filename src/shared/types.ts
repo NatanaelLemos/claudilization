@@ -80,7 +80,9 @@ export type SettlerTask =
   | { kind: "build"; buildingId: string }
   | { kind: "sail"; boatId: string }
   /** whiling the day away at a park or plaza — no work done, spirits raised */
-  | { kind: "relax"; buildingId: string };
+  | { kind: "relax"; buildingId: string }
+  /** tending a completed production building — the farm, mine, or works */
+  | { kind: "work"; buildingId: string };
 
 export interface Settler {
   id: string;
@@ -117,6 +119,9 @@ export interface BuildingSpec {
   houses?: number;
   /** food added to stocks each in-game day once complete (farms, livestock pens) */
   foodPerDay?: number;
+  /** resources added to stocks each in-game day once complete — the mines,
+   * camps, and derricks that produce instead of merely decorating */
+  yields?: Partial<Record<ResourceId, number>>;
   /** daily refinement once complete: turns stock of one resource into another */
   converts?: { from: ResourceId; to: ResourceId; perDay: number };
   /** happiness this place radiates once complete (parks, arenas, wonders) */

@@ -14,7 +14,7 @@ describe("the global catastrophe clock", () => {
     expect(catastropheView(scheduled(4600), 1000)).toEqual({
       phase: "scheduled",
       title: "Global catastrophe in 60:00",
-      detail: "One world event every 60 minutes",
+      detail: "The world keeps no schedule — strikes fall an hour, five, or a day apart",
     });
   });
 

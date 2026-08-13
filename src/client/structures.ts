@@ -2822,7 +2822,7 @@ function archetype(spec: BuildingSpec): Builder {
       });
   }
   if (
-    /works|press|maker|weaver|brewery|tanner|knapper|smokehouse|pottery|chariot|gem-cutter|sculptors|apothecary|alchemist|gunsmith|cannery|siege|fishing|toolmaker|highway|railway|telegraph/.test(
+    /works|press|maker|weaver|brewery|tanner|knapper|smokehouse|pottery|chariot|gem-cutter|sculptors|apothecary|alchemist|gunsmith|cannery|siege|fishing|toolmaker|highway|railway|telegraph|lumber/.test(
       t,
     )
   ) {

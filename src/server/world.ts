@@ -5,6 +5,7 @@ import { BUILDINGS, buildingSpec } from "../shared/buildings";
 import {
   catastropheDefinition,
   selectCatastrophe,
+  selectCatastropheGap,
   type ActiveCatastrophe,
   type CatastropheDefinition,
   type CatastropheId,
@@ -28,7 +29,7 @@ import { BUILDING_NEED_PROVIDERS, computeHappiness } from "../shared/happiness";
 import { computeInspiration } from "../shared/inspiration";
 import { WONDER_CIV } from "../shared/wonders";
 import { hashString, mulberry32 } from "../shared/rng";
-import { generateIsland } from "../shared/terrain";
+import { generateIsland, nodeCapacity } from "../shared/terrain";
 import { districtFor, INDUSTRY_NODE, townPlan } from "../shared/townPlan";
 import type {
   Age,
@@ -139,7 +140,8 @@ interface SerializedWorld {
 
 interface CatastropheRuntimeState {
   nextAt: number;
-  /** Snapshot cadence stamp. Absent only on the original 30-minute release. */
+  /** The gap that scheduled `nextAt` — rolled per strike since the world
+   * stopped keeping a schedule. Absent only on the original 30-minute release. */
   intervalSeconds?: number;
   sequence: number;
   lastType?: CatastropheId;
@@ -283,7 +285,9 @@ export class World {
   get catastrophe(): CatastropheStatus {
     return {
       nextAt: this.catastropheState.nextAt,
-      intervalSeconds: this.balance.catastropheIntervalSeconds,
+      intervalSeconds:
+        this.catastropheState.intervalSeconds ??
+        this.balance.catastropheIntervalSeconds,
       warningSeconds: this.balance.catastropheWarningSeconds,
       active: this.catastropheState.active
         ? {
@@ -1220,6 +1224,31 @@ export class World {
       return undefined;
     }
 
+    if (spec.yields) {
+      // A producer answers a ground running thin, never a virgin island: while
+      // the wild veins hold above a quarter of their capacity, settlers gather.
+      // One producer per resource — planned supply counts, so no duplicate
+      // works race each other out of the same scarcity.
+      for (const [resource, perDay] of Object.entries(spec.yields) as [
+        ResourceId,
+        number,
+      ][]) {
+        if (!perDay) continue;
+        const veins = island.nodes.filter((node) => node.resource === resource);
+        const inGround = veins.reduce((sum, node) => sum + node.remaining, 0);
+        const capacity = veins.reduce((sum, node) => sum + nodeCapacity(node), 0);
+        if (capacity > 0 && inGround >= capacity * 0.25) continue;
+        const plannedPerDay = planned.reduce(
+          (sum, building) =>
+            sum + (buildingSpec(building.type)?.yields?.[resource] ?? 0),
+          0,
+        );
+        if (plannedPerDay < perDay)
+          return `${resource} production ${plannedPerDay}/${perDay} per day`;
+      }
+      return undefined;
+    }
+
     if (spec.converts) {
       const { from, to, perDay } = spec.converts;
       const feedstock = island.stocks[from] ?? 0;
@@ -1650,12 +1679,21 @@ export class World {
       impact,
     };
 
-    // Preserve the original cadence through short restarts. Across a long
-    // outage, skip missed slots and schedule the first future boundary: one
-    // wake-up event, never an avalanche of catch-up disasters.
-    const interval = Math.max(1, Math.floor(this.balance.catastropheIntervalSeconds));
-    do state.nextAt += interval;
-    while (state.nextAt <= this.t);
+    // The next strike keeps no schedule: one, five, or twenty-four base
+    // intervals away, rolled deterministically off the boundary just passed.
+    // Across a long outage the roll walks forward hop by hop to the first
+    // future boundary: one wake-up event, never an avalanche of catch-up
+    // disasters — and every restart walks the identical hops.
+    do {
+      const gap = selectCatastropheGap(
+        this.seed,
+        sequence,
+        state.nextAt,
+        this.balance.catastropheIntervalSeconds,
+      );
+      state.nextAt += gap;
+      state.intervalSeconds = gap;
+    } while (state.nextAt <= this.t);
 
     const result = impact.inhabitedIslands
       ? `${impact.inhabitedIslands} inhabited islands lost ${Math.round(
@@ -1815,7 +1853,7 @@ export class World {
     } else if (definition.buildingScope === "productive") {
       candidates = candidates.filter((building) => {
         const spec = buildingSpec(building.type);
-        return Boolean(spec?.foodPerDay || spec?.converts);
+        return Boolean(spec?.foodPerDay || spec?.converts || spec?.yields);
       });
     } else if (definition.buildingScope === "path") {
       const size = island.size ?? this.balance.islandSize;
@@ -1912,6 +1950,30 @@ export class World {
         this.daily(island, batch);
       }
     }
+    // and after every town has reckoned with the land as dawn found it —
+    // exodus judged, urgent harbors ordered — the land breathes back
+    if (dayTurns) this.regenerate();
+  }
+
+  /**
+   * The land is never spent forever: each dawn every node on every island —
+   * inhabited, wild, dormant, or ruined — regrows a share of its capacity.
+   * Forests, herds, and shoals return quickly; ores seep back as the earth's
+   * slow gift. Deterministic, so replay regrows the same world.
+   */
+  private regenerate(): void {
+    for (const island of this.islandsMap.values()) {
+      for (const node of island.nodes) {
+        const cap = nodeCapacity(node);
+        if (cap <= 0 || node.remaining >= cap) continue;
+        const organic = node.resource === "food" || node.resource === "wood";
+        const share = organic
+          ? this.balance.nodeRegenOrganicShare
+          : this.balance.nodeRegenMineralShare;
+        if (share <= 0) continue;
+        node.remaining = Math.min(cap, node.remaining + cap * share);
+      }
+    }
   }
 
   /**
@@ -1933,6 +1995,35 @@ export class World {
     return best;
   }
 
+  /**
+   * The completed production building with the fewest tenders, two to a post —
+   * so free hands spread across the works instead of crowding one mine.
+   * Full posts mean no post: the surplus goes to leisure, not to loitering.
+   */
+  private leastTendedProducer(island: Island): Building | undefined {
+    const producers = island.buildings.filter((b) => {
+      const spec = buildingSpec(b.type);
+      return (
+        b.stage === "complete" &&
+        Boolean(spec?.yields || spec?.foodPerDay || spec?.converts) &&
+        !spec?.wonder
+      );
+    });
+    if (!producers.length) return undefined;
+    const tenders = new Map<string, number>();
+    for (const s of island.settlers) {
+      if (s.task.kind === "work")
+        tenders.set(s.task.buildingId, (tenders.get(s.task.buildingId) ?? 0) + 1);
+    }
+    let best: Building | undefined;
+    for (const b of producers) {
+      const load = tenders.get(b.id) ?? 0;
+      if (load >= 2) continue;
+      if (!best || load < (tenders.get(best.id) ?? 0)) best = b;
+    }
+    return best;
+  }
+
   /** Hard rule (council carry-forward 5): hungry islands always send someone for food. */
   private foodInvariant(island: Island): void {
     const need = island.settlers.length * this.balance.foodPerSettlerPerDay;
@@ -1946,6 +2037,7 @@ export class World {
     const pick =
       island.settlers.find((s) => s.task.kind === "idle") ??
       island.settlers.find((s) => s.task.kind === "relax") ??
+      island.settlers.find((s) => s.task.kind === "work") ??
       island.settlers.find((s) => s.task.kind === "gather") ??
       island.settlers.find((s) => s.task.kind === "build");
     if (pick) {
@@ -2024,6 +2116,19 @@ export class World {
           s.task = { kind: "gather", resource, nodeId: node.id };
           s.pos = { ...node.pos };
           break;
+        }
+      }
+      // before anyone lounges, the works want tending: hands with no ground
+      // left to gather report to the mines, camps, farms, and furnaces —
+      // the citizens both raise the producers and stand at them
+      if (s.task.kind === "idle") {
+        const post = this.leastTendedProducer(island);
+        if (post) {
+          s.task = { kind: "work", buildingId: post.id };
+          s.pos = {
+            x: post.pos.x + roll(island.seed, "tend", s.id) * 2 - 1,
+            y: post.pos.y + roll(island.seed, "tend-y", s.id) * 2 - 1,
+          };
         }
       }
       // and when the whole island is mined out, the people are never a crowd
@@ -2106,10 +2211,11 @@ export class World {
     const priority = (spec: BuildingSpec): number => {
       if ((spec.foodPerDay ?? 0) > 0) return 0;
       if (spec.type === "dock") return 1;
-      if ((spec.houses ?? 0) > 0) return 2;
-      if (spec.converts) return 3;
-      if ((spec.joy ?? 0) > 0) return 5;
-      return 4;
+      if (spec.yields) return 2;
+      if ((spec.houses ?? 0) > 0) return 3;
+      if (spec.converts) return 4;
+      if ((spec.joy ?? 0) > 0) return 6;
+      return 5;
     };
     return needed.sort(
       (a, b) =>
@@ -2163,6 +2269,18 @@ export class World {
         for (const s of island.settlers) {
           if (crew.length >= BUILD_CREW) break;
           if (s.task.kind === "gather" && s.task.resource !== "food") {
+            s.task = { kind: "build", buildingId: b.id };
+            s.pos = { ...b.pos };
+            crew = [...crew, s];
+          }
+        }
+      }
+      // then the works-tenders: the producers yield without hands, so a
+      // construction site outranks standing at the mine
+      if (crew.length < BUILD_CREW) {
+        for (const s of island.settlers) {
+          if (crew.length >= BUILD_CREW) break;
+          if (s.task.kind === "work") {
             s.task = { kind: "build", buildingId: b.id };
             s.pos = { ...b.pos };
             crew = [...crew, s];
@@ -2654,6 +2772,18 @@ export class World {
       if (b.stage === "complete") harvest += buildingSpec(b.type)?.foodPerDay ?? 0;
     }
     if (harvest > 0) island.stocks.food = (island.stocks.food ?? 0) + harvest;
+    // the producers: mines, camps, and derricks add their daily yield — the
+    // works that let a town outlive its wild veins
+    for (const b of island.buildings) {
+      if (b.stage !== "complete") continue;
+      const yields = buildingSpec(b.type)?.yields;
+      if (!yields) continue;
+      for (const [resource, perDay] of Object.entries(yields)) {
+        if (!perDay) continue;
+        island.stocks[resource as ResourceId] =
+          (island.stocks[resource as ResourceId] ?? 0) + perDay;
+      }
+    }
     // the refineries: works that turn one stock into another, each drawing
     // up to its daily draught (the steelworks feeds on iron, yields steel)
     for (const b of island.buildings) {
@@ -2665,10 +2795,11 @@ export class World {
       island.stocks[conv.from] = (island.stocks[conv.from] ?? 0) - take;
       island.stocks[conv.to] = (island.stocks[conv.to] ?? 0) + take;
     }
-    // leisure: yesterday's idlers go back to work, and the parks draw the
-    // next few away from their labors — time "wasted", spirits raised
+    // leisure: yesterday's idlers and works-tenders go back to the pool, and
+    // the parks draw the next few away from their labors — each dawn every
+    // hand weighs anew whether the ground or the works needs it more
     for (const s of island.settlers) {
-      if (s.task.kind === "relax") s.task = { kind: "idle" };
+      if (s.task.kind === "relax" || s.task.kind === "work") s.task = { kind: "idle" };
     }
     const leisureSpots = island.buildings.filter((b) => {
       const spec = buildingSpec(b.type);
@@ -2697,7 +2828,7 @@ export class World {
       if (task.kind === "gather") {
         const node = island.nodes.find((n) => n.id === task.nodeId);
         if (node) s.pos = { ...node.pos };
-      } else if (task.kind === "build" || task.kind === "relax") {
+      } else if (task.kind === "build" || task.kind === "relax" || task.kind === "work") {
         const site = island.buildings.find((b) => b.id === task.buildingId);
         if (site) s.pos = { ...site.pos };
       }
@@ -3009,8 +3140,8 @@ export class World {
       if (s.catastrophe.intervalSeconds === undefined) {
         w.catastropheState.nextAt = s.t + w.balance.catastropheIntervalSeconds;
         w.catastropheState.warningFor = undefined;
+        w.catastropheState.intervalSeconds = w.balance.catastropheIntervalSeconds;
       }
-      w.catastropheState.intervalSeconds = w.balance.catastropheIntervalSeconds;
     } else {
       w.catastropheActivationPending = true;
       w.catastropheState = {

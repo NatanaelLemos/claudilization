@@ -242,9 +242,13 @@ export const INDUSTRY_NODE: Record<string, ResourceId> = {
   "tin-mine": "tin",
   "iron-mine": "iron",
   "silver-mine": "silver",
+  "gold-mine": "gold",
   "coal-mine": "coal",
   "marble-quarry": "marble",
+  quarry: "stone",
+  "lumber-camp": "wood",
   "oil-derrick": "oil",
+  gasworks: "gas",
 };
 
 const COASTAL_TYPES = new Set(["dock", "fishing-hut", "boat"]);

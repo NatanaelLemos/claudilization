@@ -118,6 +118,30 @@ export function catastropheDefinition(id: CatastropheId): CatastropheDefinition 
   return CATASTROPHE_CATALOG.find((entry) => entry.id === id)!;
 }
 
+/**
+ * The world keeps no schedule: each strike rolls the gap to the NEXT one as a
+ * multiple of the base interval — an hour, five hours, or a full real day at
+ * production balance. Deterministic off (seed, sequence, boundary), so replay
+ * and restart land every disaster on the same second.
+ */
+export const CATASTROPHE_GAP_MULTIPLIERS = [1, 5, 24] as const;
+
+export function selectCatastropheGap(
+  worldSeed: number,
+  sequence: number,
+  fromAt: number,
+  baseIntervalSeconds: number,
+): number {
+  const random = mulberry32(
+    hashString(`${worldSeed}|catastrophe-gap|${sequence}|${fromAt}`),
+  )();
+  const multiplier =
+    CATASTROPHE_GAP_MULTIPLIERS[
+      Math.floor(random * CATASTROPHE_GAP_MULTIPLIERS.length)
+    ]!;
+  return Math.max(1, Math.floor(baseIntervalSeconds)) * multiplier;
+}
+
 /** Deterministic, replay-safe choice with immediate repeats removed. */
 export function selectCatastrophe(
   worldSeed: number,

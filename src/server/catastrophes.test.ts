@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_BALANCE } from "../shared/balance";
 import {
+  CATASTROPHE_GAP_MULTIPLIERS,
   CATASTROPHE_IDS,
   selectCatastrophe,
+  selectCatastropheGap,
   type CatastropheId,
 } from "../shared/catastrophes";
 import type { CreationUnit, GameEvent, Island } from "../shared/types";
@@ -48,10 +50,12 @@ describe("global catastrophe scheduling", () => {
     expect(starts(w.tick(19))).toHaveLength(0);
     expect(starts(w.tick(1))).toHaveLength(1);
     expect(w.catastrophe.active?.scheduledAt).toBe(143);
-    expect(w.catastrophe.nextAt).toBe(163);
+    const gap = selectCatastropheGap(7, 1, 143, FAST.catastropheIntervalSeconds);
+    expect(w.catastrophe.nextAt).toBe(143 + gap);
+    expect(w.catastrophe.intervalSeconds).toBe(gap);
   });
 
-  it("warns once, starts once, ends once, and continues on the same cadence", () => {
+  it("warns once, starts once, ends once, and rolls the next strike from the boundary", () => {
     const w = World.create({ seed: 9, balance: FAST });
     expect(w.tick(14).filter((event) => event.type === "catastrophe-warning")).toHaveLength(0);
     expect(w.tick(1).filter((event) => event.type === "catastrophe-warning")).toHaveLength(1);
@@ -59,8 +63,27 @@ describe("global catastrophe scheduling", () => {
     expect(starts(w.tick(1))).toHaveLength(1);
     expect(starts(w.tick(1))).toHaveLength(0);
     expect(w.tick(1).filter((event) => event.type === "catastrophe-end")).toHaveLength(1);
-    w.tick(17);
+    const gap = selectCatastropheGap(9, 1, 20, FAST.catastropheIntervalSeconds);
+    expect(
+      CATASTROPHE_GAP_MULTIPLIERS.map((m) => m * FAST.catastropheIntervalSeconds),
+    ).toContain(gap);
+    expect(w.catastrophe.nextAt).toBe(20 + gap);
+    expect(starts(w.tick(w.catastrophe.nextAt - w.time - 1))).toHaveLength(0);
     expect(starts(w.tick(1))).toHaveLength(1);
+  });
+
+  it("rolls every gap from the sanctioned multipliers, deterministically", () => {
+    const base = DEFAULT_BALANCE.catastropheIntervalSeconds;
+    const seen = new Set<number>();
+    let at = base;
+    for (let sequence = 1; sequence <= 40; sequence++) {
+      const gap = selectCatastropheGap(7, sequence, at, base);
+      expect(gap).toBe(selectCatastropheGap(7, sequence, at, base));
+      expect(CATASTROPHE_GAP_MULTIPLIERS.map((m) => m * base)).toContain(gap);
+      seen.add(gap / base);
+      at += gap;
+    }
+    expect(seen).toEqual(new Set(CATASTROPHE_GAP_MULTIPLIERS));
   });
 
   it("chooses deterministically and never repeats the previous type", () => {
@@ -167,7 +190,7 @@ describe("global catastrophe scheduling", () => {
     const island = w.island(late.islandId)!;
     expect(w.catastrophe.active).toBeTruthy();
     expect(island.stocks.food).toBe(30);
-    w.tick(20);
+    w.tick(w.catastrophe.nextAt - w.time);
     expect(island.stocks.food).toBeLessThan(30);
   });
 });

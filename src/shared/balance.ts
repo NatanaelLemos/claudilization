@@ -48,12 +48,19 @@ export interface Balance {
   raidCrew: number;
   /** world-seconds before the same attacker→defender pair rings the bell again */
   attackAlertCooldownSeconds: number;
-  /** authoritative real/world seconds between global catastrophes */
+  /** base real/world seconds between global catastrophes — each strike rolls
+   * its follow-up gap as 1×, 5×, or 24× this base (see selectCatastropheGap) */
   catastropheIntervalSeconds: number;
   /** countdown threshold announced to every connected viewer */
   catastropheWarningSeconds: number;
   /** how long the synchronized aftermath state remains active */
   catastropheDurationSeconds: number;
+  /** share of a node's capacity that regrows each dawn — forests, shoals,
+   * herds. The land breathes back; only the pace is law. */
+  nodeRegenOrganicShare: number;
+  /** share of a mineral node's capacity that seeps back each dawn — the
+   * earth's slow gift, so no age ever inherits a world already spent */
+  nodeRegenMineralShare: number;
 }
 
 export const DEFAULT_BALANCE: Balance = {
@@ -90,9 +97,15 @@ export const DEFAULT_BALANCE: Balance = {
   // a flotilla launched together rings once; a renewed assault two minutes
   // later is news again
   attackAlertCooldownSeconds: 120,
-  // one global event every real hour, with a five-minute warning. The
-  // effects land once at the start; the aftermath is presentation/sync state.
+  // the base gap is one real hour, with a five-minute warning; each strike
+  // rolls the NEXT gap as one, five, or twenty-four base intervals — the
+  // world keeps no schedule. Effects land once at the start; the aftermath
+  // is presentation/sync state.
   catastropheIntervalSeconds: 60 * 60,
   catastropheWarningSeconds: 5 * 60,
   catastropheDurationSeconds: 45,
+  // a wood node (500 cap) is whole again in ~13 island days; an ore vein in
+  // ~50. Faster than the volcano takes, slower than a settler gathers.
+  nodeRegenOrganicShare: 0.08,
+  nodeRegenMineralShare: 0.02,
 };
