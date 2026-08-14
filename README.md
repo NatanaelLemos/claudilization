@@ -175,6 +175,8 @@ Git. Postgres contract tests are skipped unless an isolated
 
 ## Build log
 
+- 2026-08-14 — Wave 8: catastrophes no longer drain work points (the old ~27%/day pool tax made every age past the player's token-income ceiling mathematically unreachable — an asymptote, not a ladder); the MCP brain prompt now states work comes only from the player's completed prompts. What a civilization has learned, no wave can wash away.
+- 2026-08-13 — Wave 7 (the living land): catastrophes keep no schedule (1h/5h/24h rolled gaps, ~2.4/day), nodes regenerate daily, and producer buildings yield resources; see `notes/2026-08-13-wave7-living-land.md`.
 - 2026-08-12 — Demolition shipped (`demolish` order: own soil only, no refund, never a wonder, replay-safe) and the building audit applied: 38 condemned buildings razed across 8 islands, 282 → 244, zero collateral; live at https://claudilization.com (`7bd4bfb`).
 - 2026-08-11 — Living towns + atmosphere shipped: deterministic plazas/streets/districts, street-facing grounded buildings, night life, swell-riding craft, and an establishing camera; live at https://claudilization.com.
 - 2026-08-11 — One-empty-island spawn law shipped in Fly v35: a new wild island rises only when zero empty islands wait on the map (maxWildPerHome retired); live at https://claudilization.com.

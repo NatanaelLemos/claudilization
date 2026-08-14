@@ -1725,7 +1725,6 @@ export class World {
       inhabitedIslands: 0,
       mapIslands: this.islandsMap.size,
       resourcesLost: 0,
-      workPointsLost: 0,
       reservesLost: 0,
       buildingsDamaged: 0,
       boatsDestroyed: 0,
@@ -1744,14 +1743,8 @@ export class World {
           island.stocks[resource as ResourceId] = Math.max(0, amount - lost);
           impact.resourcesLost += lost;
         }
-        if (island.workPoints > 0) {
-          const lost = Math.min(
-            island.workPoints,
-            island.workPoints * definition.workPointLossFraction,
-          );
-          island.workPoints = Math.max(0, island.workPoints - lost);
-          impact.workPointsLost += lost;
-        }
+        // Work points are untouchable: what a civilization has learned, no
+        // wave can wash away. Age progress survives every strike.
       }
 
       if (definition.nodeDepletionFraction) {
@@ -1815,12 +1808,10 @@ export class World {
 
       if (!inhabited) continue;
       const resourceLoss = impact.resourcesLost - before.resourcesLost;
-      const workLoss = impact.workPointsLost - before.workPointsLost;
       const buildingLoss = impact.buildingsDamaged - before.buildingsDamaged;
       const boatLoss = impact.boatsDestroyed - before.boatsDestroyed;
       const creationLoss = impact.creationsLost - before.creationsLost;
       const pieces = [`${Math.max(0, Math.round(resourceLoss))} materials lost`];
-      if (workLoss > 0) pieces.push(`${Math.round(workLoss)} work lost`);
       if (buildingLoss) pieces.push(`${buildingLoss} structures damaged`);
       if (boatLoss) pieces.push(`${boatLoss} vessels destroyed`);
       if (creationLoss) pieces.push(`${creationLoss} creations lost`);

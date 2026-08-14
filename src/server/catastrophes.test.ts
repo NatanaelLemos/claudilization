@@ -208,13 +208,13 @@ function addBuildings(island: Island, types: string[]): void {
 }
 
 describe("the four catastrophe laws", () => {
-  it("earthquakes remove stores and work while damaging widespread non-wonder buildings", () => {
+  it("earthquakes remove stores while damaging widespread non-wonder buildings — never work", () => {
     const { w, island } = prepared("earthquake");
     addBuildings(island, ["hut", "granary", "toolmaker", "campfire", "saturn-stones"]);
     const nodesBefore = island.nodes.reduce((sum, node) => sum + node.remaining, 0);
     w.tick(20);
     expect(island.stocks.food).toBeCloseTo(880);
-    expect(island.workPoints).toBeCloseTo(920);
+    expect(island.workPoints).toBe(1000);
     expect(island.buildings.filter((building) => building.stage === "construction")).toHaveLength(2);
     expect(island.buildings.find((building) => building.type === "saturn-stones")?.stage).toBe(
       "complete",
@@ -260,7 +260,7 @@ describe("the four catastrophe laws", () => {
     }));
     w.tick(20);
     expect(island.stocks.food).toBeCloseTo(750);
-    expect(island.workPoints).toBeCloseTo(800);
+    expect(island.workPoints).toBe(1000);
     expect(island.buildings.filter((building) => building.stage === "construction")).toHaveLength(2);
     expect(island.creations).toHaveLength(8);
   });

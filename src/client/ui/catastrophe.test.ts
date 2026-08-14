@@ -38,7 +38,6 @@ describe("the global catastrophe clock", () => {
           inhabitedIslands: 8,
           mapIslands: 12,
           resourcesLost: 4321.4,
-          workPointsLost: 900,
           reservesLost: 0,
           buildingsDamaged: 14,
           boatsDestroyed: 0,

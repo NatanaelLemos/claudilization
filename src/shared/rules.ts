@@ -147,7 +147,6 @@ export function gameRules() {
             {
               label: event.label,
               resourceLossFraction: event.resourceLossFraction,
-              workPointLossFraction: event.workPointLossFraction,
               nodeDepletionFraction: event.nodeDepletionFraction ?? 0,
               buildingDamageFraction: event.buildingDamageFraction ?? 0,
               buildingScope: event.buildingScope ?? null,
@@ -158,8 +157,9 @@ export function gameRules() {
         }),
       ),
       invariants: {
-        floors: "stocks, work, and node reserves never fall below zero",
-        protected: "wonders, settlers, ownership, home protection, ages, and daylight never change",
+        floors: "stocks and node reserves never fall below zero",
+        protected:
+          "work points, wonders, settlers, ownership, home protection, ages, and daylight never change — what a civilization has learned, no wave can wash away",
         lateJoin: "a civilization joining during aftermath participates at the next event",
       },
     },

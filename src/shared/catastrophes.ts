@@ -14,6 +14,10 @@ type CatastropheBuildingScope = "widespread" | "productive" | "coastal" | "path"
  * Server-owned catastrophe law. Adding another disaster is a catalog entry;
  * the scheduler, wire state, warning UI, persistence, and result accounting
  * do not need another branch.
+ *
+ * Work points are deliberately absent: what a civilization has learned, no
+ * wave can wash away. Catastrophes take stocks, ground, buildings, boats,
+ * and creations — never age progress.
  */
 export interface CatastropheDefinition {
   id: CatastropheId;
@@ -22,7 +26,6 @@ export interface CatastropheDefinition {
   startText: string;
   endText: string;
   resourceLossFraction: number;
-  workPointLossFraction: number;
   nodeDepletionFraction?: number;
   buildingDamageFraction?: number;
   buildingScope?: CatastropheBuildingScope;
@@ -40,7 +43,6 @@ const CATASTROPHE_CATALOG: readonly CatastropheDefinition[] = [
     startText: "The ocean floor convulses. An earthquake tears across every island!",
     endText: "The earthquake subsides. Repair crews move into the shattered streets.",
     resourceLossFraction: 0.12,
-    workPointLossFraction: 0.08,
     buildingDamageFraction: 0.35,
     buildingScope: "widespread",
     repairProgressFraction: 0.45,
@@ -52,7 +54,6 @@ const CATASTROPHE_CATALOG: readonly CatastropheDefinition[] = [
     startText: "Volcanoes erupt across the world. Lava and ash choke every horizon!",
     endText: "The eruptions quiet, leaving scorched ground and ash-heavy skies.",
     resourceLossFraction: 0.16,
-    workPointLossFraction: 0.1,
     nodeDepletionFraction: 0.12,
     buildingDamageFraction: 0.25,
     buildingScope: "productive",
@@ -65,7 +66,6 @@ const CATASTROPHE_CATALOG: readonly CatastropheDefinition[] = [
     startText: "A wall of water races around the globe. Every coast braces for impact!",
     endText: "The tsunami withdraws, leaving wrecked harbors and flooded stores.",
     resourceLossFraction: 0.18,
-    workPointLossFraction: 0.12,
     buildingDamageFraction: 1,
     buildingScope: "coastal",
     repairProgressFraction: 0.3,
@@ -78,7 +78,6 @@ const CATASTROPHE_CATALOG: readonly CatastropheDefinition[] = [
     startText: "Godzilla rises from the sea and rampages from island to island!",
     endText: "Godzilla vanishes beneath the waves. The rebuilding begins.",
     resourceLossFraction: 0.25,
-    workPointLossFraction: 0.2,
     buildingDamageFraction: 0.5,
     buildingScope: "path",
     repairProgressFraction: 0.15,
@@ -90,7 +89,6 @@ export interface CatastropheImpact {
   inhabitedIslands: number;
   mapIslands: number;
   resourcesLost: number;
-  workPointsLost: number;
   reservesLost: number;
   buildingsDamaged: number;
   boatsDestroyed: number;

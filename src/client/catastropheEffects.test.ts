@@ -20,7 +20,6 @@ function active(
       inhabitedIslands: 2,
       mapIslands: 3,
       resourcesLost: 100,
-      workPointsLost: 20,
       reservesLost: 0,
       buildingsDamaged: 4,
       boatsDestroyed: 1,
