@@ -9,10 +9,37 @@
  * at the agent reading it — state is inert, and the tests pin that.
  */
 import { CREATION_LIMITS, RESOURCE_IDS } from "./creations";
+import { MODEL_LIMITS } from "./voxel";
 import { DEFAULT_BALANCE } from "./balance";
 import { CATASTROPHE_IDS, catastropheDefinition } from "./catastrophes";
 import { ORDER_KINDS } from "./orders";
 import { PROTOCOL_VERSION } from "./protocol";
+import type { CreationModel } from "./types";
+
+/**
+ * The worked model: a hooded figure with a sash at the waist and a blade
+ * slung across its back, eleven layers tall on an 8×8 footprint. It is here to
+ * be read as much as copied — legs apart at the bottom, a torso that widens
+ * into shoulders, a head narrower than both, and one accent color used
+ * sparingly. That is the whole craft of the format.
+ */
+export const CREATION_MODEL_EXAMPLE: CreationModel = {
+  size: 8,
+  palette: ["#1a1a2e", "#e94560", "#c9d1d9"],
+  layers: [
+    ["........", "........", "........", "..0..0..", "..0..0..", "........", "........", "........"],
+    ["........", "........", "........", "..0..0..", "..0..0..", "........", "........", "........"],
+    ["........", "........", "........", "..0..0..", "..0..0..", "........", "........", "........"],
+    ["........", "........", "........", "..0..0..", "..0..0..", "........", "........", "........"],
+    ["........", "........", "........", "..0000..", "..0000..", "......0.", "........", "........"],
+    ["........", "........", "........", "..1111..", "..1111..", "......2.", "........", "........"],
+    ["........", "........", "........", ".000000.", ".000000.", "......2.", "........", "........"],
+    ["........", "........", "........", ".000000.", ".000000.", "......2.", "........", "........"],
+    ["........", "........", "........", "...00...", "...00...", "......2.", "........", "........"],
+    ["........", "........", "........", "...11...", "...00...", "......2.", "........", "........"],
+    ["........", "........", "........", "...00...", "...00...", "......2.", "........", "........"],
+  ],
+};
 
 /**
  * A complete, valid create order — the worked example. rules.test.ts proves
@@ -23,20 +50,7 @@ export const CREATION_EXAMPLE = {
   creation: {
     name: "Moonlit Ninjas",
     description: "silent blades sworn to the crescent moon",
-    sprite: {
-      size: 8,
-      palette: ["#1a1a2e", "#e94560"],
-      pixels: [
-        "..00....",
-        ".0110...",
-        "..00....",
-        ".0000...",
-        "0.00.0..",
-        "..00....",
-        ".0..0...",
-        "0....0..",
-      ],
-    },
+    model: CREATION_MODEL_EXAMPLE,
     stats: { power: 7, speed: 5, resilience: 3 },
     verbs: ["raid", "patrol"],
     count: 4,
@@ -85,18 +99,30 @@ export function gameRules() {
     },
     creations: {
       summary:
-        "an island may invent any unit — ninjas, dragons, golems, siege engines — " +
-        "as pure data; the design is validated, priced in resources, simulated, " +
-        "and rendered by the game",
+        "an island may invent any unit or object — ninjas, dragons, golems, statues, " +
+        "siege engines — as pure data; the design is validated, priced in resources, " +
+        "simulated, and built by the game as a 3D voxel solid that stands on the " +
+        "island, turns to face where it walks, and casts a shadow",
       design: {
         name: `1-${L.nameMaxChars} characters: letters, numbers, spaces, and .,'!- only`,
         description: `plain prose, up to ${L.descriptionMaxChars} characters, optional`,
-        sprite: {
-          size: `integer ${L.spriteMinSize}-${L.spriteMaxSize}`,
-          palette: `1-${L.spriteMaxPalette} "#rrggbb" colors`,
-          pixels:
-            'exactly size rows of exactly size characters each — "." for ' +
-            "transparent or a palette index digit",
+        model: {
+          about:
+            "the 3D asset: a stack of voxel layers, bottom to top. There is no " +
+            "other art format — flat sprites from older clients are accepted for " +
+            "compatibility alone and are carved into relief on arrival",
+          size: `integer ${MODEL_LIMITS.minSize}-${MODEL_LIMITS.maxSize} — voxels per side of the footprint (X and Z)`,
+          palette: `1-${MODEL_LIMITS.maxPalette} "#rrggbb" colors`,
+          layers:
+            `${MODEL_LIMITS.minHeight}-${MODEL_LIMITS.maxHeight} layers, index 0 at the ground. ` +
+            "Each layer is exactly size rows (north to south) of exactly size " +
+            'characters (west to east): "." for empty or a palette index digit',
+          budget: `${MODEL_LIMITS.minVoxels}-${MODEL_LIMITS.maxVoxels} solid voxels in total`,
+          craft:
+            "the model is fitted so its longest side is about 3 world units — a " +
+            "little taller than a settler. Shape a readable silhouette layer by " +
+            "layer (feet apart, torso, narrower head), keep one accent color for " +
+            "trim, and leave the grid's edges empty rather than filling the box",
         },
         stats: {
           power: `integer ${L.statMin}-${L.statMax}`,

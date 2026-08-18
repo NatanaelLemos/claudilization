@@ -222,8 +222,10 @@ export interface Island {
 }
 
 // ── player-invented creations ──────────────────────────────────────────────
-// A creation is data, never code: name + pixel sprite + clamped stats +
-// behaviors from a closed verb list. See shared/creations.ts for the gate.
+// A creation is data, never code: name + a 3D voxel model + clamped stats +
+// behaviors from a closed verb list. See shared/creations.ts for the gate and
+// shared/voxel.ts for the asset format. Flat sprites are legacy: they are
+// carved into relief at the gate, so everything in the world is a solid.
 
 export type CreationVerb = "guard" | "patrol" | "perform" | "gather" | "raid";
 
@@ -236,6 +238,7 @@ export interface CreationStats {
   resilience: number;
 }
 
+/** Legacy flat art. Accepted at the gate, stored only as carved relief. */
 export interface CreationSprite {
   /** pixels per side, 8–16 */
   size: number;
@@ -245,11 +248,27 @@ export interface CreationSprite {
   pixels: string[];
 }
 
+/** The 3D asset: a stack of voxel layers, bottom to top. See shared/voxel.ts. */
+export interface CreationModel {
+  /** voxels per side of the footprint, 4–16 */
+  size: number;
+  /** up to 8 #rrggbb colors */
+  palette: string[];
+  /**
+   * bottom-to-top layers; each layer is `size` rows (north→south) of `size`
+   * characters (west→east): "." empty, digits index the palette
+   */
+  layers: string[][];
+}
+
 /** What a player's Claude submits — the untrusted definition. */
 export interface CreationInput {
   name: string;
   description: string;
-  sprite: CreationSprite;
+  /** the 3D asset — always present once the design has passed the gate */
+  model: CreationModel;
+  /** what the player sent, when they sent legacy flat art */
+  sprite?: CreationSprite;
   stats: CreationStats;
   verbs: CreationVerb[];
   gathers?: ResourceId;
@@ -261,7 +280,10 @@ export interface CreationSpec {
   id: string;
   name: string;
   description: string;
-  sprite: CreationSprite;
+  /** the 3D asset every unit of this design is built from */
+  model: CreationModel;
+  /** kept on designs born before the world went solid; never rendered flat */
+  sprite?: CreationSprite;
   stats: CreationStats;
   verbs: CreationVerb[];
   gathers?: ResourceId;

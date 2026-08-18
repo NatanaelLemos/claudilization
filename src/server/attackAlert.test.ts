@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { CREATION_MODEL_EXAMPLE } from "../shared/rules";
 import type { CreationInput, GameEvent, Order } from "../shared/types";
 import { World } from "./world";
 
@@ -18,14 +19,7 @@ function raiders(over: Partial<CreationInput> = {}): Order {
     creation: {
       name: "Moon Ninjas",
       description: "silent blades of the night",
-      sprite: {
-        size: 8,
-        palette: ["#1a1a2e", "#e94560"],
-        pixels: [
-          "..00....", ".0110...", "..00....", ".0000...",
-          "0.00.0..", "..00....", ".0..0...", "0....0..",
-        ],
-      },
+      model: CREATION_MODEL_EXAMPLE,
       stats: { power: 7, speed: 5, resilience: 3 },
       verbs: ["raid", "patrol"],
       count: 4,

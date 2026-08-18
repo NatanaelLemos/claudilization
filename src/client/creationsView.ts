@@ -1,20 +1,29 @@
 import * as THREE from "three";
 import { drawableSprite } from "../shared/creations";
+import { drawableModel, modelFromSprite } from "../shared/voxel";
 import { hashString } from "../shared/rng";
-import type { CreationSprite, Vec2 } from "../shared/types";
+import type { CreationModel, CreationSprite, Vec2 } from "../shared/types";
+import { ART_DIRECTION, CLAY_PALETTE, clayMaterial } from "./artDirection";
+import { buildModel, type BuiltModel } from "./voxelMesh";
 
 /**
- * Player-invented creations on screen. Every creation is pixel-art DATA from
- * the closed vocabulary — never markup, never a URL — re-validated here with
- * `drawableSprite` because it arrives over the wire from a public server.
- * Valid sprites become nearest-filtered canvas textures on billboards; anything
- * off becomes a plain placeholder swatch instead of a crash.
+ * Player-invented creations on screen — as solid as anything else on the
+ * island. Every creation is DATA from the closed vocabulary — never markup,
+ * never a URL — re-validated here with `drawableModel` because it arrives over
+ * the wire from a public server. A valid model becomes greedy-meshed clay
+ * geometry that stands on the ground, turns to face where it is going, casts a
+ * shadow, and rests on a soft contact blob like every settler does. A design
+ * from before the world went solid is carved out of its old flat art on the
+ * spot; anything unreadable becomes a plain clay marker instead of a crash.
  */
 
 export interface CreationSpecView {
   id: string;
   name: string;
-  sprite: CreationSprite;
+  /** the 3D asset — designs are immutable, so it arrives once and is cached */
+  model?: CreationModel;
+  /** legacy flat art from a save older than the format */
+  sprite?: CreationSprite;
 }
 
 export interface CreationUnitView {
@@ -35,90 +44,102 @@ export interface CreationBandView {
   intent?: string;
 }
 
-/**
- * Pixel rows → per-row runs of same-colored pixels (pure, testable): the
- * painter draws one rect per run instead of one per pixel.
- */
-export function spriteRuns(
-  sprite: CreationSprite,
-): { x: number; y: number; w: number; color: string }[] {
-  const ok = drawableSprite(sprite);
-  if (!ok) return [];
-  const runs: { x: number; y: number; w: number; color: string }[] = [];
-  ok.pixels.forEach((row, y) => {
-    let x = 0;
-    while (x < row.length) {
-      const ch = row[x]!;
-      if (ch === ".") {
-        x++;
-        continue;
-      }
-      let w = 1;
-      while (x + w < row.length && row[x + w] === ch) w++;
-      runs.push({ x, y, w, color: ok.palette[Number(ch)]! });
-      x += w;
-    }
-  });
-  return runs;
+// ── geometry: one build per design, cached — specs are immutable ────────────
+
+const SPAN = ART_DIRECTION.sprites.creationScale; // world units on the long side
+
+const builds = new Map<string, BuiltModel | null>();
+
+/** The clay every creation is finished in; the model's own palette rides in
+ * the vertex colors, so one material serves the whole ocean. */
+const creationMaterial = clayMaterial({ color: "#ffffff", vertexColors: true });
+
+const markerGeo = new THREE.BoxGeometry(SPAN * 0.5, SPAN * 0.5, SPAN * 0.5);
+const markerMat = clayMaterial({ color: "#b9a389" });
+
+const blobGeo = new THREE.CircleGeometry(1, 12).rotateX(-Math.PI / 2);
+const blobMat = new THREE.MeshBasicMaterial({
+  color: "#33261c",
+  transparent: true,
+  opacity: 0.24,
+  depthWrite: false,
+  polygonOffset: true,
+  polygonOffsetFactor: -2,
+});
+
+const raftGeo = new THREE.BoxGeometry(SPAN * 0.9, SPAN * 0.14, SPAN * 0.7);
+const raftMat = clayMaterial({ color: CLAY_PALETTE.woodDark });
+
+/** The model a design is built from — carving legacy flat art if that is all
+ * this design ever had. Never trusts the wire: both paths re-validate. */
+export function modelOf(spec: CreationSpecView): CreationModel | null {
+  const model = drawableModel(spec.model);
+  if (model) return model;
+  const sprite = drawableSprite(spec.sprite);
+  return sprite ? modelFromSprite(sprite) : null;
 }
 
-// ── textures: one per design, cached — specs are immutable once created ────
-
-const textures = new Map<string, THREE.Texture | null>();
-
-function specTexture(spec: CreationSpecView): THREE.Texture | null {
-  const cached = textures.get(spec.id);
+function specBuild(spec: CreationSpecView): BuiltModel | null {
+  const cached = builds.get(spec.id);
   if (cached !== undefined) return cached;
-  let texture: THREE.Texture | null = null;
-  if (typeof document !== "undefined") {
-    const runs = spriteRuns(spec.sprite);
-    if (runs.length) {
-      const canvas = document.createElement("canvas");
-      canvas.width = spec.sprite.size;
-      canvas.height = spec.sprite.size;
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        for (const r of runs) {
-          ctx.fillStyle = r.color;
-          ctx.fillRect(r.x, r.y, r.w, 1);
-        }
-        texture = new THREE.CanvasTexture(canvas);
-        texture.magFilter = THREE.NearestFilter;
-        texture.minFilter = THREE.NearestFilter;
-        texture.colorSpace = THREE.SRGBColorSpace;
-      }
-    }
-  }
-  textures.set(spec.id, texture);
-  return texture;
+  const model = modelOf(spec);
+  const built = model ? buildModel(model, SPAN) : null;
+  builds.set(spec.id, built);
+  return built;
 }
 
 /** Cross-island design registry: colony garrisons and bands at sea reference
  * specs that live on the ruler's home island, which arrives in the same world
- * frame — every summary's specs land here first. */
+ * frame — every summary's specs land here first. A later frame may carry only
+ * the design's id (models travel once), so a known model is never forgotten. */
 const specIndex = new Map<string, CreationSpecView>();
 
 export function registerCreationSpecs(specs: CreationSpecView[] | undefined): void {
-  for (const s of specs ?? []) specIndex.set(s.id, s);
+  for (const s of specs ?? []) {
+    const known = specIndex.get(s.id);
+    specIndex.set(s.id, {
+      ...s,
+      model: s.model ?? known?.model,
+      sprite: s.sprite ?? known?.sprite,
+    });
+  }
 }
 
-function materialFor(specId: string): THREE.SpriteMaterial {
+interface CreationPiece {
+  root: THREE.Group;
+  height: number;
+}
+
+/** One creation, assembled: the clay body plus its contact shadow. */
+function makePiece(specId: string, scale = 1): CreationPiece {
+  const root = new THREE.Group();
   const spec = specIndex.get(specId);
-  const texture = spec ? specTexture(spec) : null;
-  return texture
-    ? new THREE.SpriteMaterial({ map: texture, transparent: true })
-    : new THREE.SpriteMaterial({ color: "#b9a389" });
+  const built = spec ? specBuild(spec) : null;
+  const body = built
+    ? new THREE.Mesh(built.geometry, creationMaterial)
+    : new THREE.Mesh(markerGeo, markerMat);
+  body.castShadow = true;
+  body.receiveShadow = true;
+  root.add(body);
+  const blob = new THREE.Mesh(blobGeo, blobMat);
+  const radius = (built?.radius ?? SPAN * 0.3) * 1.15;
+  blob.scale.set(radius, 1, radius);
+  blob.position.y = 0.02;
+  root.add(blob);
+  root.scale.setScalar(scale);
+  return { root, height: (built?.height ?? SPAN * 0.5) * scale };
 }
 
-// ── land units: billboards that glide between server positions and bob ─────
+// ── land units: clay figures that walk between their server positions ───────
 
 interface UnitAnim {
-  sprite: THREE.Sprite;
+  piece: CreationPiece;
   x: number;
   z: number;
   targetX: number;
   targetZ: number;
   phase: number;
+  yaw: number;
 }
 
 interface ViewState {
@@ -131,7 +152,7 @@ interface ViewState {
 const views = new Map<THREE.Group, ViewState>();
 
 const GLIDE = 2.5; // island units per second toward the server's position
-const SIZE = 3.4; // world units per billboard side
+const TURN = 4.5; // radians per second a creation swings around to its heading
 
 /** The island's creations — called on every island pulse and summary. */
 export function updateCreations(
@@ -147,6 +168,8 @@ export function updateCreations(
     view = { units: new Map(), heightAt, half, time: 0 };
     views.set(holder, view);
   }
+  view.heightAt = heightAt;
+  view.half = half;
   const alive = new Set<string>();
   for (const u of units ?? []) {
     alive.add(u.id);
@@ -156,27 +179,26 @@ export function updateCreations(
       existing.targetZ = u.pos.y;
       continue;
     }
-    const sprite = new THREE.Sprite(materialFor(u.specId));
-    sprite.scale.set(SIZE, SIZE, 1);
-    holder.add(sprite);
+    const piece = makePiece(u.specId);
+    holder.add(piece.root);
     view.units.set(u.id, {
-      sprite,
+      piece,
       x: u.pos.x,
       z: u.pos.y,
       targetX: u.pos.x,
       targetZ: u.pos.y,
       phase: hashString(u.id) % 7,
+      yaw: ((hashString(u.id) % 628) / 100) - Math.PI,
     });
   }
   for (const [id, anim] of [...view.units]) {
     if (alive.has(id)) continue;
-    holder.remove(anim.sprite);
-    anim.sprite.material.dispose();
+    holder.remove(anim.piece.root);
     view.units.delete(id);
   }
 }
 
-/** Advance every creation one frame: glide toward its post, bob gently. */
+/** Advance every creation one frame: walk toward its post, turn, breathe. */
 export function tickCreations(dt: number): void {
   for (const view of views.values()) {
     view.time += dt;
@@ -184,18 +206,27 @@ export function tickCreations(dt: number): void {
       const dx = anim.targetX - anim.x;
       const dz = anim.targetZ - anim.z;
       const dist = Math.hypot(dx, dz);
+      let moving = false;
       if (dist > 0.02) {
         const step = Math.min(1, (GLIDE * dt * Math.max(1, dist * 0.4)) / dist);
         anim.x += dx * step;
         anim.z += dz * step;
+        moving = true;
+        // face the way it walks, the short way around
+        const want = Math.atan2(dx, dz);
+        let turn = want - anim.yaw;
+        while (turn > Math.PI) turn -= Math.PI * 2;
+        while (turn < -Math.PI) turn += Math.PI * 2;
+        anim.yaw += Math.max(-TURN * dt, Math.min(TURN * dt, turn));
       }
       const ground = Math.max(0.1, view.heightAt(anim.x, anim.z));
-      const bob = Math.sin(view.time * 2.2 + anim.phase) * 0.12;
-      anim.sprite.position.set(
-        anim.x - view.half,
-        ground + SIZE / 2 + 0.4 + bob,
-        anim.z - view.half,
-      );
+      // standing creations breathe in place; walking ones ride their stride
+      const bob = moving
+        ? Math.abs(Math.sin(view.time * 5 + anim.phase)) * 0.09
+        : Math.sin(view.time * 1.6 + anim.phase) * 0.03;
+      const root = anim.piece.root;
+      root.position.set(anim.x - view.half, ground + bob, anim.z - view.half);
+      root.rotation.y = anim.yaw;
     }
   }
 }
@@ -209,15 +240,21 @@ export function updateCreationBands(
 ): void {
   holder.clear();
   for (const band of bands ?? []) {
-    const sprite = new THREE.Sprite(materialFor(band.specId));
     const count = Array.isArray(band.units)
       ? band.units.length
       : typeof band.units === "number"
         ? band.units
         : 1;
-    const grow = Math.min(1.6, 1 + count * 0.08);
-    sprite.scale.set(SIZE * grow, SIZE * grow, 1);
-    sprite.position.set(band.pos.x, SIZE / 2 + 0.6, band.pos.y);
-    holder.add(sprite);
+    const grow = Math.min(1.5, 0.9 + count * 0.07);
+    const piece = makePiece(band.specId, grow);
+    // a raft under their feet, so a band reads as crossing water, not walking on it
+    const raft = new THREE.Mesh(raftGeo, raftMat);
+    raft.scale.setScalar(grow);
+    raft.position.y = -SPAN * 0.05 * grow;
+    raft.receiveShadow = true;
+    piece.root.add(raft);
+    piece.root.position.set(band.pos.x, 0.25, band.pos.y);
+    piece.root.rotation.y = (hashString(band.id) % 628) / 100;
+    holder.add(piece.root);
   }
 }

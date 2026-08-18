@@ -22,7 +22,19 @@ const hookEntry = {
   hooks: [{ type: "command", command: hookCommand }],
 };
 
-if (process.argv.includes("--write")) {
+/** Write just the /claudilization command — what a self-update calls to keep
+ * the player's own copy in step with the app, touching nothing else. */
+function writeSkillFile(): string {
+  const skillFile = join(homedir(), ".claude", "skills", "claudilization", "SKILL.md");
+  mkdirSync(dirname(skillFile), { recursive: true, mode: 0o700 });
+  writeFileSync(skillFile, claudilizationSkill(), { mode: 0o600 });
+  chmodSync(skillFile, 0o600);
+  return skillFile;
+}
+
+if (process.argv.includes("--skill-only")) {
+  console.log(`✔ /claudilization command refreshed at ${writeSkillFile()}`);
+} else if (process.argv.includes("--write")) {
   const settingsPath = join(homedir(), ".claude", "settings.json");
   mkdirSync(dirname(settingsPath), { recursive: true, mode: 0o700 });
   const settings = existsSync(settingsPath)
@@ -42,11 +54,7 @@ if (process.argv.includes("--write")) {
     console.log(`✔ Stop hook already installed`);
   }
   if (existsSync(settingsPath)) chmodSync(settingsPath, 0o600);
-  const skillFile = join(homedir(), ".claude", "skills", "claudilization", "SKILL.md");
-  mkdirSync(dirname(skillFile), { recursive: true, mode: 0o700 });
-  writeFileSync(skillFile, claudilizationSkill(), { mode: 0o600 });
-  chmodSync(skillFile, 0o600);
-  console.log(`✔ /claudilization command installed at ${skillFile}`);
+  console.log(`✔ /claudilization command installed at ${writeSkillFile()}`);
   console.log(`\nNow add the MCP server to Claude Code:`);
   console.log(`  claude mcp add claudilization -- npx tsx ${join(repo, "src/mcp/server.ts")}`);
 } else {

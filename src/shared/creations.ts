@@ -1,15 +1,20 @@
 /**
  * Player-invented creations — the "create whatever you want" layer.
  *
- * A creation is DATA, never code: a name, a pixel-art sprite, clamped stats,
- * and behaviors picked from a closed verb list. The player's own Claude
- * composes the definition; this module is the single gate every definition
- * passes through — schema, sanitization, and budget clamping — on the MCP
- * client, the API boundary, and durable-log replay alike. The server's
- * deterministic simulation interprets the verbs; nothing user-supplied is
- * ever executed.
+ * A creation is DATA, never code: a name, a 3D voxel model, clamped stats, and
+ * behaviors picked from a closed verb list. The player's own Claude composes
+ * the definition; this module is the single gate every definition passes
+ * through — schema, sanitization, and budget clamping — on the MCP client, the
+ * API boundary, and durable-log replay alike. The server's deterministic
+ * simulation interprets the verbs; nothing user-supplied is ever executed.
+ *
+ * Every asset in this world is a solid. A design may still arrive as legacy
+ * flat pixel art from an install that predates the format; the gate carves it
+ * into relief on the way through (see shared/voxel.ts), so nothing downstream
+ * — server, save, or renderer — ever has to deal with a picture again.
  */
 import { z } from "zod";
+import { CreationModelSchema, modelFromSprite } from "./voxel";
 import type {
   CreationInput,
   CreationSpec,
@@ -103,7 +108,24 @@ const StatSchema = z
   .min(CREATION_LIMITS.statMin)
   .max(CREATION_LIMITS.statMax);
 
-export const CreationInputSchema = z
+/** Legacy flat art, shape only — the deep checks run in the refinement below. */
+const LegacySpriteSchema = z.object({
+  size: z
+    .number()
+    .int()
+    .min(CREATION_LIMITS.spriteMinSize)
+    .max(CREATION_LIMITS.spriteMaxSize),
+  palette: z
+    .array(z.string().regex(HEX_COLOR_RE, "palette colors are #rrggbb"))
+    .min(1)
+    .max(CREATION_LIMITS.spriteMaxPalette),
+  pixels: z
+    .array(z.string().max(CREATION_LIMITS.spriteMaxSize))
+    .min(CREATION_LIMITS.spriteMinSize)
+    .max(CREATION_LIMITS.spriteMaxSize),
+});
+
+const CreationInputShape = z
   .object({
     name: z.string().trim().min(1).max(CREATION_LIMITS.nameMaxChars),
     description: z
@@ -112,21 +134,10 @@ export const CreationInputSchema = z
       .max(CREATION_LIMITS.descriptionMaxChars)
       .optional()
       .default(""),
-    sprite: z.object({
-      size: z
-        .number()
-        .int()
-        .min(CREATION_LIMITS.spriteMinSize)
-        .max(CREATION_LIMITS.spriteMaxSize),
-      palette: z
-        .array(z.string().regex(HEX_COLOR_RE, "palette colors are #rrggbb"))
-        .min(1)
-        .max(CREATION_LIMITS.spriteMaxPalette),
-      pixels: z
-        .array(z.string().max(CREATION_LIMITS.spriteMaxSize))
-        .min(CREATION_LIMITS.spriteMinSize)
-        .max(CREATION_LIMITS.spriteMaxSize),
-    }),
+    /** the 3D asset — the only art a new design should ever send */
+    model: CreationModelSchema.optional(),
+    /** legacy flat art from an install older than the format; carved on entry */
+    sprite: LegacySpriteSchema.optional(),
     stats: z.object({
       power: StatSchema,
       speed: StatSchema,
@@ -152,34 +163,47 @@ export const CreationInputSchema = z
         message: "descriptions are plain prose — no markup, links, or scripts",
       });
     }
-    if (c.sprite.pixels.length !== c.sprite.size) {
+    if (!c.model && !c.sprite) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["sprite", "pixels"],
-        message: `the sprite is ${c.sprite.size}×${c.sprite.size} — exactly ${c.sprite.size} rows`,
+        path: ["model"],
+        message:
+          "a creation needs a `model`: the 3D asset — { size, palette, layers }, " +
+          "layers stacked bottom to top, each layer size rows of size characters",
       });
     }
-    const rowRe = new RegExp(`^[.0-7]{${c.sprite.size}}$`);
-    c.sprite.pixels.forEach((row, i) => {
-      if (!rowRe.test(row)) {
+    // legacy flat art is checked in full only when it is the art we will carve
+    if (!c.model && c.sprite) {
+      const sprite = c.sprite;
+      if (sprite.pixels.length !== sprite.size) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          path: ["sprite", "pixels", i],
-          message: `row ${i} must be ${c.sprite.size} characters of "." or palette digits`,
+          path: ["sprite", "pixels"],
+          message: `the sprite is ${sprite.size}×${sprite.size} — exactly ${sprite.size} rows`,
         });
-        return;
       }
-      for (const ch of row) {
-        if (ch !== "." && Number(ch) >= c.sprite.palette.length) {
+      const rowRe = new RegExp(`^[.0-7]{${sprite.size}}$`);
+      sprite.pixels.forEach((row, i) => {
+        if (!rowRe.test(row)) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ["sprite", "pixels", i],
-            message: `row ${i} uses palette index ${ch} but the palette has ${c.sprite.palette.length} colors`,
+            message: `row ${i} must be ${sprite.size} characters of "." or palette digits`,
           });
           return;
         }
-      }
-    });
+        for (const ch of row) {
+          if (ch !== "." && Number(ch) >= sprite.palette.length) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["sprite", "pixels", i],
+              message: `row ${i} uses palette index ${ch} but the palette has ${sprite.palette.length} colors`,
+            });
+            return;
+          }
+        }
+      });
+    }
     const sum = c.stats.power + c.stats.speed + c.stats.resilience;
     if (sum > CREATION_LIMITS.statBudget) {
       ctx.addIssue({
@@ -210,6 +234,16 @@ export const CreationInputSchema = z
       });
     }
   });
+
+/**
+ * The one gate. What comes out the far side always carries a `model`: the
+ * world holds solids only, so legacy flat art is carved into relief here and
+ * the picture is left behind at the door.
+ */
+export const CreationInputSchema = CreationInputShape.transform((c) => {
+  const { sprite, ...rest } = c;
+  return { ...rest, model: c.model ?? modelFromSprite(sprite!) };
+});
 
 /** Validate one untrusted creation definition. Throws with informative issues. */
 export function parseCreationInput(input: unknown): CreationInput {

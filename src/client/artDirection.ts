@@ -39,7 +39,9 @@ export const ART_DIRECTION = {
   sprites: {
     settlerHeight: 1.72,
     headScale: 1.18,
-    creationScale: 3.2,
+    /** the world size a creation's longest side is fitted to: taller than a
+     * settler, shorter than a hut's ridge — a solid that belongs in the town */
+    creationScale: 2.4,
     motionHz: { normal: 30, dense: 15 },
   },
   density: {

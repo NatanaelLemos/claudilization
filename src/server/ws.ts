@@ -31,10 +31,41 @@ interface ClientState {
   subscribed: Set<string>;
   secret?: string;
   islandId?: string;
+  /** designs this connection has already been handed the 3D model for */
+  knownSpecs: Set<string>;
+}
+
+/**
+ * A design is immutable once invented, and its model is the heaviest thing on
+ * the wire — a solid, not a 16×16 picture. So a connection is handed the full
+ * model the first time a design appears and only its name afterwards; the
+ * client caches designs by id for the life of the page. Two summary arrays are
+ * built per tick (full and lean) and shared by every viewer, so the saving
+ * costs nothing in server work.
+ */
+export function summarySpecs(
+  island: Island,
+  lean: boolean,
+): { id: string; name: string; model?: unknown }[] {
+  return (island.creationSpecs ?? []).map((s) =>
+    lean ? { id: s.id, name: s.name } : { id: s.id, name: s.name, model: s.model },
+  );
+}
+
+/**
+ * The specs on a full island frame carry the whole design — the happiness
+ * readout reads their verbs — so only the art is withheld, and only once the
+ * viewer has it. Legacy flat art never travels: the world renders solids.
+ */
+export function islandSpecs(island: Island, lean: boolean): Record<string, unknown>[] {
+  return (island.creationSpecs ?? []).map((s) => {
+    const { sprite: _legacy, model, ...rest } = s;
+    return lean ? { ...rest } : { ...rest, model };
+  });
 }
 
 /** Lightweight island summary every viewer gets for the whole ocean. */
-function summary(island: Island, world: World) {
+function summary(island: Island, world: World, lean = false) {
   return {
     id: island.id,
     name: island.name,
@@ -74,12 +105,8 @@ function summary(island: Island, world: World) {
       intent: b.intent,
     })),
     // player-invented creations are part of the visible world too: the specs
-    // carry the pixel-art the client draws, the units and bands carry positions
-    creationSpecs: (island.creationSpecs ?? []).map((s) => ({
-      id: s.id,
-      name: s.name,
-      sprite: s.sprite,
-    })),
+    // carry the 3D model the client builds, the units and bands carry positions
+    creationSpecs: summarySpecs(island, lean),
     creations: (island.creations ?? []).map((u) => ({
       id: u.id,
       specId: u.specId,
@@ -128,8 +155,9 @@ export class Hub {
    * as a client: greet it with the world, then run the shared protocol.
    */
   attachSocket(socket: HubSocket): void {
-    const client: ClientState = { socket, subscribed: new Set() };
+    const client: ClientState = { socket, subscribed: new Set(), knownSpecs: new Set() };
     this.clients.add(client);
+    const islands = this.world.islands();
     this.send(client, {
       type: "world",
       // the world's own clock: the sky is read from this, never from any one
@@ -138,8 +166,10 @@ export class Hub {
       daySeconds: this.balance.daySeconds,
       daylightShare: this.balance.daylightShare,
       catastrophe: this.world.catastrophe,
-      islands: this.world.islands().map((i) => summary(i, this.world)),
+      // a fresh connection knows no designs: it gets every model in full, once
+      islands: islands.map((i) => summary(i, this.world)),
     });
+    this.learnSpecs(client, islands);
     socket.on("message", (raw: unknown) => {
       try {
         this.onMessage(client, JSON.parse(String(raw)));
@@ -190,7 +220,7 @@ export class Hub {
         if (client.islandId) client.subscribed.add(client.islandId);
         for (const id of client.subscribed) {
           const island = this.world.island(id);
-          if (island) this.send(client, { type: "island", island });
+          if (island) this.sendIsland(client, island);
         }
         break;
       }
@@ -215,22 +245,56 @@ export class Hub {
   /** Called every sim tick: summaries + subscribed islands + events. */
   broadcastTick(events: GameEvent[]): void {
     const islands = this.world.islands();
-    const summaries = islands.map((i) => summary(i, this.world));
+    // built once and shared: the heavy array carries every 3D model, the lean
+    // one only design ids — a viewer gets the heavy one only when something
+    // was invented that it has never seen
+    const withModels = islands.map((i) => summary(i, this.world));
+    const lean = islands.map((i) => summary(i, this.world, true));
     for (const client of this.clients) {
+      const knowsAll = this.knowsEverySpec(client, islands);
       this.send(client, {
         type: "world",
         time: this.world.time,
         daySeconds: this.balance.daySeconds,
         daylightShare: this.balance.daylightShare,
         catastrophe: this.world.catastrophe,
-        islands: summaries,
+        islands: knowsAll ? lean : withModels,
       });
+      if (!knowsAll) this.learnSpecs(client, islands);
       for (const id of client.subscribed) {
         const island = this.world.island(id);
-        if (island) this.send(client, { type: "island", island });
+        if (island) this.sendIsland(client, island);
       }
       this.sendEvents(client, events);
     }
+  }
+
+  /** Has this connection already been handed every design in the ocean? */
+  private knowsEverySpec(client: ClientState, islands: Island[]): boolean {
+    for (const island of islands)
+      for (const spec of island.creationSpecs ?? [])
+        if (!client.knownSpecs.has(spec.id)) return false;
+    return true;
+  }
+
+  private learnSpecs(client: ClientState, islands: Island[]): void {
+    for (const island of islands)
+      for (const spec of island.creationSpecs ?? []) client.knownSpecs.add(spec.id);
+  }
+
+  /** The full island a subscriber watches — models only on first sight. */
+  private sendIsland(client: ClientState, island: Island): void {
+    const specs = island.creationSpecs ?? [];
+    if (!specs.length) {
+      this.send(client, { type: "island", island });
+      return;
+    }
+    const known = specs.every((s) => client.knownSpecs.has(s.id));
+    for (const s of specs) client.knownSpecs.add(s.id);
+    this.send(client, {
+      type: "island",
+      island: { ...island, creationSpecs: islandSpecs(island, known) },
+    });
   }
 
   /** Immediate fan-out (pulse echoes must land well inside 10 s). */

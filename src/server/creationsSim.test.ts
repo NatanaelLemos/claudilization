@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { CREATION_LIMITS } from "../shared/creations";
 import { parseOrders } from "../shared/orders";
+import { CREATION_MODEL_EXAMPLE } from "../shared/rules";
 import type { CreationInput, Order } from "../shared/types";
 import { FileStore, Persistence } from "./persistence";
 import { World } from "./world";
@@ -13,14 +14,7 @@ function ninja(over: Partial<CreationInput> = {}): CreationInput {
   return {
     name: "Moon Ninjas",
     description: "silent blades of the night",
-    sprite: {
-      size: 8,
-      palette: ["#1a1a2e", "#e94560"],
-      pixels: [
-        "..00....", ".0110...", "..00....", ".0000...",
-        "0.00.0..", "..00....", ".0..0...", "0....0..",
-      ],
-    },
+    model: CREATION_MODEL_EXAMPLE,
     stats: { power: 7, speed: 5, resilience: 3 },
     verbs: ["raid", "patrol"],
     count: 4,

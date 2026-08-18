@@ -67,14 +67,20 @@ SHA-256 digest before extraction.
 ## Creations — invent anything
 
 Players can ask their Claude to create whatever they imagine — ninjas, dragons,
-golems, siege engines — and watch it live on their island. A creation is pure
-data, never code: a name, a pixel-art sprite, clamped stats, and behaviors
-picked from a closed verb list. Claude composes the design; the server
-validates, prices, and simulates it; the client renders the pixel art on the
-island and across the open sea.
+golems, statues, siege engines — and watch it live on their island. A creation
+is pure data, never code: a name, a **3D voxel model**, clamped stats, and
+behaviors picked from a closed verb list. Claude composes the design; the
+server validates, prices, and simulates it; the client builds it as greedy-
+meshed clay geometry that stands on the ground, turns to face where it walks,
+and casts a shadow like everything else in the diorama.
 
-- **Sprite**: 8–16 pixels per side, up to 8 `#rrggbb` colors, rows of `.`
-  (transparent) or palette digits. No SVG, no HTML, no URLs — ever.
+- **Model**: `size` 4–16 voxels per side of the footprint, `layers` 2–20 deep
+  stacked bottom to top, each layer exactly `size` rows of exactly `size`
+  characters (`.` empty or a palette digit), up to 8 `#rrggbb` colors and 2400
+  solid voxels. No mesh files, no SVG, no HTML, no URLs — ever.
+- **Legacy sprites**: designs from before the format are still accepted, and
+  are carved into relief on arrival (`modelFromSprite`). Nothing in this world
+  renders flat.
 - **Stats**: `power`, `speed`, `resilience`, each 1–10, sum capped at 15.
 - **Verbs** (up to 3): `guard` (defends double), `patrol` (defends, walks
   rounds), `perform` (radiates joy), `gather` (harvests a resource tirelessly),
@@ -93,8 +99,9 @@ island and across the open sea.
 Every string field passes a strict gate (length caps, plain-prose character
 sets, no markup, links, or control characters), the schema is enforced on the
 MCP client, the API boundary, and durable-log replay alike, and the renderer
-re-validates sprites off the wire. Worlds saved before creations existed load
-unchanged with zero creations.
+re-validates models off the wire. Designs are immutable, so a model crosses the
+wire once per viewer and is cached by design id. Worlds saved before creations
+existed load unchanged with zero creations.
 
 ## Privacy and trust model
 
@@ -175,6 +182,7 @@ Git. Postgres contract tests are skipped unless an isolated
 
 ## Build log
 
+- 2026-08-18 — Wave 9 (solid creations): every invented thing is a 3D voxel model, greedy-meshed into clay geometry that stands, turns, and casts a shadow; flat sprites are carved into relief at the gate and on load, so nothing renders 2D again; models cross the wire once per viewer and creations take posts on a spiral; the rulebook, `/claudilization`, and the self-update's skill refresh all teach the format. See `notes/2026-08-18-wave9-solid-creations.md`. Not deployed.
 - 2026-08-14 — Wave 8: catastrophes no longer drain work points (the old ~27%/day pool tax made every age past the player's token-income ceiling mathematically unreachable — an asymptote, not a ladder); the MCP brain prompt now states work comes only from the player's completed prompts. What a civilization has learned, no wave can wash away.
 - 2026-08-13 — Wave 7 (the living land): catastrophes keep no schedule (1h/5h/24h rolled gaps, ~2.4/day), nodes regenerate daily, and producer buildings yield resources; see `notes/2026-08-13-wave7-living-land.md`.
 - 2026-08-12 — Demolition shipped (`demolish` order: own soil only, no refund, never a wonder, replay-safe) and the building audit applied: 38 condemned buildings razed across 8 islands, 282 → 244, zero collateral; live at https://claudilization.com (`7bd4bfb`).

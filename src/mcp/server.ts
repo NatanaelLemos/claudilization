@@ -91,16 +91,20 @@ server.tool(
           '{"kind":"build","building":"hut"},{"kind":"advance_age"},' +
           '{"kind":"voyage","dest":"island-7","intent":"colonize"},' +
           '{"kind":"create","creation":{"name":"Moon Ninjas","description":"silent blades",' +
-          '"sprite":{"size":8,"palette":["#1a1a2e","#e94560"],"pixels":["..00....",".0110...",' +
-          '"..00....",".0000...","0.00.0..","..00....",".0..0...","0....0.."]},' +
+          '"model":{"size":4,"palette":["#1a1a2e","#e94560"],"layers":[' +
+          '["....",".0..","..0.","...."],["....",".00.",".00.","...."],' +
+          '["....",".11.",".11.","...."]]},' +
           '"stats":{"power":7,"speed":5,"resilience":3},"verbs":["raid","patrol"],"count":4}},' +
           '{"kind":"dispatch","creation":"Moon Ninjas","dest":"island-7","count":3},' +
           '{"kind":"disband","creation":"Moon Ninjas"},' +
-          '{"kind":"demolish","building":"shrine"}] — create invents any unit as pixel-art ' +
-          "data (verbs: guard, patrol, perform, gather, raid; stats 1-10, sum <= 15); dispatch " +
-          "raids a rival colony or garrisons your own; home islands can never be attacked; " +
-          "demolish tears a building down on your own soil (id or type, optional island: a " +
-          "colony you rule) — no refund, never a wonder.",
+          '{"kind":"demolish","building":"shrine"}] — create invents any unit or object as a ' +
+          "3D voxel model: `layers` run bottom to top, each layer is exactly `size` rows of " +
+          'exactly `size` characters ("." empty, or a palette index digit); size 4-16, 2-20 ' +
+          "layers, up to 8 colors. Sculpt a real silhouette, layer by layer (verbs: guard, " +
+          "patrol, perform, gather, raid; stats 1-10, sum <= 15); dispatch raids a rival " +
+          "colony or garrisons your own; home islands can never be attacked; demolish tears a " +
+          "building down on your own soil (id or type, optional island: a colony you rule) — " +
+          "no refund, never a wonder.",
       ),
   },
   async ({ orders }) => {

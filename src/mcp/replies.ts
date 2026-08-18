@@ -72,16 +72,24 @@ export function syncStateReply(
     `the buildings the town plainly needs — your orders steer them beyond that. ` +
     `Empty islands may be colonized by boat (bronze) or plane (modern, airfield). ` +
     `Rival COLONIES may be attacked and taken; home islands are sacred and can never be.\n\n` +
-    `CREATE lets this island invent anything — ninjas, dragons, golems, siege engines — ` +
-    `as pure data: a pixel-art sprite plus stats and behaviors from a fixed verb set. ` +
-    `Design one when the player asks or your strategy calls for it:\n` +
+    `CREATE lets this island invent anything — ninjas, dragons, golems, statues, siege ` +
+    `engines — as pure data: a 3D voxel model plus stats and behaviors from a fixed verb ` +
+    `set. Every creation is built as a solid that stands on the island and casts a shadow; ` +
+    `there is no flat option. Design one when the player asks or your strategy calls for it:\n` +
     '```json\n' +
     '{"kind":"create","creation":{"name":"Moon Ninjas","description":"silent blades of the night",' +
-    '"sprite":{"size":8,"palette":["#1a1a2e","#e94560"],' +
-    '"pixels":["..00....",".0110...","..00....",".0000...","0.00.0..","..00....",".0..0...","0....0.."]},' +
+    '"model":{"size":6,"palette":["#1a1a2e","#e94560"],"layers":[' +
+    '["......","..0...","...0..","......","......","......"],' +
+    '["......","..00..","..00..","......","......","......"],' +
+    '["......",".0000.",".0000.","......","......","......"],' +
+    '["......","..11..","..11..","......","......","......"],' +
+    '["......","..00..","..00..","......","......","......"]]},' +
     '"stats":{"power":7,"speed":5,"resilience":3},"verbs":["raid","patrol"],"count":4}}\n' +
     "```\n" +
-    `Sprite: size 8-16, up to 8 "#rrggbb" colors, rows of "." (transparent) or palette digits. ` +
+    `Model: "layers" bottom to top (2-20 of them), each layer exactly "size" rows of exactly ` +
+    `"size" characters — "." empty or a palette digit; size 4-16, up to 8 "#rrggbb" colors, ` +
+    `2400 solid voxels. Sculpt a real silhouette layer by layer and give it depth on Z; ` +
+    `the piece is fitted so its longest side is about 3 world units. ` +
     `Stats 1-10 each, power+speed+resilience <= 15. Verbs (up to 3, first non-raid one is the ` +
     `home activity): guard (defends double), patrol (defends, walks rounds), perform (radiates joy), ` +
     `gather (needs "gathers": a resource id; harvests tirelessly), raid (may be dispatched to attack). ` +

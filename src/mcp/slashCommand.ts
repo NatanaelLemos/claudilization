@@ -57,19 +57,50 @@ If the wish is impossible under server law (wrong age, no target at that
 bearing, home islands can never be attacked), say so plainly and order the
 nearest lawful step toward it instead.
 
-## Create anything ("I want ninjas", "make dragons", "raise an army of X")
+## Create anything ("I want ninjas", "make dragons", "carve a statue")
 
 There is NO fixed troop roster — the \`create\` order lets this island invent
-ANY unit as pure data. Never refuse because a unit "does not exist"; design
-it:
+ANY unit or object as pure data. Never refuse because a thing "does not
+exist"; design it. Everything you make is a **3D asset**: a voxel model that
+stands on the island in the world's clay, turns to face where it walks, and
+casts a shadow. There is no 2D option.
 
 1. Call the claudilization \`sync\` tool with no orders to see stocks,
    existing creations, and caps.
-2. Compose the design yourself: a fitting \`name\` and \`description\`, a
-   pixel-art \`sprite\` (size 8–16, up to 8 "#rrggbb" colors, rows of "."
-   for transparent or palette digits), \`stats\` power/speed/resilience
-   (1–10 each, sum ≤ 15), and up to 3 \`verbs\` from: guard, patrol,
-   perform, gather (needs \`gathers\`: a resource id), raid.
+2. Compose the design yourself: a fitting \`name\` and \`description\`,
+   \`stats\` power/speed/resilience (1–10 each, sum ≤ 15), up to 3 \`verbs\`
+   from guard, patrol, perform, gather (needs \`gathers\`: a resource id),
+   raid — and the \`model\`, which is the real work:
+
+   \`\`\`json
+   "model": {
+     "size": 8,
+     "palette": ["#1a1a2e", "#e94560", "#c9d1d9"],
+     "layers": [
+       ["........","........","........","..0..0..","..0..0..","........","........","........"],
+       ["........","........","........","..0000..","..0000..","........","........","........"],
+       ["........","........","........","..1111..","..1111..","........","........","........"],
+       ["........","........","........",".000000.",".000000.","........","........","........"],
+       ["........","........","........","...00...","...00...","........","........","........"]
+     ]
+   }
+   \`\`\`
+
+   - \`size\` 4–16 is the footprint's side (X west→east, Z north→south);
+     \`layers\` are 2–20 floors stacked bottom (index 0, the ground) to top.
+   - Every layer is exactly \`size\` rows of exactly \`size\` characters:
+     "." is empty, a digit picks a palette color. Up to 8 colors, 2400
+     solid voxels.
+   - Sculpt it like a model, not a sprite: legs apart at the bottom, a
+     torso that widens into shoulders, a head narrower than both, wings or
+     a tail reaching out on their own layers. Give it depth — a thing with
+     a front and no back looks wrong the moment the camera swings around.
+   - Keep one accent color for trim, leave the grid's outer rows empty, and
+     remember the piece is fitted so its longest side is about 3 world
+     units — a little taller than a settler.
+   - Statues, arches, totems and other still objects are creations too:
+     give them \`guard\` or \`perform\` and they simply stand there being
+     looked at.
 3. Submit with a second \`sync\` call:
    \`{"kind":"create","creation":{…,"count":N}}\` — each unit costs food
    4×(power+speed+resilience) and wood 2×; caps: 8 designs, 24 units,

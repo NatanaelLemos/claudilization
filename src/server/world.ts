@@ -24,6 +24,7 @@ import {
   parseCreationInput,
   unitDefense,
 } from "../shared/creations";
+import { modelFromSprite } from "../shared/voxel";
 import { dayIndex, isNight, secondsIntoDay, worldSecondsAt } from "../shared/daylight";
 import { BUILDING_NEED_PROVIDERS, computeHappiness } from "../shared/happiness";
 import { computeInspiration } from "../shared/inspiration";
@@ -167,6 +168,39 @@ export function migrateRetrofitIsland(island: Island): Island {
   // empty from the sea. After this, origin never changes again.
   island.origin ??= island.kind === "home" ? "home" : "neutral";
   return island;
+}
+
+/**
+ * Designs invented before the world went solid kept flat pixel art. Loading a
+ * save carves each of them into a model once, so no creation anywhere is a
+ * picture — the renderer never sees a sprite, and the next snapshot writes the
+ * solid down for good. The original art is kept beside it as provenance.
+ */
+export function carveLegacyCreations(island: Island): Island {
+  for (const spec of island.creationSpecs ?? []) {
+    if (spec.model || !spec.sprite) continue;
+    spec.model = modelFromSprite(spec.sprite);
+  }
+  return island;
+}
+
+/** The golden angle — the way a sunflower packs seeds without a gap or a clash. */
+const PHYLLOTAXIS = Math.PI * (3 - Math.sqrt(5));
+
+/**
+ * Where the nth creation on an island stands. A spiral out from the town
+ * center: the first few take posts close in, later ones ring wider, and no
+ * two share a spot — which matters now that a creation is a solid object
+ * several units across rather than a flat card. The small per-unit jitter
+ * keeps a row of guards from looking machine-stamped.
+ */
+export function creationPost(ordinal: number, half: number, id: string): Vec2 {
+  const angle = ordinal * PHYLLOTAXIS + roll(id, "ca") * 0.35;
+  const radius = 7 + 3.4 * Math.sqrt(ordinal) + roll(id, "cr") * 1.5;
+  return {
+    x: half + Math.cos(angle) * radius,
+    y: half + Math.sin(angle) * radius,
+  };
 }
 
 /** Retrofit-era browser accounts, never a Claude Code identity. */
@@ -963,7 +997,7 @@ export class World {
         id: `${island.id}-c${++this.idCounter}`,
         name: input.name,
         description: input.description,
-        sprite: input.sprite,
+        model: input.model,
         stats: input.stats,
         verbs: input.verbs,
         gathers: input.gathers,
@@ -977,10 +1011,11 @@ export class World {
       units.push({
         id,
         specId: spec.id,
-        pos: {
-          x: half + (roll(id, "cx") - 0.5) * 10,
-          y: half + (roll(id, "cy") - 0.5) * 10,
-        },
+        // creations are solid objects a couple of units across: they take
+        // their post on a widening spiral around the town rather than a random
+        // scatter, so a growing menagerie stands in view of itself instead of
+        // inside itself. Deterministic — the ordinal replays exactly.
+        pos: creationPost(units.length + i, half, id),
       });
     }
     counter.count += 1;
@@ -3113,6 +3148,7 @@ export class World {
     // worlds saved before wild islands existed only knew home islands
     for (const i of s.islands) i.kind ??= "home";
     for (const i of s.islands) migrateRetrofitIsland(i);
+    for (const i of s.islands) carveLegacyCreations(i);
     w.islandsMap = new Map(s.islands.map((i) => [i.id, i]));
     // islands are never removed, so the counter is exactly the highest stamp
     w.pulseSeq = Math.max(0, ...s.islands.map((i) => i.lastPulseSeq ?? 0));

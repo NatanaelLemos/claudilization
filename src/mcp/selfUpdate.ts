@@ -57,6 +57,29 @@ export function releaseLock(root: string): void {
 }
 
 /**
+ * The /claudilization command is the player's own words for this game, and it
+ * lives outside the app directory — so a swapped-in app would otherwise keep
+ * teaching last month's rules forever. The NEW app rewrites it itself, in its
+ * own process (this worker's imports are the old app's). Never fatal: an
+ * updated app with a stale command still plays.
+ */
+export function refreshSlashCommand(root: string): void {
+  const installer = join(installedAppDir(), "src", "mcp", "install.ts");
+  if (!existsSync(installer)) return;
+  const run = spawnSync("npx", ["tsx", installer, "--skill-only"], {
+    cwd: installedAppDir(),
+    timeout: 2 * 60 * 1000,
+    stdio: "ignore",
+  });
+  log(
+    root,
+    run.status === 0
+      ? "refreshed the /claudilization command from the new app"
+      : `could not refresh the /claudilization command (status ${String(run.status)})`,
+  );
+}
+
+/**
  * The two renames that make an update land, with rollback: if the new app
  * cannot take its place, the old one is put back before the error surfaces.
  */
@@ -135,6 +158,7 @@ export async function runSelfUpdate(serverUrl: string): Promise<void> {
     // 4. the swap — the only moment the live app is touched
     swapAppDirs(root);
     log(root, `updated to bundle ${bundle.slice(0, 12)} — previous app kept at app.prev`);
+    refreshSlashCommand(root);
   } catch (err) {
     rmSync(next, { recursive: true, force: true });
     log(root, `update failed, app untouched: ${err instanceof Error ? err.message : String(err)}`);

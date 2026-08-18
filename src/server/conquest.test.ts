@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { CREATION_MODEL_EXAMPLE } from "../shared/rules";
 import type { Island } from "../shared/types";
 import { World } from "./world";
 
@@ -216,10 +217,7 @@ describe("only originally-empty islands are ever conquerable", () => {
     const creation = {
       name: "Sea Wolves",
       description: "grey raiders of the cold water",
-      sprite: { size: 8, palette: ["#444455"], pixels: [
-        "..00....", ".0000...", "..00....", ".0000...",
-        "0.00.0..", "..00....", ".0..0...", "0....0..",
-      ] },
+      model: CREATION_MODEL_EXAMPLE,
       stats: { power: 8, speed: 4, resilience: 3 },
       verbs: ["raid" as const],
       count: 6,
