@@ -15,7 +15,7 @@ describe("procedural clay water", () => {
 
     expect(water.mesh.name).toBe("procedural-clay-ocean");
     expect(water.mesh.userData.waterShader).toBe(WATER_SHADER_MARKER);
-    expect(WATER_SHADER_MARKER).toBe("clay-water-waves-v2");
+    expect(WATER_SHADER_MARKER).toBe("clay-water-waves-v3");
     // no downloaded assets: the only texture is the CPU-stamped bathymetry
     expect(water.material.map).toBeNull();
     expect(water.material.transparent).toBe(false);

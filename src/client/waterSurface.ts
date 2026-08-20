@@ -7,7 +7,7 @@ import {
   type WaterDepthField,
 } from "./waterDepthField";
 
-export const WATER_SHADER_MARKER = "clay-water-waves-v2";
+export const WATER_SHADER_MARKER = "clay-water-waves-v3";
 
 /** the sea level of the shared terrain law (`terrain.ts` WATER) */
 const SEA_LEVEL = 0.2;
@@ -189,8 +189,18 @@ float landH = shoreTex.a * uWaterLandMax;
 float shoreDist = uWaterSeaLevel - landH;
 float depth01 = clamp(shoreDist / uWaterSeaLevel, 0.0, 1.0);
 float dayGlow = 0.22 + 0.78 * uWaterDaylight;
-// each island's lagoon turquoise banks down to the rig's deep-sea blue
-vec3 deepCol = diffuseColor.rgb * 0.78;
+// A coast has weather. One very low-frequency field decides which stretches
+// of shoreline are exposed and which lie sheltered, so the foam ring stops
+// reading as a rubber gasket stamped round every island: some headlands
+// break white, some coves barely wet the sand. The frequency is far below
+// anything that could tile inside one bay.
+float coastMood = sin(vWaterWorld.x * 0.0071 - vWaterWorld.z * 0.0052 + 1.7)
+  * sin(vWaterWorld.z * 0.0094 + vWaterWorld.x * 0.0036 - 0.6);
+coastMood = 0.55 + 0.85 * (coastMood * 0.5 + 0.5);
+// each island's lagoon turquoise banks down to the rig's deep-sea blue,
+// and the true deep keeps banking down past it — the reference's sea has a
+// real value range from lagoon to horizon, not one flat field with a rim
+vec3 deepCol = diffuseColor.rgb * (0.78 - 0.16 * smoothstep(0.55, 1.0, depth01));
 float hasTint = step(0.01, shoreTex.r + shoreTex.g + shoreTex.b);
 vec3 shallowCol = mix(diffuseColor.rgb, shoreTex.rgb, 0.85 * dayGlow * hasTint);
 float bank = smoothstep(0.0, 0.75, 1.0 - depth01);
@@ -214,13 +224,15 @@ float coreEdge = 0.0065 + foamWobble * 0.0022 + shoreAA * 1.6;
 // the hard bright core: the wet line where the sea actually meets the clay
 float shoreCore = 1.0 - smoothstep(coreEdge * 0.3, coreEdge, shoreDist);
 // and the soft halo behind it, still allowed to breathe
-float halo = 1.0 - smoothstep(0.004, 0.019 + foamWobble * 0.006, shoreDist);
-halo *= 0.66 + 0.34 * sin(vWaterWorld.x * 0.21 - vWaterWorld.z * 0.17 + foamWobble);
+float halo = 1.0 - smoothstep(0.004, (0.019 + foamWobble * 0.006) * coastMood, shoreDist);
+halo *= (0.66 + 0.34 * sin(vWaterWorld.x * 0.21 - vWaterWorld.z * 0.17 + foamWobble))
+  * clamp(coastMood, 0.4, 1.25);
 float contact = max(shoreCore, halo);
-// slow lapping rings rolling in toward the beach
+// slow lapping rings rolling in toward the beach, reaching further up an
+// exposed shore than into a sheltered one
 float lap = sin(shoreDist * 110.0 + uWaterTime * 1.35 + foamWobble * 1.2);
-float lapMask = (1.0 - smoothstep(0.012, 0.13, shoreDist)) * step(0.0, shoreDist);
-float lapFoam = smoothstep(0.62, 0.9, lap) * lapMask;
+float lapMask = (1.0 - smoothstep(0.012, 0.13 * coastMood, shoreDist)) * step(0.0, shoreDist);
+float lapFoam = smoothstep(0.62, 0.9, lap) * lapMask * clamp(coastMood, 0.35, 1.3);
 float foamAmt = clamp(contact + lapFoam * 0.8, 0.0, 1.0);
 // quiet crest bands out at sea — long strokes, never polka dots
 float crestA = sin(vWaterWorld.x * 0.052 + vWaterWorld.z * 0.014 + uWaterTime * 0.55);

@@ -52,6 +52,105 @@ export function surfaceY(height: number): number {
   return base + s * 3.8;
 }
 
+/** the eight compass directions an occlusion probe walks */
+const AO_DIRECTIONS: readonly (readonly [number, number])[] = [
+  [1, 0],
+  [-1, 0],
+  [0, 1],
+  [0, -1],
+  [1, 1],
+  [1, -1],
+  [-1, 1],
+  [-1, -1],
+];
+/** probe distances in tiles — near creases, then the shadow of a whole cliff */
+const AO_RADII: readonly number[] = [1, 2, 4, 7];
+/** how much of a vertex's pigment the deepest crease is allowed to take */
+const AO_STRENGTH = 0.46;
+/** and how much a fully open ridge is allowed to gain back */
+const AO_SKY_LIFT = 0.07;
+/**
+ * Gain on the horizon tangent before it is rolled into 0..1. Raw tangents are
+ * the wrong instrument for this island: the relief is deliberately soft
+ * rolling meadow, so an honest 3° slope answers 0.05 and the whole bake
+ * disappears. The reference is not physically honest either — Townscaper
+ * exaggerates contact darkening far past what the geometry earns, because
+ * that darkening *is* the form. A gain of 6 puts a gentle meadow fold in the
+ * middle of the response curve where it can be seen.
+ */
+const AO_TANGENT_GAIN = 6;
+/** radius, in tiles, of the ring that decides whether a vertex sits in a bowl */
+const AO_BOWL_RADIUS = 6;
+/** how far the bowl/dome term may swing a vertex either way */
+const AO_BOWL_STRENGTH = 0.055;
+/** world height difference that counts as a full bowl */
+const AO_BOWL_SCALE = 1.6;
+
+/**
+ * Baked sky occlusion for one island's heightfield, per tile, 0 (open sky) to
+ * 1 (buried in a crease).
+ *
+ * This is the reference's dominant read: in Townscaper almost nothing is lit
+ * by a shadow map — the form is carried by darkening where surfaces face each
+ * other and brightening where they face the sky. A per-frame screen-space
+ * pass would cost the one thing this world cannot spend, so the occlusion is
+ * measured once at mesh time from the same tile heights the simulation uses
+ * and folded into the vertex colours the terrain already carries. It is free
+ * at render, it survives into the distant LOD mesh (which samples these exact
+ * colours), and it is deterministic from the seed like everything else here.
+ *
+ * Each probe walks eight compass directions and keeps the steepest horizon it
+ * finds; a tangent of 1 (a 45° wall) counts as half-occluded. Sea tiles get a
+ * softened share so a lagoon under a headland still deepens without the
+ * seabed turning to soot.
+ */
+export function terrainSkyOcclusion(
+  heights: Readonly<Float32Array>,
+  size: number,
+): Float32Array {
+  const occlusion = new Float32Array(heights.length);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const index = y * size + x;
+      const here = heights[index]!;
+      let sum = 0;
+      let ring = 0;
+      let ringCount = 0;
+      for (const [dx, dy] of AO_DIRECTIONS) {
+        // a diagonal step covers √2 tiles of ground for the same rise
+        const stride = dx !== 0 && dy !== 0 ? Math.SQRT2 : 1;
+        let horizon = 0;
+        for (const radius of AO_RADII) {
+          const sx = x + dx * radius;
+          const sy = y + dy * radius;
+          // off the island is open sky, not a wall
+          if (sx < 0 || sy < 0 || sx >= size || sy >= size) continue;
+          const rise = heights[sy * size + sx]! - here;
+          if (rise <= 0) continue;
+          const tangent = (rise / (radius * stride)) * AO_TANGENT_GAIN;
+          if (tangent > horizon) horizon = tangent;
+        }
+        sum += horizon / (horizon + 1);
+        const bx = x + dx * AO_BOWL_RADIUS;
+        const by = y + dy * AO_BOWL_RADIUS;
+        if (bx >= 0 && by >= 0 && bx < size && by < size) {
+          ring += heights[by * size + bx]!;
+          ringCount++;
+        }
+      }
+      // Bowl vs dome: the horizon walk only sees what is above a vertex, so a
+      // broad meadow saddle and a broad meadow crown answer the same. Compare
+      // the vertex against the mean of a wide ring around it and the island's
+      // large forms come back — hollows settle, crowns catch the sky.
+      const bowl = ringCount > 0 ? (ring / ringCount - here) / AO_BOWL_SCALE : 0;
+      const shaped =
+        sum / AO_DIRECTIONS.length + Math.max(-1, Math.min(1, bowl)) * AO_BOWL_STRENGTH;
+      occlusion[index] = Math.max(0, Math.min(1, shaped));
+    }
+  }
+  return occlusion;
+}
+
 /** Terrain + nature for one island, regenerated deterministically from its seed. */
 export function createIslandGroup(
   seed: number,
@@ -82,6 +181,13 @@ export function createIslandGroup(
     const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
     return t * t * (3 - 2 * t);
   };
+  // one occlusion bake over the sculpted relief — the same surface the eye
+  // sees, not the raw gameplay height, so a rounded shore reads rounded
+  const surfaceHeights = new Float32Array(pos.count);
+  for (let i = 0; i < pos.count; i++) {
+    surfaceHeights[i] = surfaceY(terrain.tiles[i]!.height);
+  }
+  const occlusion = terrainSkyOcclusion(surfaceHeights, size);
   for (let i = 0; i < pos.count; i++) {
     const gx = i % size;
     const gy = Math.floor(i / size);
@@ -113,6 +219,16 @@ export function createIslandGroup(
       }
     }
     tinted.offsetHSL(0, 0, (shade() - 0.5) * 0.045 + (tile.height - SEA) * 0.05);
+    // baked sky occlusion: valleys, cliff feet and the inner corners of every
+    // fold go down, open ridges come up. Creases also cool very slightly —
+    // a shadow in a clay diorama is skylight, not an absence of light.
+    const occ = occlusion[i]! * (tile.kind === "water" ? 0.45 : 1);
+    const lit = 1 - AO_STRENGTH * occ + AO_SKY_LIFT * (1 - occ) * (1 - occ);
+    tinted.setRGB(
+      tinted.r * lit,
+      tinted.g * lit,
+      tinted.b * (lit + 0.05 * occ),
+    );
     colors[i * 3] = tinted.r;
     colors[i * 3 + 1] = tinted.g;
     colors[i * 3 + 2] = tinted.b;

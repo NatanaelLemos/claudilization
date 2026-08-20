@@ -6,6 +6,7 @@ import {
   spatiallyThinResourceVisuals,
   surfaceY,
   terrainLodSegments,
+  terrainSkyOcclusion,
 } from "./islandMesh";
 
 describe("terrain level of detail", () => {
@@ -122,5 +123,62 @@ describe("terrain level of detail", () => {
       expect(mesh.boundingBox?.isEmpty()).toBe(false);
       expect(mesh.boundingSphere?.isEmpty()).toBe(false);
     }
+  });
+});
+
+describe("baked terrain occlusion", () => {
+  /** a single square pit sunk into an otherwise flat plateau */
+  function pit(size: number, depth: number): Float32Array {
+    const heights = new Float32Array(size * size);
+    const mid = Math.floor(size / 2);
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const inPit = Math.abs(x - mid) <= 1 && Math.abs(y - mid) <= 1;
+        heights[y * size + x] = inPit ? -depth : 0;
+      }
+    }
+    return heights;
+  }
+
+  it("darkens the floor of a hollow and leaves open ground alone", () => {
+    const size = 33;
+    const occlusion = terrainSkyOcclusion(pit(size, 3), size);
+    const mid = Math.floor(size / 2);
+    const floor = occlusion[mid * size + mid]!;
+    const openGround = occlusion[2 * size + 2]!;
+    expect(floor).toBeGreaterThan(0.5);
+    expect(openGround).toBeLessThan(0.15);
+    expect(floor).toBeGreaterThan(openGround * 4);
+  });
+
+  it("shades the foot of a cliff more than its crown", () => {
+    const size = 33;
+    const heights = new Float32Array(size * size);
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) heights[y * size + x] = x >= size / 2 ? 6 : 0;
+    }
+    const occlusion = terrainSkyOcclusion(heights, size);
+    const row = Math.floor(size / 2);
+    const foot = occlusion[row * size + (Math.floor(size / 2) - 1)]!;
+    const crown = occlusion[row * size + (Math.floor(size / 2) + 1)]!;
+    expect(foot).toBeGreaterThan(crown);
+    expect(crown).toBeLessThan(0.2);
+  });
+
+  it("stays inside 0..1 and is deterministic for a real island", () => {
+    const size = 48;
+    const heights = new Float32Array(size * size);
+    for (let i = 0; i < heights.length; i++) {
+      heights[i] = Math.sin(i * 0.13) * 2 + Math.cos(i * 0.031) * 5;
+    }
+    const a = terrainSkyOcclusion(heights, size);
+    const b = terrainSkyOcclusion(heights, size);
+    expect(Array.from(a)).toEqual(Array.from(b));
+    for (const value of a) {
+      expect(value).toBeGreaterThanOrEqual(0);
+      expect(value).toBeLessThanOrEqual(1);
+    }
+    // a rolling meadow must actually be modelled, not flattened by the curve
+    expect(Math.max(...a) - Math.min(...a)).toBeGreaterThan(0.25);
   });
 });
