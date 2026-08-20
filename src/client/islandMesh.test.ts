@@ -118,6 +118,11 @@ describe("terrain level of detail", () => {
       expect(mesh.boundingSphere?.isEmpty()).toBe(false);
     }
     for (const mesh of instanced) {
+      // contact shadows are paint, not assets: nothing can hover or click one
+      if (mesh.userData.contactShadow) {
+        expect(mesh.userData.instanceAssetPicks).toBeUndefined();
+        continue;
+      }
       const picks = mesh.userData.instanceAssetPicks?.picks as unknown[];
       expect(picks).toHaveLength(mesh.count);
       expect(mesh.boundingBox?.isEmpty()).toBe(false);

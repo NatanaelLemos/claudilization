@@ -40,7 +40,8 @@ function town(count: number, spread = 8): Building[] {
 }
 
 function roadMesh(group: THREE.Group): THREE.Mesh | undefined {
-  return group.children.find((c): c is THREE.Mesh => (c as THREE.Mesh).isMesh);
+  // the group also carries the plaza's contact skirt; the paving is named
+  return group.children.find((c): c is THREE.Mesh => c.name === "roads");
 }
 
 function vertices(mesh: THREE.Mesh): { x: number; y: number; z: number }[] {

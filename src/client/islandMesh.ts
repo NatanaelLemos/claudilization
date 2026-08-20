@@ -7,6 +7,11 @@ import {
   islandPalette,
   type IslandPalette,
 } from "./artDirection";
+import {
+  bakeUndersideShade,
+  contactDiscMeshes,
+  type ContactDiscPlacement,
+} from "./contactShadows";
 import { compactStaticMeshes } from "./meshCompaction";
 import { setBatchedAssetPicks, setInstanceAssetPicks, type AssetPick } from "./picking";
 
@@ -31,6 +36,11 @@ export function spatiallyThinResourceVisuals<
 
 const AMP = 7;
 const SEA = 0.2;
+/**
+ * How far the terrain's normals are tilted past what its gentle relief earns,
+ * so the live sun models the hills instead of washing them flat.
+ */
+const TERRAIN_NORMAL_GAIN = 3.1;
 const TERRAIN_LOD_DISTANCE = 240;
 /** Fine decoration — meadows, blooms, shrubs — hides beyond this range. */
 export const DECOR_FINE_DISTANCE = 260;
@@ -82,7 +92,7 @@ const AO_TANGENT_GAIN = 6;
 /** radius, in tiles, of the ring that decides whether a vertex sits in a bowl */
 const AO_BOWL_RADIUS = 6;
 /** how far the bowl/dome term may swing a vertex either way */
-const AO_BOWL_STRENGTH = 0.055;
+const AO_BOWL_STRENGTH = 0.085;
 /** world height difference that counts as a full bowl */
 const AO_BOWL_SCALE = 1.6;
 
@@ -151,6 +161,159 @@ export function terrainSkyOcclusion(
   return occlusion;
 }
 
+/**
+ * Low-frequency macro variation for one island's ground, 0..1 per tile.
+ *
+ * The single loudest thing separating this meadow from the reference's was
+ * that it had *one* albedo. A real painted landmass is patchy at a scale you
+ * can walk across in ten seconds: a dry hectare here, a lush hollow there,
+ * and no two of them the same. Three octaves of value noise — a broad drift
+ * across the whole island, a hectare-scale patch, and a paddock-scale
+ * break — decide which pot of green each tile is painted from. Deterministic
+ * from the seed, baked into vertex colours, free at render.
+ */
+export function terrainMacroField(seed: number, size: number): Float32Array {
+  /** wavelength in tiles, and its share of the mask */
+  const octaves: readonly (readonly [number, number])[] = [
+    [58, 0.44],
+    [26, 0.36],
+    [11, 0.2],
+  ];
+  const field = new Float32Array(size * size);
+  for (const [wavelength, weight] of octaves) {
+    const cells = Math.max(2, Math.ceil(size / wavelength) + 2);
+    const rng = mulberry32(hashString(`${seed}|macro|${wavelength}`));
+    const lattice = new Float32Array(cells * cells);
+    for (let i = 0; i < lattice.length; i++) lattice[i] = rng();
+    for (let y = 0; y < size; y++) {
+      const fy = y / wavelength;
+      const cy = Math.min(cells - 2, Math.floor(fy));
+      const ty = fy - cy;
+      const sy = ty * ty * (3 - 2 * ty);
+      for (let x = 0; x < size; x++) {
+        const fx = x / wavelength;
+        const cx = Math.min(cells - 2, Math.floor(fx));
+        const tx = fx - cx;
+        const sx = tx * tx * (3 - 2 * tx);
+        const a = lattice[cy * cells + cx]!;
+        const b = lattice[cy * cells + cx + 1]!;
+        const c = lattice[(cy + 1) * cells + cx]!;
+        const d = lattice[(cy + 1) * cells + cx + 1]!;
+        const top = a + (b - a) * sx;
+        const bottom = c + (d - c) * sx;
+        const index = y * size + x;
+        field[index] = field[index]! + (top + (bottom - top) * sy) * weight;
+      }
+    }
+  }
+  return field;
+}
+
+/** Steepness of the sculpted surface per tile, in world units of rise per tile. */
+export function terrainSlopeField(
+  surfaceHeights: Readonly<Float32Array>,
+  size: number,
+): Float32Array {
+  const slope = new Float32Array(surfaceHeights.length);
+  const at = (x: number, y: number) =>
+    surfaceHeights[Math.max(0, Math.min(size - 1, y)) * size + Math.max(0, Math.min(size - 1, x))]!;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const dx = (at(x + 1, y) - at(x - 1, y)) * 0.5;
+      const dy = (at(x, y + 1) - at(x, y - 1)) * 0.5;
+      slope[y * size + x] = Math.hypot(dx, dy);
+    }
+  }
+  return slope;
+}
+
+/**
+ * The low and high water marks of a field over the tiles that matter.
+ *
+ * Absolute thresholds were why the first pass at tonal zones did nothing: an
+ * island whose whole interior sits between 0.4 and 0.55 of the height range
+ * lands in one zone and paints itself one colour. The ladder has to be
+ * stretched over the terrain that actually exists, so every island uses its
+ * full range of pigment — outliers trimmed, because one lone summit must not
+ * decide what "high" means for the meadow underneath it.
+ */
+export function fieldSpread(
+  values: Readonly<Float32Array>,
+  indices: readonly number[],
+  lowShare = 0.08,
+  highShare = 0.92,
+): { low: number; high: number } {
+  if (!indices.length) return { low: 0, high: 1 };
+  const sorted = indices.map((i) => values[i]!).sort((a, b) => a - b);
+  const at = (share: number) =>
+    sorted[Math.max(0, Math.min(sorted.length - 1, Math.round(share * (sorted.length - 1))))]!;
+  const low = at(lowShare);
+  const high = at(highShare);
+  return { low, high: high > low ? high : low + 1e-6 };
+}
+
+export interface GroundZoneWeights {
+  /** damp, dark, low and flat — the floor of a hollow */
+  hollow: number;
+  /** the working mid-green of open ground */
+  meadow: number;
+  /** dry, pale, sun-bleached — crowns and exposed banks */
+  crown: number;
+}
+
+/**
+ * Which of the three tonal zones a patch of ground belongs to.
+ *
+ * Height alone is a contour map; slope alone is a relief map. Ground reads as
+ * painted when the two argue: a high flat crown bleaches, a steep bank wears
+ * through, a low flat hollow stays damp and dark. The macro mask then shoves
+ * the boundaries around by a third of their range, so the zones wander in
+ * patches instead of drawing tidy elevation bands around the island.
+ */
+export function groundZoneWeights(
+  relief: number,
+  slope: number,
+  macro: number,
+): GroundZoneWeights {
+  const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+  const smooth = (edge0: number, edge1: number, x: number) => {
+    const t = clamp01((x - edge0) / (edge1 - edge0));
+    return t * t * (3 - 2 * t);
+  };
+  // all three arrive stretched across this island's own range
+  const dryness = clamp01(
+    0.42 * clamp01(relief) + 0.17 * clamp01(slope) + 0.44 * clamp01(macro),
+  );
+  const crown = smooth(0.5, 0.78, dryness);
+  const hollow = smooth(0.45, 0.16, dryness);
+  const meadow = Math.max(0, 1 - crown - hollow);
+  const total = crown + hollow + meadow;
+  return { hollow: hollow / total, meadow: meadow / total, crown: crown / total };
+}
+
+/**
+ * Exaggerate a terrain mesh's normals so the real sun can find its form.
+ *
+ * The island is a gentle miniature — a whole hill answers three degrees, so
+ * every slope returned within a hair of the same N·L and the landmass shaded
+ * only by its baked occlusion, which reads as a vignette rather than as
+ * light. Tilting each normal's horizontal component by a fixed gain keeps
+ * flat ground flat and gives a hillside a real lit face and a real shaded
+ * one, at any hour, because it is the live directional light doing the work
+ * rather than a bake that would be wrong by dusk.
+ */
+export function amplifyTerrainNormals(geometry: THREE.BufferGeometry, gain: number): void {
+  const normals = geometry.getAttribute("normal") as THREE.BufferAttribute;
+  for (let i = 0; i < normals.count; i++) {
+    const nx = normals.getX(i) * gain;
+    const ny = normals.getY(i);
+    const nz = normals.getZ(i) * gain;
+    const length = Math.hypot(nx, ny, nz) || 1;
+    normals.setXYZ(i, nx / length, ny / length, nz / length);
+  }
+  normals.needsUpdate = true;
+}
+
 /** Terrain + nature for one island, regenerated deterministically from its seed. */
 export function createIslandGroup(
   seed: number,
@@ -171,8 +334,17 @@ export function createIslandGroup(
   const shade = mulberry32(hashString(`${seed}|shade`));
   const tinted = new THREE.Color();
   const grassLow = new THREE.Color(palette.grassLight);
-  const grassHigh = new THREE.Color(palette.grass);
   const moss = new THREE.Color(palette.canopy[1]);
+  const soil = new THREE.Color(palette.soil);
+  // the three tonal zones the meadow is painted from: a damp hollow, the
+  // working mid-green, and a dry bleached crown. They are a real value
+  // ladder — a hill crown must not be the same pixel value as a valley floor.
+  const zoneHollow = new THREE.Color(palette.grass).lerp(moss, 0.55).multiplyScalar(0.72);
+  const zoneMeadow = new THREE.Color(palette.grass);
+  const zoneCrown = new THREE.Color(palette.grassLight)
+    .lerp(new THREE.Color(CLAY_PALETTE.sand), 0.24)
+    .multiplyScalar(1.2);
+  const zoneMix = new THREE.Color();
   const rockWarm = new THREE.Color(palette.rock).lerp(new THREE.Color(palette.soil), 0.38);
   const rockDark = new THREE.Color(CLAY_PALETTE.stoneDark);
   const sandBase = new THREE.Color(CLAY_PALETTE.sand);
@@ -188,11 +360,25 @@ export function createIslandGroup(
     surfaceHeights[i] = surfaceY(terrain.tiles[i]!.height);
   }
   const occlusion = terrainSkyOcclusion(surfaceHeights, size);
+  const macroField = terrainMacroField(seed, size);
+  const slopeField = terrainSlopeField(surfaceHeights, size);
+  // stretch every shading driver over the meadow this island actually has
+  const meadowTiles: number[] = [];
+  for (let i = 0; i < pos.count; i++) {
+    if (terrain.tiles[i]!.kind === "grass") meadowTiles.push(i);
+  }
+  const heightSpread = fieldSpread(surfaceHeights, meadowTiles);
+  const slopeSpread = fieldSpread(slopeField, meadowTiles, 0.1, 0.9);
+  const macroSpread = fieldSpread(macroField, meadowTiles, 0.06, 0.94);
+  const stretch = (value: number, span: { low: number; high: number }) =>
+    Math.max(0, Math.min(1, (value - span.low) / (span.high - span.low)));
   for (let i = 0; i < pos.count; i++) {
     const gx = i % size;
     const gy = Math.floor(i / size);
     const tile = terrain.tiles[gy * size + gx]!;
     pos.setY(i, surfaceY(tile.height));
+    const macro = macroField[i]!;
+    const slope = slopeField[i]!;
     // an elevation ramp instead of four flat pots: bright meadow low, working
     // green mid, moss toward the heights, then warm banded rock — with the
     // same per-vertex jitter that keeps clay from reading as plastic
@@ -202,11 +388,35 @@ export function createIslandGroup(
         break;
       case "sand":
         tinted.copy(sandBase).offsetHSL(0, 0, smooth(0.28, SEA, tile.height) * 0.05);
+        // the dune's own patchiness, and the damp line where the meadow
+        // starts: the beach used to end in a hard zigzag of tile kinds
+        tinted.offsetHSL(0, 0, (macro - 0.5) * 0.05);
+        tinted.lerp(zoneHollow, smooth(0.24, 0.28, tile.height) * 0.55);
         break;
-      case "grass":
-        tinted.copy(grassLow).lerp(grassHigh, smooth(0.3, 0.58, tile.height));
-        tinted.lerp(moss, smooth(0.56, 0.7, tile.height) * 0.4);
+      case "grass": {
+        // three tonal zones, chosen by height *and* slope, shoved around by
+        // the macro mask so no two hectares of this island match
+        const zones = groundZoneWeights(
+          stretch(surfaceHeights[i]!, heightSpread),
+          stretch(slope, slopeSpread),
+          stretch(macro, macroSpread),
+        );
+        zoneMix.setRGB(
+          zoneHollow.r * zones.hollow + zoneMeadow.r * zones.meadow + zoneCrown.r * zones.crown,
+          zoneHollow.g * zones.hollow + zoneMeadow.g * zones.meadow + zoneCrown.g * zones.crown,
+          zoneHollow.b * zones.hollow + zoneMeadow.b * zones.meadow + zoneCrown.b * zones.crown,
+        );
+        tinted.copy(zoneMix);
+        // the steepest banks wear through to the island's own earth
+        tinted.lerp(soil, smooth(0.75, 1.5, slope) * 0.4);
+        // moss still creeps up the heights, and the low meadow keeps its light
+        tinted.lerp(moss, smooth(0.62, 0.78, tile.height) * 0.3);
+        tinted.lerp(grassLow, smooth(0.34, 0.29, tile.height) * 0.45);
+        // and the last metre before the sand goes damp rather than switching
+        tinted.lerp(sandBase, smooth(0.31, 0.275, tile.height) * 0.34);
+        tinted.multiplyScalar(1 - smooth(0.32, 0.28, tile.height) * 0.1);
         break;
+      }
       default: {
         // rock — warm, moss-edged clay strata rather than a single grey
         // terrain blob. High faces stay stone; low shelves belong to the same
@@ -235,6 +445,7 @@ export function createIslandGroup(
   }
   geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
   geo.computeVertexNormals();
+  amplifyTerrainNormals(geo, TERRAIN_NORMAL_GAIN);
   const ground = new THREE.Mesh(
     geo,
     clayMaterial({ color: "#ffffff", vertexColors: true }),
@@ -265,6 +476,7 @@ export function createIslandGroup(
   }
   lowGeo.setAttribute("color", new THREE.BufferAttribute(lowColors, 3));
   lowGeo.computeVertexNormals();
+  amplifyTerrainNormals(lowGeo, TERRAIN_NORMAL_GAIN);
   const lowGround = new THREE.Mesh(
     lowGeo,
     clayMaterial({ color: "#ffffff", vertexColors: true }),
@@ -335,6 +547,8 @@ export function createIslandGroup(
     x: number;
     y: number;
     z: number;
+    tileX: number;
+    tileY: number;
     s: number;
     rotY: number;
     species: "broadleaf" | "pine" | "cypress";
@@ -343,6 +557,9 @@ export function createIslandGroup(
   const decorGroup = new THREE.Group();
   decorGroup.name = DECOR_FINE_GROUP;
   const groveRng = mulberry32(hashString(`${seed}|groves`));
+  // its own stream, so adding contact shadows never reshuffles where a
+  // single tree of an existing island stands
+  const contactRng = mulberry32(hashString(`${seed}|contact`));
   const primaries: TreePlacement[] = [];
   const companions: TreePlacement[] = [];
   const canopyPots = palette.canopy.map((hex) => new THREE.Color(hex));
@@ -367,6 +584,8 @@ export function createIslandGroup(
         x: tx - half,
         y: heightAt(tx, ty),
         z: ty - half,
+        tileX: tx,
+        tileY: ty,
         s: (i === 0 ? 0.95 : 0.6) + groveRng() * 0.35,
         rotY: groveRng() * Math.PI * 2,
         species,
@@ -386,16 +605,45 @@ export function createIslandGroup(
       clayMaterial({ color: CLAY_PALETTE.wood }),
       trees.length,
     );
+    // the canopy's own underside darkens toward the trunk it sits on — the
+    // junction was the one place in this frame where two solids met and
+    // nothing happened
     const round = new THREE.InstancedMesh(
-      new THREE.DodecahedronGeometry(1.05, 0),
-      clayMaterial({ color: "#ffffff" }),
+      bakeUndersideShade(new THREE.DodecahedronGeometry(1.05, 0), { strength: 0.36 }),
+      clayMaterial({ color: "#ffffff", vertexColors: true }),
       trees.filter((t) => t.species === "broadleaf").length,
     );
     const cones = new THREE.InstancedMesh(
-      new THREE.ConeGeometry(1, 2.4, 6),
-      clayMaterial({ color: "#ffffff" }),
+      bakeUndersideShade(new THREE.ConeGeometry(1, 2.4, 6), { strength: 0.3, bias: 0.05 }),
+      clayMaterial({ color: "#ffffff", vertexColors: true }),
       trees.filter((t) => t.species !== "broadleaf").length,
     );
+    // one contact disc per tree, and no two alike: the canopy that casts it
+    // sets its size, and a seeded roll sets its ellipse, spin and strength
+    const discs: ContactDiscPlacement[] = trees.map((tree) => {
+      const canopy = tree.species === "broadleaf" ? 1.15 : tree.species === "pine" ? 0.95 : 0.6;
+      const radius = canopy * tree.s * (0.62 + contactRng() * 0.44);
+      // A flat disc pressed onto sculpted ground sinks into the uphill half of
+      // its own footprint and most of the shadow is simply buried. Ride the
+      // highest ground the disc covers instead — invisible under a tree, and
+      // the darkening survives on a slope.
+      const rise = Math.max(
+        tree.y,
+        heightAt(tree.tileX + radius, tree.tileY),
+        heightAt(tree.tileX - radius, tree.tileY),
+        heightAt(tree.tileX, tree.tileY + radius),
+        heightAt(tree.tileX, tree.tileY - radius),
+      );
+      return {
+        x: tree.x + (contactRng() - 0.5) * 0.24,
+        y: rise + 0.06,
+        z: tree.z + (contactRng() - 0.5) * 0.24,
+        radius,
+        strength: 0.18 + contactRng() * 0.8,
+        rotY: contactRng() * Math.PI * 2,
+        squash: 0.72 + contactRng() * 0.5,
+      };
+    });
     const matrix = new THREE.Matrix4();
     const quat = new THREE.Quaternion();
     const euler = new THREE.Euler();
@@ -472,6 +720,9 @@ export function createIslandGroup(
       mesh.computeBoundingSphere();
       if (withPicks) setInstanceAssetPicks(mesh, picks);
       parent.add(mesh);
+    }
+    for (const contact of contactDiscMeshes(discs, { name: `${namePrefix}-contact` })) {
+      parent.add(contact);
     }
   };
   plantTrees(primaries, resources, "clay-tree", true);

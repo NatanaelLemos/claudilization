@@ -111,11 +111,24 @@ describe("procedural clay water", () => {
     water.material.onBeforeCompile(shader as any, null as any);
     const frag = shader.fragmentShader;
 
-    // the contact band widens with the local depth gradient, so a cliff coast
-    // and a flat beach both render one crisp line instead of a hairline or a
-    // smear across half the bay
+    // Foam is banded by distance to the waterline, never by depth: a band at
+    // a fixed depth closes into a ring wherever the seabed flattens at that
+    // value, and hangs there in open water with no coast under it.
     expect(frag).toContain("fwidth(shoreDist)");
-    expect(frag).toMatch(/float shoreCore = 1\.0 - smoothstep\(/);
+    expect(frag).toContain("float shorePx = shoreDist / shoreFall;");
+    // every foam term reads the screen distance, and none reads raw depth
+    for (const term of ["shoreCore", "halo", "lapMask"]) {
+      const line = frag.match(new RegExp(`float ${term} = [^;]+;`))!;
+      expect(line).not.toBeNull();
+      expect(line[0]).toContain("shorePx");
+    }
+    // the lapping rings travel in screen distance too — the old
+    // `sin(shoreDist * 110.0)` was what drew rings out on the shelf
+    expect(frag).not.toMatch(/sin\(shoreDist \* /);
+    expect(frag).toMatch(/float lap = sin\(shorePx \* /);
+    // and nothing foams that is not standing on a shelf that actually shelves
+    expect(frag).toMatch(/float shelf = 1\.0 - smoothstep\(/);
+    expect(frag).toContain("float wet = step(0.0, shoreDist);");
 
     // the wet-edge specular only ever fires in daylight and stays a kick, not
     // a light source — an unbounded add here blows the coast to white

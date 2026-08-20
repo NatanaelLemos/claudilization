@@ -9,6 +9,7 @@ import {
 } from "../shared/townPlan";
 import type { Age, Building, IslandTerrain, Vec2 } from "../shared/types";
 import { clayMaterial, islandPalette, type IslandPalette } from "./artDirection";
+import { contactRingGeometry, contactShadowMaterial } from "./contactShadows";
 
 /**
  * The roads: the connective tissue that turns a scatter of buildings into a
@@ -551,6 +552,29 @@ export function buildRoadsGroup({
       indices.push(centre, innerB, innerA);
       indices.push(innerA, outerB, outerA, innerA, innerB, outerB);
     }
+  }
+
+  // ── where the paving stops ───────────────────────────────────────────────
+  // A town's floor met the meadow at a painted edge and nothing else: no
+  // trodden margin, no shade, dirt and grass simply swapping pixels. One
+  // annulus of contact darkening on the *grass* side settles the plaza into
+  // the hill it was cut from.
+  if (plan && ground(plan.plaza.x, plan.plaza.y) >= WATERLINE) {
+    const rim = plan.plazaRadius + 1.1;
+    const reach = rim + 2.4;
+    const skirt = new THREE.Mesh(
+      contactRingGeometry(rim / reach, 36),
+      contactShadowMaterial(0.34),
+    );
+    skirt.name = "plaza-contact";
+    skirt.scale.set(reach, 1, reach);
+    skirt.position.set(
+      plan.plaza.x - half,
+      ground(plan.plaza.x, plan.plaza.y) + 0.06,
+      plan.plaza.y - half,
+    );
+    skirt.renderOrder = -1;
+    holder.add(skirt);
   }
 
   if (!indices.length) return holder;

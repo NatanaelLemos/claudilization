@@ -214,24 +214,33 @@ seaCol = mix(seaCol, uWaterSand, smoothstep(0.045, 0.006, max(shoreDist, 0.0)) *
 // soft clay foam hugging the real coastline, its edge breathing with the sea
 float foamWobble = sin(vWaterWorld.x * 0.33 + uWaterTime * 0.7)
   * sin(vWaterWorld.z * 0.29 - uWaterTime * 0.55);
-// The shore band is measured in world *height*, so a steep coast squeezed it
-// to sub-pixel and a flat beach smeared it across half a bay — the reference
-// frame's coastline is one crisp bright line at every angle. Widening the
-// band by the local screen-space gradient of the depth pins it to a constant
-// on-screen width from any camera height.
-float shoreAA = fwidth(shoreDist);
-float coreEdge = 0.0065 + foamWobble * 0.0022 + shoreAA * 1.6;
+// Foam is banded by *distance to the waterline*, never by depth.
+//
+// Depth bands were the bug: the sea's floor flattens out at whatever value
+// it likes, so a band drawn at a fixed depth closed on itself out in open
+// water and hung there — a foam ring with no coast under it. The seabed's
+// own gradient is the ruler that converts one into the other, and taken in
+// screen space it also holds the coastline to a constant on-screen width
+// from any camera height, which is how the reference reads at every zoom.
+float shoreFall = max(fwidth(shoreDist), 1e-6);
+float shorePx = shoreDist / shoreFall;
+// a shelf that is not shelving cannot break: the second gate every stretch
+// of foam has to pass, so a flat plateau at the right depth stays water
+float shelf = 1.0 - smoothstep(0.055, 0.15, shoreDist);
+float wet = step(0.0, shoreDist);
 // the hard bright core: the wet line where the sea actually meets the clay
-float shoreCore = 1.0 - smoothstep(coreEdge * 0.3, coreEdge, shoreDist);
+float shoreCore = (1.0 - smoothstep(0.9, 2.6 + foamWobble * 0.6, shorePx)) * wet;
 // and the soft halo behind it, still allowed to breathe
-float halo = 1.0 - smoothstep(0.004, (0.019 + foamWobble * 0.006) * coastMood, shoreDist);
+float halo = (1.0 - smoothstep(1.2, (5.5 + foamWobble * 1.6) * coastMood, shorePx))
+  * wet * shelf;
 halo *= (0.66 + 0.34 * sin(vWaterWorld.x * 0.21 - vWaterWorld.z * 0.17 + foamWobble))
   * clamp(coastMood, 0.4, 1.25);
 float contact = max(shoreCore, halo);
 // slow lapping rings rolling in toward the beach, reaching further up an
-// exposed shore than into a sheltered one
-float lap = sin(shoreDist * 110.0 + uWaterTime * 1.35 + foamWobble * 1.2);
-float lapMask = (1.0 - smoothstep(0.012, 0.13 * coastMood, shoreDist)) * step(0.0, shoreDist);
+// exposed shore than into a sheltered one — and dying with distance, so the
+// outermost ring can never detach and drift off on its own
+float lap = sin(shorePx * 0.42 + uWaterTime * 1.35 + foamWobble * 1.2);
+float lapMask = (1.0 - smoothstep(3.0, 26.0 * coastMood, shorePx)) * wet * shelf;
 float lapFoam = smoothstep(0.62, 0.9, lap) * lapMask * clamp(coastMood, 0.35, 1.3);
 float foamAmt = clamp(contact + lapFoam * 0.8, 0.0, 1.0);
 // quiet crest bands out at sea — long strokes, never polka dots

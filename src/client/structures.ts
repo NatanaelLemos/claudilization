@@ -4,6 +4,7 @@ import { buildingSpec } from "../shared/buildings";
 import { hashString, mulberry32 } from "../shared/rng";
 import type { Age, Building, BuildingSpec, CivSpec } from "../shared/types";
 import { ART_DIRECTION, CLAY_PALETTE, clayMaterial } from "./artDirection";
+import { contactDiscGeometry, contactShadowMaterial } from "./contactShadows";
 import { compactStaticMeshes } from "./meshCompaction";
 
 /**
@@ -3009,18 +3010,16 @@ export function createBuildingMesh(
   }
 
   // complete — a soft contact blob grounds the building even where the
-  // shadow map goes soft
+  // shadow map goes soft. It carries its falloff in vertex alpha now, so the
+  // wall-to-ground line goes properly dark where it meets the clay instead of
+  // sitting inside one flat grey coin with a visible rim.
   const blob = new THREE.Mesh(
-    new THREE.CircleGeometry(1.15, 14),
-    new THREE.MeshBasicMaterial({
-      color: CLAY_PALETTE.ink,
-      transparent: true,
-      opacity: ART_DIRECTION.material.shadowOpacity,
-      depthWrite: false,
-    }),
+    contactDiscGeometry(16),
+    contactShadowMaterial(ART_DIRECTION.material.shadowOpacity * 2.6),
   );
-  blob.rotation.x = -Math.PI / 2;
+  blob.scale.set(1.45, 1, 1.45);
   blob.position.y = 0.04;
+  blob.renderOrder = -1;
   group.add(blob);
   const builder = spec.wonder ? bWonder : (SPECIALS[building.type] ?? archetype(spec));
   builder(ctx);
